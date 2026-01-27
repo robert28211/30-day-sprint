@@ -567,14 +567,19 @@ export default function App() {
       
       if (existingTask) {
         // Update existing task
+        const updateFields = {
+          Completed: newCompleted
+        };
+        
+        if (newCompleted) {
+          updateFields['Completed Date'] = new Date().toISOString().split('T')[0];
+          updateFields['Completed By'] = userName;
+        }
+        
         await airtableFetch(`${TASKS_TABLE}/${existingTask.id}`, {
           method: 'PATCH',
           body: JSON.stringify({
-            fields: {
-              Completed: newCompleted,
-              'Completed Date': newCompleted ? new Date().toISOString().split('T')[0] : null,
-              'Completed By': newCompleted ? userName : null
-            }
+            fields: updateFields
           })
         });
         
