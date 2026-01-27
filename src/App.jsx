@@ -7,7 +7,9 @@ const CLIENTS_TABLE = 'Clients';
 const TASKS_TABLE = 'Tasks';
 
 const airtableFetch = async (table, options = {}) => {
-  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(table)}${options.params || ''}`;
+  // Don't encode if it contains a record ID (has a slash)
+  const tablePart = table.includes('/') ? table : encodeURIComponent(table);
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tablePart}${options.params || ''}`;
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -15,6 +17,29 @@ const airtableFetch = async (table, options = {}) => {
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Airtable API error');
+  }
+  return response.json();
+};
+
+// Separate function for updating records using batch update format
+const updateRecord = async (table, recordId, fields) => {
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(table)}`;
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      records: [{
+        id: recordId,
+        fields: fields
+      }]
+    })
   });
   if (!response.ok) {
     const error = await response.json();
@@ -576,12 +601,7 @@ export default function App() {
           updateFields['Completed By'] = userName;
         }
         
-        await airtableFetch(`${TASKS_TABLE}/${existingTask.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            fields: updateFields
-          })
-        });
+        await updateRecord(TASKS_TABLE, existingTask.id, updateFields);
         
         setTasks(tasks.map(t => 
           t.id === existingTask.id 
@@ -648,14 +668,7 @@ export default function App() {
       }
       
       if (existingTask) {
-        await airtableFetch(`${TASKS_TABLE}/${existingTask.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            fields: {
-              Notes: noteValue
-            }
-          })
-        });
+        await updateRecord(TASKS_TABLE, existingTask.id, { Notes: noteValue });
         
         setTasks(tasks.map(t => 
           t.id === existingTask.id ? { ...t, notes: noteValue } : t
