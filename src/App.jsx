@@ -390,7 +390,7 @@ export default function App() {
         clientId: record.fields.Client?.[0] || null,
         taskId: record.fields['Task ID'] || '',
         completed: record.fields.Completed || false,
-        completedAt: record.fields['Completed At'] || null
+        completedAt: record.fields['Completed Date'] || null
       }));
       setTasks(loadedTasks);
 
@@ -502,7 +502,7 @@ export default function App() {
           body: JSON.stringify({
             fields: {
               Completed: newCompleted,
-              'Completed At': newCompleted ? new Date().toISOString().split('T')[0] : null
+              'Completed Date': newCompleted ? new Date().toISOString().split('T')[0] : null
             }
           })
         });
@@ -522,7 +522,7 @@ export default function App() {
                 Client: [activeClientId],
                 'Task ID': taskId,
                 Completed: true,
-                'Completed At': new Date().toISOString().split('T')[0]
+                'Completed Date': new Date().toISOString().split('T')[0]
               }
             }]
           })
