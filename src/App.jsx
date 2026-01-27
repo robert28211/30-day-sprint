@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User } from 'lucide-react';
 
 const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -300,6 +300,10 @@ const sprintTemplate = {
       { id: "handoff-confirm", text: "Confirm ongoing retainer scope" },
       { id: "handoff-feedback", text: "Collect sprint feedback" }
     ]
+  },
+  customTasks: {
+    title: "Custom Tasks",
+    items: []
   }
 };
 
@@ -343,6 +347,14 @@ const phases = [
     icon: TrendingUp,
     color: 'from-orange-500 to-orange-600',
     sections: ['week4CTA', 'week4Retargeting', 'week4Launch', 'week4Handoff']
+  },
+  { 
+    id: 'custom', 
+    name: 'Custom', 
+    subtitle: 'Added Tasks',
+    icon: Plus,
+    color: 'from-pink-500 to-pink-600',
+    sections: ['customTasks']
   }
 ];
 
@@ -365,6 +377,12 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [userName, setUserName] = useState(() => localStorage.getItem('engageengine-username') || '');
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [noteModal, setNoteModal] = useState({ open: false, taskId: null, note: '' });
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [newTaskText, setNewTaskText] = useState('');
+  const [customTasks, setCustomTasks] = useState([]);
 
   // Load clients and tasks from Airtable
   const loadData = useCallback(async () => {
@@ -390,9 +408,23 @@ export default function App() {
         clientId: record.fields.Client?.[0] || null,
         taskId: record.fields['Task ID'] || '',
         completed: record.fields.Completed || false,
-        completedAt: record.fields['Completed Date'] || null
+        completedAt: record.fields['Completed Date'] || null,
+        completedBy: record.fields['Completed By'] || null,
+        notes: record.fields.Notes || '',
+        isCustom: record.fields['Task ID']?.startsWith('custom-') || false,
+        customText: record.fields['Task ID']?.startsWith('custom-') ? (record.fields.Notes?.split('|||')[0] || '') : ''
       }));
       setTasks(loadedTasks);
+      
+      // Extract custom tasks for display
+      const customs = loadedTasks
+        .filter(t => t.isCustom && t.clientId)
+        .map(t => ({
+          id: t.taskId,
+          text: t.customText,
+          clientId: t.clientId
+        }));
+      setCustomTasks(customs);
 
     } catch (err) {
       console.error('Failed to load data:', err);
@@ -405,14 +437,49 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+  
+  useEffect(() => {
+    if (!userName) {
+      setShowUserModal(true);
+    }
+  }, [userName]);
 
   const activeClient = clients.find(c => c.id === activeClientId);
 
+  // Get task record for a task
+  const getTaskRecord = (taskId) => {
+    if (!activeClientId) return null;
+    return tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
+  };
+
   // Get completed status for a task
   const isTaskCompleted = (taskId) => {
-    if (!activeClientId) return false;
-    const task = tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
+    const task = getTaskRecord(taskId);
     return task?.completed || false;
+  };
+  
+  // Get task notes
+  const getTaskNotes = (taskId) => {
+    const task = getTaskRecord(taskId);
+    if (!task?.notes) return '';
+    // For custom tasks, notes are stored as "taskText|||actualNotes"
+    if (task.isCustom && task.notes.includes('|||')) {
+      return task.notes.split('|||')[1] || '';
+    }
+    return task.notes;
+  };
+  
+  // Get who completed the task
+  const getCompletedBy = (taskId) => {
+    const task = getTaskRecord(taskId);
+    return task?.completedBy || null;
+  };
+
+  // Save username
+  const saveUserName = (name) => {
+    localStorage.setItem('engageengine-username', name);
+    setUserName(name);
+    setShowUserModal(false);
   };
 
   // Create new client
@@ -487,7 +554,10 @@ export default function App() {
 
   // Toggle task completion
   const toggleItem = async (taskId) => {
-    if (!activeClientId) return;
+    if (!activeClientId || !userName) {
+      if (!userName) setShowUserModal(true);
+      return;
+    }
     
     const existingTask = tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
     const newCompleted = !existingTask?.completed;
@@ -502,14 +572,20 @@ export default function App() {
           body: JSON.stringify({
             fields: {
               Completed: newCompleted,
-              'Completed Date': newCompleted ? new Date().toISOString().split('T')[0] : null
+              'Completed Date': newCompleted ? new Date().toISOString().split('T')[0] : null,
+              'Completed By': newCompleted ? userName : null
             }
           })
         });
         
         setTasks(tasks.map(t => 
           t.id === existingTask.id 
-            ? { ...t, completed: newCompleted, completedAt: newCompleted ? new Date().toISOString().split('T')[0] : null }
+            ? { 
+                ...t, 
+                completed: newCompleted, 
+                completedAt: newCompleted ? new Date().toISOString().split('T')[0] : null,
+                completedBy: newCompleted ? userName : null
+              }
             : t
         ));
       } else {
@@ -522,7 +598,8 @@ export default function App() {
                 Client: [activeClientId],
                 'Task ID': taskId,
                 Completed: true,
-                'Completed Date': new Date().toISOString().split('T')[0]
+                'Completed Date': new Date().toISOString().split('T')[0],
+                'Completed By': userName
               }
             }]
           })
@@ -533,7 +610,9 @@ export default function App() {
           clientId: activeClientId,
           taskId: taskId,
           completed: true,
-          completedAt: new Date().toISOString().split('T')[0]
+          completedAt: new Date().toISOString().split('T')[0],
+          completedBy: userName,
+          notes: ''
         };
         
         setTasks([...tasks, newTask]);
@@ -541,6 +620,138 @@ export default function App() {
     } catch (err) {
       console.error('Failed to update task:', err);
       setError('Failed to update task');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Save note for a task
+  const saveNote = async () => {
+    if (!activeClientId || !noteModal.taskId) return;
+    
+    const existingTask = tasks.find(t => t.clientId === activeClientId && t.taskId === noteModal.taskId);
+    const isCustom = noteModal.taskId.startsWith('custom-');
+    
+    try {
+      setSaving(true);
+      
+      // For custom tasks, preserve the task text in notes
+      let noteValue = noteModal.note;
+      if (isCustom && existingTask) {
+        const taskText = existingTask.customText || '';
+        noteValue = taskText + '|||' + noteModal.note;
+      }
+      
+      if (existingTask) {
+        await airtableFetch(`${TASKS_TABLE}/${existingTask.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            fields: {
+              Notes: noteValue
+            }
+          })
+        });
+        
+        setTasks(tasks.map(t => 
+          t.id === existingTask.id ? { ...t, notes: noteValue } : t
+        ));
+      } else {
+        const result = await airtableFetch(TASKS_TABLE, {
+          method: 'POST',
+          body: JSON.stringify({
+            records: [{
+              fields: {
+                Client: [activeClientId],
+                'Task ID': noteModal.taskId,
+                Completed: false,
+                Notes: noteValue
+              }
+            }]
+          })
+        });
+        
+        const newTask = {
+          id: result.records[0].id,
+          clientId: activeClientId,
+          taskId: noteModal.taskId,
+          completed: false,
+          completedAt: null,
+          completedBy: null,
+          notes: noteValue
+        };
+        
+        setTasks([...tasks, newTask]);
+      }
+      
+      setNoteModal({ open: false, taskId: null, note: '' });
+    } catch (err) {
+      console.error('Failed to save note:', err);
+      setError('Failed to save note');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Add custom task
+  const addCustomTask = async () => {
+    if (!activeClientId || !newTaskText.trim()) return;
+    
+    const customId = `custom-${Date.now()}`;
+    
+    try {
+      setSaving(true);
+      
+      const result = await airtableFetch(TASKS_TABLE, {
+        method: 'POST',
+        body: JSON.stringify({
+          records: [{
+            fields: {
+              Client: [activeClientId],
+              'Task ID': customId,
+              Completed: false,
+              Notes: newTaskText.trim() + '|||'
+            }
+          }]
+        })
+      });
+      
+      const newTask = {
+        id: result.records[0].id,
+        clientId: activeClientId,
+        taskId: customId,
+        completed: false,
+        completedAt: null,
+        completedBy: null,
+        notes: newTaskText.trim() + '|||',
+        isCustom: true,
+        customText: newTaskText.trim()
+      };
+      
+      setTasks([...tasks, newTask]);
+      setCustomTasks([...customTasks, { id: customId, text: newTaskText.trim(), clientId: activeClientId }]);
+      setNewTaskText('');
+      setShowAddTaskModal(false);
+    } catch (err) {
+      console.error('Failed to add custom task:', err);
+      setError('Failed to add custom task');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Delete custom task
+  const deleteCustomTask = async (taskId) => {
+    const existingTask = tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
+    if (!existingTask) return;
+    
+    try {
+      setSaving(true);
+      await airtableFetch(`${TASKS_TABLE}/${existingTask.id}`, { method: 'DELETE' });
+      setTasks(tasks.filter(t => t.id !== existingTask.id));
+      setCustomTasks(customTasks.filter(t => t.id !== taskId));
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+      setError('Failed to delete task');
     } finally {
       setSaving(false);
     }
@@ -579,6 +790,11 @@ export default function App() {
     }));
   };
 
+  // Get custom tasks for current client
+  const getClientCustomTasks = () => {
+    return customTasks.filter(t => t.clientId === activeClientId);
+  };
+
   const getPhaseProgress = (phase) => {
     if (!activeClientId) return { completed: 0, total: 0, percent: 0 };
     
@@ -586,12 +802,20 @@ export default function App() {
     let total = 0;
     
     phase.sections.forEach(sectionId => {
-      const section = sprintTemplate[sectionId];
-      if (section) {
-        section.items.forEach(item => {
+      if (sectionId === 'customTasks') {
+        const clientCustom = getClientCustomTasks();
+        clientCustom.forEach(item => {
           total++;
           if (isTaskCompleted(item.id)) completed++;
         });
+      } else {
+        const section = sprintTemplate[sectionId];
+        if (section) {
+          section.items.forEach(item => {
+            total++;
+            if (isTaskCompleted(item.id)) completed++;
+          });
+        }
       }
     });
     
@@ -604,11 +828,19 @@ export default function App() {
     let completed = 0;
     let total = 0;
     
-    Object.values(sprintTemplate).forEach(section => {
-      section.items.forEach(item => {
-        total++;
-        if (isTaskCompleted(item.id)) completed++;
-      });
+    Object.entries(sprintTemplate).forEach(([key, section]) => {
+      if (key === 'customTasks') {
+        const clientCustom = getClientCustomTasks();
+        clientCustom.forEach(item => {
+          total++;
+          if (isTaskCompleted(item.id)) completed++;
+        });
+      } else {
+        section.items.forEach(item => {
+          total++;
+          if (isTaskCompleted(item.id)) completed++;
+        });
+      }
     });
     
     return { completed, total, percent: total > 0 ? Math.round((completed / total) * 100) : 0 };
@@ -619,11 +851,13 @@ export default function App() {
     
     const incomplete = [];
     Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
-      section.items.forEach(item => {
-        if (item.critical && !isTaskCompleted(item.id)) {
-          incomplete.push({ ...item, section: section.title });
-        }
-      });
+      if (sectionId !== 'customTasks') {
+        section.items.forEach(item => {
+          if (item.critical && !isTaskCompleted(item.id)) {
+            incomplete.push({ ...item, section: section.title });
+          }
+        });
+      }
     });
     return incomplete;
   };
@@ -672,7 +906,15 @@ export default function App() {
               <h1 className="text-2xl font-bold">EngageEngine 30-Day Sprint</h1>
               <p className="text-slate-300 text-sm flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                Team Tracker (Airtable Connected)
+                Team Tracker
+                {userName && (
+                  <button 
+                    onClick={() => setShowUserModal(true)}
+                    className="ml-2 bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs"
+                  >
+                    {userName}
+                  </button>
+                )}
               </p>
             </div>
             
@@ -782,6 +1024,11 @@ export default function App() {
                     const Icon = phase.icon;
                     const isActive = activePhase === phase.id;
                     
+                    // Hide custom phase if no custom tasks
+                    if (phase.id === 'custom' && getClientCustomTasks().length === 0) {
+                      return null;
+                    }
+                    
                     return (
                       <button
                         key={phase.id}
@@ -815,6 +1062,17 @@ export default function App() {
                       </button>
                     );
                   })}
+                </div>
+                
+                {/* Add Custom Task Button */}
+                <div className="p-4 border-t border-gray-100">
+                  <button
+                    onClick={() => setShowAddTaskModal(true)}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Custom Task
+                  </button>
                 </div>
                 
                 {/* Failure Mode Selector */}
@@ -879,6 +1137,115 @@ export default function App() {
 
                   {/* Sections */}
                   {currentPhase.sections.map(sectionId => {
+                    // Handle custom tasks section
+                    if (sectionId === 'customTasks') {
+                      const clientCustom = getClientCustomTasks();
+                      if (clientCustom.length === 0) return null;
+                      
+                      const isExpanded = expandedSections[sectionId] !== false;
+                      const sectionCompleted = clientCustom.filter(item => isTaskCompleted(item.id)).length;
+                      const sectionTotal = clientCustom.length;
+                      const sectionPercent = Math.round((sectionCompleted / sectionTotal) * 100);
+                      
+                      return (
+                        <div key={sectionId} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                          <button
+                            onClick={() => toggleSection(sectionId)}
+                            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              {isExpanded ? (
+                                <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                              )}
+                              <h3 className="font-semibold text-slate-800 text-left">Custom Tasks</h3>
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <span className={`text-sm font-medium ${sectionPercent === 100 ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                {sectionCompleted}/{sectionTotal}
+                              </span>
+                              <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full transition-all duration-300 ${sectionPercent === 100 ? 'bg-emerald-500' : 'bg-pink-500'}`}
+                                  style={{ width: `${sectionPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                          </button>
+                          
+                          {isExpanded && (
+                            <div className="border-t border-gray-100 p-4">
+                              <div className="space-y-2">
+                                {clientCustom.map(item => {
+                                  const completed = isTaskCompleted(item.id);
+                                  const completedBy = getCompletedBy(item.id);
+                                  const notes = getTaskNotes(item.id);
+                                  
+                                  return (
+                                    <div
+                                      key={item.id}
+                                      className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all ${
+                                        completed
+                                          ? 'bg-emerald-50'
+                                          : 'bg-slate-50'
+                                      }`}
+                                    >
+                                      <button
+                                        onClick={() => toggleItem(item.id)}
+                                        disabled={saving}
+                                        className="flex-shrink-0 mt-0.5"
+                                      >
+                                        {completed ? (
+                                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                        ) : (
+                                          <Circle className="w-5 h-5 text-slate-300 hover:text-slate-400" />
+                                        )}
+                                      </button>
+                                      <div className="flex-1 min-w-0">
+                                        <span className={`text-sm ${
+                                          completed ? 'text-emerald-800 line-through' : 'text-slate-700'
+                                        }`}>
+                                          {item.text}
+                                        </span>
+                                        {completedBy && (
+                                          <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                            <User className="w-3 h-3" />
+                                            {completedBy}
+                                          </div>
+                                        )}
+                                        {notes && (
+                                          <div className="text-xs text-slate-500 mt-1 bg-white rounded p-2 border border-slate-200">
+                                            {notes}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        <button
+                                          onClick={() => setNoteModal({ open: true, taskId: item.id, note: notes })}
+                                          className="text-slate-400 hover:text-slate-600 p-1"
+                                          title="Add note"
+                                        >
+                                          <MessageSquare className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                          onClick={() => deleteCustomTask(item.id)}
+                                          className="text-slate-400 hover:text-red-500 p-1"
+                                          title="Delete task"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    
                     const section = sprintTemplate[sectionId];
                     if (!section) return null;
                     
@@ -919,33 +1286,60 @@ export default function App() {
                             <div className="space-y-2">
                               {section.items.map(item => {
                                 const completed = isTaskCompleted(item.id);
+                                const completedBy = getCompletedBy(item.id);
+                                const notes = getTaskNotes(item.id);
+                                
                                 return (
-                                  <button
+                                  <div
                                     key={item.id}
-                                    onClick={() => toggleItem(item.id)}
-                                    disabled={saving}
-                                    className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all text-left ${
+                                    className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all ${
                                       completed
-                                        ? 'bg-emerald-50 hover:bg-emerald-100'
-                                        : 'bg-slate-50 hover:bg-slate-100'
+                                        ? 'bg-emerald-50'
+                                        : 'bg-slate-50'
                                     } ${saving ? 'opacity-50' : ''}`}
                                   >
-                                    {completed ? (
-                                      <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                                    ) : (
-                                      <Circle className="w-5 h-5 text-slate-300 flex-shrink-0 mt-0.5" />
-                                    )}
-                                    <span className={`text-sm ${
-                                      completed ? 'text-emerald-800 line-through' : 'text-slate-700'
-                                    }`}>
-                                      {item.text}
-                                      {item.critical && !completed && (
-                                        <span className="ml-2 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
-                                          CRITICAL
-                                        </span>
+                                    <button
+                                      onClick={() => toggleItem(item.id)}
+                                      disabled={saving}
+                                      className="flex-shrink-0 mt-0.5"
+                                    >
+                                      {completed ? (
+                                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                      ) : (
+                                        <Circle className="w-5 h-5 text-slate-300 hover:text-slate-400" />
                                       )}
-                                    </span>
-                                  </button>
+                                    </button>
+                                    <div className="flex-1 min-w-0">
+                                      <span className={`text-sm ${
+                                        completed ? 'text-emerald-800 line-through' : 'text-slate-700'
+                                      }`}>
+                                        {item.text}
+                                        {item.critical && !completed && (
+                                          <span className="ml-2 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
+                                            CRITICAL
+                                          </span>
+                                        )}
+                                      </span>
+                                      {completedBy && (
+                                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                          <User className="w-3 h-3" />
+                                          {completedBy}
+                                        </div>
+                                      )}
+                                      {notes && (
+                                        <div className="text-xs text-slate-500 mt-1 bg-white rounded p-2 border border-slate-200">
+                                          {notes}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <button
+                                      onClick={() => setNoteModal({ open: true, taskId: item.id, note: notes })}
+                                      className={`flex-shrink-0 p-1 ${notes ? 'text-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
+                                      title="Add note"
+                                    >
+                                      <MessageSquare className="w-4 h-4" />
+                                    </button>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -956,6 +1350,40 @@ export default function App() {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Name Modal */}
+      {showUserModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-slate-800">What's your name?</h2>
+              <p className="text-sm text-slate-500 mt-1">This will be shown when you complete tasks</p>
+            </div>
+            
+            <div className="p-6">
+              <input
+                type="text"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                placeholder="e.g., Robbie"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && userName.trim() && saveUserName(userName.trim())}
+              />
+            </div>
+            
+            <div className="p-6 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => saveUserName(userName.trim())}
+                disabled={!userName.trim()}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -1009,6 +1437,96 @@ export default function App() {
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Create Sprint
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Note Modal */}
+      {noteModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-slate-800">Task Notes</h2>
+              <button
+                onClick={() => setNoteModal({ open: false, taskId: null, note: '' })}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <textarea
+                value={noteModal.note}
+                onChange={(e) => setNoteModal({ ...noteModal, note: e.target.value })}
+                placeholder="Add notes about this task..."
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-32 resize-none"
+                autoFocus
+              />
+            </div>
+            
+            <div className="p-6 bg-slate-50 flex justify-end gap-3">
+              <button
+                onClick={() => setNoteModal({ open: false, taskId: null, note: '' })}
+                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveNote}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors inline-flex items-center gap-2"
+              >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                Save Note
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Custom Task Modal */}
+      {showAddTaskModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-slate-800">Add Custom Task</h2>
+              <button
+                onClick={() => setShowAddTaskModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <input
+                type="text"
+                value={newTaskText}
+                onChange={(e) => setNewTaskText(e.target.value)}
+                placeholder="What needs to be done?"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && newTaskText.trim() && addCustomTask()}
+              />
+            </div>
+            
+            <div className="p-6 bg-slate-50 flex justify-end gap-3">
+              <button
+                onClick={() => setShowAddTaskModal(false)}
+                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addCustomTask}
+                disabled={!newTaskText.trim() || saving}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors inline-flex items-center gap-2"
+              >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                Add Task
               </button>
             </div>
           </div>
