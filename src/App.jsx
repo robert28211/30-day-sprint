@@ -1,5 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, Download, Upload } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users } from 'lucide-react';
+
+const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
+const CLIENTS_TABLE = 'Clients';
+const TASKS_TABLE = 'Tasks';
+
+const airtableFetch = async (table, options = {}) => {
+  const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(table)}${options.params || ''}`;
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Airtable API error');
+  }
+  return response.json();
+};
 
 const sprintTemplate = {
   preSprintAccess: {
@@ -325,103 +347,229 @@ const phases = [
 ];
 
 const failureModes = [
-  { id: 'not-seen', name: 'Not Seen When Decisions Are Made', control: 'Presence Control', color: 'bg-red-100 border-red-300 text-red-800' },
-  { id: 'not-trusted', name: 'Seen But Not Trusted', control: 'Confidence Control', color: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
-  { id: 'still-compared', name: 'Trusted But Still Compared', control: 'Comparison Control', color: 'bg-blue-100 border-blue-300 text-blue-800' },
-  { id: 'no-action', name: 'Intended Choice, No Action', control: 'Momentum Control', color: 'bg-purple-100 border-purple-300 text-purple-800' }
+  { id: 'Not Seen', name: 'Not Seen When Decisions Are Made', control: 'Presence Control', color: 'bg-red-100 border-red-300 text-red-800' },
+  { id: 'Not Trusted', name: 'Seen But Not Trusted', control: 'Confidence Control', color: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
+  { id: 'Still Compared', name: 'Trusted But Still Compared', control: 'Comparison Control', color: 'bg-blue-100 border-blue-300 text-blue-800' },
+  { id: 'No Action', name: 'Intended Choice, No Action', control: 'Momentum Control', color: 'bg-purple-100 border-purple-300 text-purple-800' }
 ];
-
-const STORAGE_KEY = 'engageengine-sprint-data';
 
 export default function App() {
   const [clients, setClients] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [activeClientId, setActiveClientId] = useState(null);
   const [activePhase, setActivePhase] = useState('preSprint');
   const [expandedSections, setExpandedSections] = useState({});
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientStartDate, setNewClientStartDate] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Load from localStorage on mount
-  useEffect(() => {
+  // Load clients and tasks from Airtable
+  const loadData = useCallback(async () => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setClients(parsed.clients || []);
-        setActiveClientId(parsed.activeClientId || null);
-      }
-    } catch (e) {
-      console.error('Failed to load data:', e);
+      setLoading(true);
+      setError(null);
+      
+      // Load clients
+      const clientsData = await airtableFetch(CLIENTS_TABLE);
+      const loadedClients = clientsData.records.map(record => ({
+        id: record.id,
+        name: record.fields.Name || '',
+        startDate: record.fields['Start Date'] || '',
+        status: record.fields.Status || 'Active',
+        failureMode: record.fields['Failure Mode'] || null
+      }));
+      setClients(loadedClients);
+
+      // Load tasks
+      const tasksData = await airtableFetch(TASKS_TABLE);
+      const loadedTasks = tasksData.records.map(record => ({
+        id: record.id,
+        clientId: record.fields.Client?.[0] || null,
+        taskId: record.fields['Task ID'] || '',
+        completed: record.fields.Completed || false,
+        completedAt: record.fields['Completed At'] || null
+      }));
+      setTasks(loadedTasks);
+
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setError('Failed to load data from Airtable. Check your API key and Base ID.');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Save to localStorage on change
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients, activeClientId }));
-    } catch (e) {
-      console.error('Failed to save data:', e);
-    }
-  }, [clients, activeClientId]);
+    loadData();
+  }, [loadData]);
 
   const activeClient = clients.find(c => c.id === activeClientId);
 
-  const createNewClient = () => {
-    if (!newClientName.trim()) return;
-    
-    const newClient = {
-      id: Date.now().toString(),
-      name: newClientName.trim(),
-      startDate: newClientStartDate || new Date().toISOString().split('T')[0],
-      status: 'active',
-      failureMode: null,
-      completed: {},
-      notes: {}
-    };
-    
-    setClients([...clients, newClient]);
-    setActiveClientId(newClient.id);
-    setNewClientName('');
-    setNewClientStartDate('');
-    setShowNewClientModal(false);
+  // Get completed status for a task
+  const isTaskCompleted = (taskId) => {
+    if (!activeClientId) return false;
+    const task = tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
+    return task?.completed || false;
   };
 
-  const deleteClient = (clientId) => {
-    if (confirm('Delete this client? This cannot be undone.')) {
-      setClients(clients.filter(c => c.id !== clientId));
-      if (activeClientId === clientId) {
-        setActiveClientId(clients.length > 1 ? clients.find(c => c.id !== clientId)?.id : null);
-      }
+  // Create new client
+  const createNewClient = async () => {
+    if (!newClientName.trim()) return;
+    
+    try {
+      setSaving(true);
+      const result = await airtableFetch(CLIENTS_TABLE, {
+        method: 'POST',
+        body: JSON.stringify({
+          records: [{
+            fields: {
+              Name: newClientName.trim(),
+              'Start Date': newClientStartDate || new Date().toISOString().split('T')[0],
+              Status: 'Active'
+            }
+          }]
+        })
+      });
+      
+      const newClient = {
+        id: result.records[0].id,
+        name: result.records[0].fields.Name,
+        startDate: result.records[0].fields['Start Date'],
+        status: result.records[0].fields.Status,
+        failureMode: null
+      };
+      
+      setClients([...clients, newClient]);
+      setActiveClientId(newClient.id);
+      setNewClientName('');
+      setNewClientStartDate('');
+      setShowNewClientModal(false);
+    } catch (err) {
+      console.error('Failed to create client:', err);
+      setError('Failed to create client');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const toggleItem = (itemId) => {
-    if (!activeClient) return;
+  // Delete client
+  const deleteClient = async (clientId) => {
+    if (!confirm('Delete this client and all their tasks? This cannot be undone.')) return;
     
-    setClients(clients.map(c => {
-      if (c.id === activeClientId) {
-        return {
-          ...c,
-          completed: {
-            ...c.completed,
-            [itemId]: !c.completed[itemId]
-          }
-        };
+    try {
+      setSaving(true);
+      
+      // Delete all tasks for this client
+      const clientTasks = tasks.filter(t => t.clientId === clientId);
+      for (const task of clientTasks) {
+        await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' });
       }
-      return c;
-    }));
+      
+      // Delete the client
+      await airtableFetch(`${CLIENTS_TABLE}/${clientId}`, { method: 'DELETE' });
+      
+      setClients(clients.filter(c => c.id !== clientId));
+      setTasks(tasks.filter(t => t.clientId !== clientId));
+      
+      if (activeClientId === clientId) {
+        setActiveClientId(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete client:', err);
+      setError('Failed to delete client');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const setFailureMode = (modeId) => {
+  // Toggle task completion
+  const toggleItem = async (taskId) => {
+    if (!activeClientId) return;
+    
+    const existingTask = tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
+    const newCompleted = !existingTask?.completed;
+    
+    try {
+      setSaving(true);
+      
+      if (existingTask) {
+        // Update existing task
+        await airtableFetch(`${TASKS_TABLE}/${existingTask.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            fields: {
+              Completed: newCompleted,
+              'Completed At': newCompleted ? new Date().toISOString().split('T')[0] : null
+            }
+          })
+        });
+        
+        setTasks(tasks.map(t => 
+          t.id === existingTask.id 
+            ? { ...t, completed: newCompleted, completedAt: newCompleted ? new Date().toISOString().split('T')[0] : null }
+            : t
+        ));
+      } else {
+        // Create new task record
+        const result = await airtableFetch(TASKS_TABLE, {
+          method: 'POST',
+          body: JSON.stringify({
+            records: [{
+              fields: {
+                Client: [activeClientId],
+                'Task ID': taskId,
+                Completed: true,
+                'Completed At': new Date().toISOString().split('T')[0]
+              }
+            }]
+          })
+        });
+        
+        const newTask = {
+          id: result.records[0].id,
+          clientId: activeClientId,
+          taskId: taskId,
+          completed: true,
+          completedAt: new Date().toISOString().split('T')[0]
+        };
+        
+        setTasks([...tasks, newTask]);
+      }
+    } catch (err) {
+      console.error('Failed to update task:', err);
+      setError('Failed to update task');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Set failure mode
+  const setFailureMode = async (modeId) => {
     if (!activeClient) return;
     
-    setClients(clients.map(c => {
-      if (c.id === activeClientId) {
-        return { ...c, failureMode: modeId };
-      }
-      return c;
-    }));
+    try {
+      setSaving(true);
+      await airtableFetch(`${CLIENTS_TABLE}/${activeClientId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          fields: {
+            'Failure Mode': modeId
+          }
+        })
+      });
+      
+      setClients(clients.map(c => 
+        c.id === activeClientId ? { ...c, failureMode: modeId } : c
+      ));
+    } catch (err) {
+      console.error('Failed to update failure mode:', err);
+      setError('Failed to update failure mode');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleSection = (sectionId) => {
@@ -431,39 +579,8 @@ export default function App() {
     }));
   };
 
-  const exportData = () => {
-    const dataStr = JSON.stringify({ clients, activeClientId }, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `engageengine-sprints-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importData = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.clients) {
-          setClients(data.clients);
-          setActiveClientId(data.activeClientId || null);
-          alert('Data imported successfully!');
-        }
-      } catch (err) {
-        alert('Failed to import data. Invalid file format.');
-      }
-    };
-    reader.readAsText(file);
-  };
-
   const getPhaseProgress = (phase) => {
-    if (!activeClient) return { completed: 0, total: 0, percent: 0 };
+    if (!activeClientId) return { completed: 0, total: 0, percent: 0 };
     
     let completed = 0;
     let total = 0;
@@ -473,7 +590,7 @@ export default function App() {
       if (section) {
         section.items.forEach(item => {
           total++;
-          if (activeClient.completed[item.id]) completed++;
+          if (isTaskCompleted(item.id)) completed++;
         });
       }
     });
@@ -482,7 +599,7 @@ export default function App() {
   };
 
   const getTotalProgress = () => {
-    if (!activeClient) return { completed: 0, total: 0, percent: 0 };
+    if (!activeClientId) return { completed: 0, total: 0, percent: 0 };
     
     let completed = 0;
     let total = 0;
@@ -490,7 +607,7 @@ export default function App() {
     Object.values(sprintTemplate).forEach(section => {
       section.items.forEach(item => {
         total++;
-        if (activeClient.completed[item.id]) completed++;
+        if (isTaskCompleted(item.id)) completed++;
       });
     });
     
@@ -498,12 +615,12 @@ export default function App() {
   };
 
   const getCriticalIncomplete = () => {
-    if (!activeClient) return [];
+    if (!activeClientId) return [];
     
     const incomplete = [];
     Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
       section.items.forEach(item => {
-        if (item.critical && !activeClient.completed[item.id]) {
+        if (item.critical && !isTaskCompleted(item.id)) {
           incomplete.push({ ...item, section: section.title });
         }
       });
@@ -515,6 +632,36 @@ export default function App() {
   const totalProgress = getTotalProgress();
   const criticalIncomplete = getCriticalIncomplete();
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Loading from Airtable...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && clients.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-slate-800 mb-2">Connection Error</h2>
+          <p className="text-slate-600 mb-4">{error}</p>
+          <button
+            onClick={loadData}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-2 font-medium transition-colors inline-flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -523,22 +670,30 @@ export default function App() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-bold">EngageEngine 30-Day Sprint</h1>
-              <p className="text-slate-300 text-sm">Demand Control Implementation Tracker</p>
+              <p className="text-slate-300 text-sm flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Team Tracker (Airtable Connected)
+              </p>
             </div>
             
             <div className="flex items-center gap-3 flex-wrap">
-              {/* Export/Import */}
+              {/* Refresh */}
               <button
-                onClick={exportData}
-                className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 transition-colors"
-                title="Export Data"
+                onClick={loadData}
+                disabled={loading}
+                className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 transition-colors disabled:opacity-50"
+                title="Refresh Data"
               >
-                <Download className="w-5 h-5" />
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
               </button>
-              <label className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 transition-colors cursor-pointer" title="Import Data">
-                <Upload className="w-5 h-5" />
-                <input type="file" accept=".json" onChange={importData} className="hidden" />
-              </label>
+              
+              {/* Saving indicator */}
+              {saving && (
+                <div className="flex items-center gap-2 text-slate-300 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </div>
+              )}
               
               {/* Client Selector */}
               <div className="flex items-center gap-2">
@@ -562,6 +717,13 @@ export default function App() {
               </div>
             </div>
           </div>
+          
+          {/* Error banner */}
+          {error && (
+            <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-lg px-4 py-2 text-red-200 text-sm">
+              {error}
+            </div>
+          )}
           
           {/* Total Progress */}
           {activeClient && (
@@ -721,7 +883,7 @@ export default function App() {
                     if (!section) return null;
                     
                     const isExpanded = expandedSections[sectionId] !== false;
-                    const sectionCompleted = section.items.filter(item => activeClient.completed[item.id]).length;
+                    const sectionCompleted = section.items.filter(item => isTaskCompleted(item.id)).length;
                     const sectionTotal = section.items.length;
                     const sectionPercent = Math.round((sectionCompleted / sectionTotal) * 100);
                     
@@ -755,33 +917,37 @@ export default function App() {
                         {isExpanded && (
                           <div className="border-t border-gray-100 p-4">
                             <div className="space-y-2">
-                              {section.items.map(item => (
-                                <button
-                                  key={item.id}
-                                  onClick={() => toggleItem(item.id)}
-                                  className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all text-left ${
-                                    activeClient.completed[item.id]
-                                      ? 'bg-emerald-50 hover:bg-emerald-100'
-                                      : 'bg-slate-50 hover:bg-slate-100'
-                                  }`}
-                                >
-                                  {activeClient.completed[item.id] ? (
-                                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                                  ) : (
-                                    <Circle className="w-5 h-5 text-slate-300 flex-shrink-0 mt-0.5" />
-                                  )}
-                                  <span className={`text-sm ${
-                                    activeClient.completed[item.id] ? 'text-emerald-800 line-through' : 'text-slate-700'
-                                  }`}>
-                                    {item.text}
-                                    {item.critical && !activeClient.completed[item.id] && (
-                                      <span className="ml-2 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
-                                        CRITICAL
-                                      </span>
+                              {section.items.map(item => {
+                                const completed = isTaskCompleted(item.id);
+                                return (
+                                  <button
+                                    key={item.id}
+                                    onClick={() => toggleItem(item.id)}
+                                    disabled={saving}
+                                    className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all text-left ${
+                                      completed
+                                        ? 'bg-emerald-50 hover:bg-emerald-100'
+                                        : 'bg-slate-50 hover:bg-slate-100'
+                                    } ${saving ? 'opacity-50' : ''}`}
+                                  >
+                                    {completed ? (
+                                      <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                                    ) : (
+                                      <Circle className="w-5 h-5 text-slate-300 flex-shrink-0 mt-0.5" />
                                     )}
-                                  </span>
-                                </button>
-                              ))}
+                                    <span className={`text-sm ${
+                                      completed ? 'text-emerald-800 line-through' : 'text-slate-700'
+                                    }`}>
+                                      {item.text}
+                                      {item.critical && !completed && (
+                                        <span className="ml-2 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
+                                          CRITICAL
+                                        </span>
+                                      )}
+                                    </span>
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
@@ -838,9 +1004,10 @@ export default function App() {
               </button>
               <button
                 onClick={createNewClient}
-                disabled={!newClientName.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors"
+                disabled={!newClientName.trim() || saving}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors inline-flex items-center gap-2"
               >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Create Sprint
               </button>
             </div>
