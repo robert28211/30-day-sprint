@@ -1119,7 +1119,7 @@ export default function App() {
                   // Build task map - group same tasks across clients
                   let taskGroups = {};
                   
-                  // Process template tasks
+                  // Process template tasks - first create all task entries
                   Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
                     const phase = phases.find(p => p.sections?.includes(sectionId));
                     section.items.forEach(item => {
@@ -1135,23 +1135,31 @@ export default function App() {
                           clients: []
                         };
                       }
+                    });
+                  });
+                  
+                  // Now add each client's status for each task
+                  Object.keys(taskGroups).forEach(taskId => {
+                    clients.forEach(client => {
+                      const color = getClientColor(client.id);
+                      const completed = isTaskCompleted(taskId, client.id);
+                      const completedBy = getCompletedBy(taskId, client.id);
+                      const notes = getTaskNotes(taskId, client.id);
                       
-                      // Add each client's status for this task
-                      clients.forEach(client => {
-                        const color = getClientColor(client.id);
-                        const completed = isTaskCompleted(item.id, client.id);
-                        const completedBy = getCompletedBy(item.id, client.id);
-                        const notes = getTaskNotes(item.id, client.id);
-                        
-                        taskGroups[item.id].clients.push({
-                          clientId: client.id,
-                          clientName: client.name,
-                          clientColor: color,
-                          completed,
-                          completedBy,
-                          notes
-                        });
+                      taskGroups[taskId].clients.push({
+                        clientId: client.id,
+                        clientName: client.name,
+                        clientColor: color,
+                        completed,
+                        completedBy,
+                        notes
                       });
+                    });
+                    
+                    // Sort clients: incomplete first, then by name
+                    taskGroups[taskId].clients.sort((a, b) => {
+                      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                      return a.clientName.localeCompare(b.clientName);
                     });
                   });
                   
