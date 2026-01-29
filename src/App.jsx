@@ -70,6 +70,7 @@ const sprintTemplate = {
       { id: "vendasta-reputation", text: "Activate Reputation Management" },
       { id: "vendasta-seo", text: "Activate Local SEO (if applicable)" },
       { id: "vendasta-social", text: "Activate Social Marketing dashboard" },
+      { id: "vendasta-chatbot", text: "Activate Chatbot" },
       { id: "vendasta-notifications", text: "Configure email notifications" },
       { id: "vendasta-invite", text: "Send client portal invitation" }
     ]
@@ -390,6 +391,20 @@ const failureModes = [
   { id: 'No Action', name: 'Intended Choice, No Action', control: 'Momentum Control', color: 'bg-purple-100 border-purple-300 text-purple-800' }
 ];
 
+// Color palette for clients in All Clients view
+const clientColors = [
+  { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-800', dot: 'bg-blue-500' },
+  { bg: 'bg-emerald-100', border: 'border-emerald-300', text: 'text-emerald-800', dot: 'bg-emerald-500' },
+  { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-800', dot: 'bg-purple-500' },
+  { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-800', dot: 'bg-orange-500' },
+  { bg: 'bg-pink-100', border: 'border-pink-300', text: 'text-pink-800', dot: 'bg-pink-500' },
+  { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-800', dot: 'bg-cyan-500' },
+  { bg: 'bg-amber-100', border: 'border-amber-300', text: 'text-amber-800', dot: 'bg-amber-500' },
+  { bg: 'bg-indigo-100', border: 'border-indigo-300', text: 'text-indigo-800', dot: 'bg-indigo-500' },
+  { bg: 'bg-rose-100', border: 'border-rose-300', text: 'text-rose-800', dot: 'bg-rose-500' },
+  { bg: 'bg-teal-100', border: 'border-teal-300', text: 'text-teal-800', dot: 'bg-teal-500' },
+];
+
 export default function App() {
   const [clients, setClients] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -404,10 +419,12 @@ export default function App() {
   const [error, setError] = useState(null);
   const [userName, setUserName] = useState(() => localStorage.getItem('engageengine-username') || '');
   const [showUserModal, setShowUserModal] = useState(false);
-  const [noteModal, setNoteModal] = useState({ open: false, taskId: null, note: '' });
+  const [noteModal, setNoteModal] = useState({ open: false, taskId: null, note: '', clientId: null });
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
   const [customTasks, setCustomTasks] = useState([]);
+  const [viewMode, setViewMode] = useState('byClient'); // 'byClient' or 'allClients'
+  const [allClientsSort, setAllClientsSort] = useState('phase'); // 'phase', 'client', 'status'
 
   // Load clients and tasks from Airtable
   const loadData = useCallback(async () => {
@@ -471,21 +488,28 @@ export default function App() {
 
   const activeClient = clients.find(c => c.id === activeClientId);
 
-  // Get task record for a task
-  const getTaskRecord = (taskId) => {
-    if (!activeClientId) return null;
-    return tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
+  // Get color for a client based on their index
+  const getClientColor = (clientId) => {
+    const index = clients.findIndex(c => c.id === clientId);
+    return clientColors[index % clientColors.length];
+  };
+
+  // Get task record for a task (with optional clientId for All Clients view)
+  const getTaskRecord = (taskId, clientId = null) => {
+    const cid = clientId || activeClientId;
+    if (!cid) return null;
+    return tasks.find(t => t.clientId === cid && t.taskId === taskId);
   };
 
   // Get completed status for a task
-  const isTaskCompleted = (taskId) => {
-    const task = getTaskRecord(taskId);
+  const isTaskCompleted = (taskId, clientId = null) => {
+    const task = getTaskRecord(taskId, clientId);
     return task?.completed || false;
   };
   
   // Get task notes
-  const getTaskNotes = (taskId) => {
-    const task = getTaskRecord(taskId);
+  const getTaskNotes = (taskId, clientId = null) => {
+    const task = getTaskRecord(taskId, clientId);
     if (!task?.notes) return '';
     // For custom tasks, notes are stored as "taskText|||actualNotes"
     if (task.isCustom && task.notes.includes('|||')) {
@@ -495,8 +519,8 @@ export default function App() {
   };
   
   // Get who completed the task
-  const getCompletedBy = (taskId) => {
-    const task = getTaskRecord(taskId);
+  const getCompletedBy = (taskId, clientId = null) => {
+    const task = getTaskRecord(taskId, clientId);
     return task?.completedBy || null;
   };
 
@@ -578,13 +602,14 @@ export default function App() {
   };
 
   // Toggle task completion
-  const toggleItem = async (taskId) => {
-    if (!activeClientId || !userName) {
+  const toggleItem = async (taskId, clientId = null) => {
+    const targetClientId = clientId || activeClientId;
+    if (!targetClientId || !userName) {
       if (!userName) setShowUserModal(true);
       return;
     }
     
-    const existingTask = tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
+    const existingTask = tasks.find(t => t.clientId === targetClientId && t.taskId === taskId);
     const newCompleted = !existingTask?.completed;
     
     try {
@@ -620,7 +645,7 @@ export default function App() {
           body: JSON.stringify({
             records: [{
               fields: {
-                Client: [activeClientId],
+                Client: [targetClientId],
                 'Task ID': taskId,
                 Completed: true,
                 'Completed Date': new Date().toISOString().split('T')[0],
@@ -632,7 +657,7 @@ export default function App() {
         
         const newTask = {
           id: result.records[0].id,
-          clientId: activeClientId,
+          clientId: targetClientId,
           taskId: taskId,
           completed: true,
           completedAt: new Date().toISOString().split('T')[0],
@@ -652,9 +677,10 @@ export default function App() {
 
   // Save note for a task
   const saveNote = async () => {
-    if (!activeClientId || !noteModal.taskId) return;
+    const targetClientId = noteModal.clientId || activeClientId;
+    if (!targetClientId || !noteModal.taskId) return;
     
-    const existingTask = tasks.find(t => t.clientId === activeClientId && t.taskId === noteModal.taskId);
+    const existingTask = tasks.find(t => t.clientId === targetClientId && t.taskId === noteModal.taskId);
     const isCustom = noteModal.taskId.startsWith('custom-');
     
     try {
@@ -679,7 +705,7 @@ export default function App() {
           body: JSON.stringify({
             records: [{
               fields: {
-                Client: [activeClientId],
+                Client: [targetClientId],
                 'Task ID': noteModal.taskId,
                 Completed: false,
                 Notes: noteValue
@@ -690,7 +716,7 @@ export default function App() {
         
         const newTask = {
           id: result.records[0].id,
-          clientId: activeClientId,
+          clientId: targetClientId,
           taskId: noteModal.taskId,
           completed: false,
           completedAt: null,
@@ -955,26 +981,63 @@ export default function App() {
                 </div>
               )}
               
-              {/* Client Selector */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={activeClientId || ''}
-                  onChange={(e) => setActiveClientId(e.target.value || null)}
-                  className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {/* View Toggle */}
+              <div className="flex items-center bg-slate-700 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('byClient')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'byClient' 
+                      ? 'bg-slate-600 text-white' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
                 >
-                  <option value="">Select Client...</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>{client.name}</option>
-                  ))}
-                </select>
-                
+                  By Client
+                </button>
+                <button
+                  onClick={() => setViewMode('allClients')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'allClients' 
+                      ? 'bg-slate-600 text-white' 
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  All Clients
+                </button>
+              </div>
+              
+              {/* Client Selector - only show in byClient mode */}
+              {viewMode === 'byClient' && (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={activeClientId || ''}
+                    onChange={(e) => setActiveClientId(e.target.value || null)}
+                    className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Client...</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>{client.name}</option>
+                    ))}
+                  </select>
+                  
+                  <button
+                    onClick={() => setShowNewClientModal(true)}
+                    className="bg-blue-600 hover:bg-blue-700 rounded-lg p-2 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+              
+              {/* Add Client button in allClients mode */}
+              {viewMode === 'allClients' && (
                 <button
                   onClick={() => setShowNewClientModal(true)}
                   className="bg-blue-600 hover:bg-blue-700 rounded-lg p-2 transition-colors"
+                  title="Add New Client"
                 >
                   <Plus className="w-5 h-5" />
                 </button>
-              </div>
+              )}
             </div>
           </div>
           
@@ -1003,7 +1066,223 @@ export default function App() {
         </div>
       </div>
 
-      {!activeClient ? (
+      {/* All Clients View */}
+      {viewMode === 'allClients' ? (
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {clients.length === 0 ? (
+            <div className="text-center py-16">
+              <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-slate-700 mb-2">No Clients Yet</h2>
+              <p className="text-slate-500 mb-6">Create your first sprint to get started.</p>
+              <button
+                onClick={() => setShowNewClientModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors inline-flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Start New Sprint
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Sort Options */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-600">Sort by:</span>
+                  <select
+                    value={allClientsSort}
+                    onChange={(e) => setAllClientsSort(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="phase">Phase</option>
+                    <option value="client">Client</option>
+                    <option value="status">Status (Incomplete First)</option>
+                  </select>
+                </div>
+                
+                {/* Client Legend */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  {clients.map(client => {
+                    const color = getClientColor(client.id);
+                    return (
+                      <div key={client.id} className="flex items-center gap-1.5 text-sm">
+                        <div className={`w-3 h-3 rounded-full ${color.dot}`}></div>
+                        <span className="text-slate-600">{client.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* All Tasks Grid */}
+              <div className="space-y-4">
+                {(() => {
+                  // Build all tasks list
+                  let allTasks = [];
+                  
+                  clients.forEach(client => {
+                    const color = getClientColor(client.id);
+                    
+                    // Add template tasks
+                    Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
+                      const phase = phases.find(p => p.sections?.includes(sectionId));
+                      section.items.forEach(item => {
+                        allTasks.push({
+                          ...item,
+                          clientId: client.id,
+                          clientName: client.name,
+                          clientColor: color,
+                          sectionTitle: section.title,
+                          phaseId: phase?.id || 'preSprint',
+                          phaseName: phase?.name || 'Pre-Sprint',
+                          phaseColor: phase?.color || 'from-slate-500 to-slate-600',
+                          completed: isTaskCompleted(item.id, client.id)
+                        });
+                      });
+                    });
+                    
+                    // Add custom tasks
+                    const clientCustomTasks = customTasks.filter(t => t.clientId === client.id);
+                    clientCustomTasks.forEach(item => {
+                      allTasks.push({
+                        id: item.id,
+                        text: item.text,
+                        clientId: client.id,
+                        clientName: client.name,
+                        clientColor: color,
+                        sectionTitle: 'Custom Tasks',
+                        phaseId: 'custom',
+                        phaseName: 'Custom',
+                        phaseColor: 'from-pink-500 to-pink-600',
+                        completed: isTaskCompleted(item.id, client.id),
+                        isCustom: true
+                      });
+                    });
+                  });
+                  
+                  // Sort tasks
+                  if (allClientsSort === 'phase') {
+                    const phaseOrder = ['preSprint', 'week1', 'week2', 'week3', 'week4', 'custom'];
+                    allTasks.sort((a, b) => {
+                      const aPhase = phaseOrder.indexOf(a.phaseId);
+                      const bPhase = phaseOrder.indexOf(b.phaseId);
+                      if (aPhase !== bPhase) return aPhase - bPhase;
+                      return a.clientName.localeCompare(b.clientName);
+                    });
+                  } else if (allClientsSort === 'client') {
+                    allTasks.sort((a, b) => {
+                      if (a.clientName !== b.clientName) return a.clientName.localeCompare(b.clientName);
+                      const phaseOrder = ['preSprint', 'week1', 'week2', 'week3', 'week4', 'custom'];
+                      return phaseOrder.indexOf(a.phaseId) - phaseOrder.indexOf(b.phaseId);
+                    });
+                  } else if (allClientsSort === 'status') {
+                    allTasks.sort((a, b) => {
+                      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                      return a.clientName.localeCompare(b.clientName);
+                    });
+                  }
+                  
+                  // Group for display
+                  let groupedTasks = {};
+                  const groupKey = allClientsSort === 'client' ? 'clientName' : 
+                                   allClientsSort === 'status' ? (t => t.completed ? 'Completed' : 'To Do') :
+                                   'phaseName';
+                  
+                  allTasks.forEach(task => {
+                    const key = typeof groupKey === 'function' ? groupKey(task) : task[groupKey];
+                    if (!groupedTasks[key]) groupedTasks[key] = [];
+                    groupedTasks[key].push(task);
+                  });
+                  
+                  return Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
+                    <div key={groupName} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      <div className="p-4 border-b border-gray-100 bg-slate-50">
+                        <h3 className="font-semibold text-slate-800">{groupName}</h3>
+                        <p className="text-sm text-slate-500">
+                          {groupTasks.filter(t => t.completed).length} / {groupTasks.length} completed
+                        </p>
+                      </div>
+                      <div className="p-4">
+                        <div className="space-y-2">
+                          {groupTasks.map((task, idx) => {
+                            const taskNotes = getTaskNotes(task.id, task.clientId);
+                            const completedBy = getCompletedBy(task.id, task.clientId);
+                            
+                            return (
+                              <div 
+                                key={`${task.clientId}-${task.id}-${idx}`}
+                                className={`flex items-start gap-3 p-3 rounded-lg border ${task.clientColor.bg} ${task.clientColor.border}`}
+                              >
+                                <button
+                                  onClick={() => toggleItem(task.id, task.clientId)}
+                                  disabled={saving}
+                                  className="flex-shrink-0 mt-0.5"
+                                >
+                                  {task.completed ? (
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                  ) : (
+                                    <Circle className="w-5 h-5 text-slate-400 hover:text-blue-500 transition-colors" />
+                                  )}
+                                </button>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : task.clientColor.text}`}>
+                                      {task.text}
+                                    </span>
+                                    {task.critical && (
+                                      <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Critical</span>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                    <span className={`font-medium ${task.clientColor.text}`}>{task.clientName}</span>
+                                    <span>•</span>
+                                    <span>{task.sectionTitle}</span>
+                                    {completedBy && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="flex items-center gap-1">
+                                          <User className="w-3 h-3" />
+                                          {completedBy}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                  
+                                  {taskNotes && (
+                                    <div className="mt-2 text-xs text-slate-600 bg-white/50 rounded p-2">
+                                      {taskNotes}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <button
+                                  onClick={() => setNoteModal({ 
+                                    open: true, 
+                                    taskId: task.id, 
+                                    note: taskNotes,
+                                    clientId: task.clientId
+                                  })}
+                                  className={`flex-shrink-0 p-1 rounded transition-colors ${
+                                    taskNotes ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300 hover:text-slate-500 hover:bg-slate-50'
+                                  }`}
+                                  title="Add/Edit Note"
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </>
+          )}
+        </div>
+      ) : !activeClient ? (
         /* No Client Selected */
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
           <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
