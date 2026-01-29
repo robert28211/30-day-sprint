@@ -1087,15 +1087,15 @@ export default function App() {
               {/* Sort Options */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600">Sort by:</span>
+                  <span className="text-sm text-slate-600">Group by:</span>
                   <select
                     value={allClientsSort}
                     onChange={(e) => setAllClientsSort(e.target.value)}
                     className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="task">Task (same tasks together)</option>
                     <option value="phase">Phase</option>
                     <option value="client">Client</option>
-                    <option value="status">Status (Incomplete First)</option>
                   </select>
                 </div>
                 
@@ -1116,164 +1116,186 @@ export default function App() {
               {/* All Tasks Grid */}
               <div className="space-y-4">
                 {(() => {
-                  // Build all tasks list
-                  let allTasks = [];
+                  // Build task map - group same tasks across clients
+                  let taskGroups = {};
                   
-                  clients.forEach(client => {
-                    const color = getClientColor(client.id);
-                    
-                    // Add template tasks
-                    Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
-                      const phase = phases.find(p => p.sections?.includes(sectionId));
-                      section.items.forEach(item => {
-                        allTasks.push({
-                          ...item,
-                          clientId: client.id,
-                          clientName: client.name,
-                          clientColor: color,
+                  // Process template tasks
+                  Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
+                    const phase = phases.find(p => p.sections?.includes(sectionId));
+                    section.items.forEach(item => {
+                      if (!taskGroups[item.id]) {
+                        taskGroups[item.id] = {
+                          taskId: item.id,
+                          text: item.text,
+                          critical: item.critical,
                           sectionTitle: section.title,
                           phaseId: phase?.id || 'preSprint',
                           phaseName: phase?.name || 'Pre-Sprint',
                           phaseColor: phase?.color || 'from-slate-500 to-slate-600',
-                          completed: isTaskCompleted(item.id, client.id)
+                          clients: []
+                        };
+                      }
+                      
+                      // Add each client's status for this task
+                      clients.forEach(client => {
+                        const color = getClientColor(client.id);
+                        const completed = isTaskCompleted(item.id, client.id);
+                        const completedBy = getCompletedBy(item.id, client.id);
+                        const notes = getTaskNotes(item.id, client.id);
+                        
+                        taskGroups[item.id].clients.push({
+                          clientId: client.id,
+                          clientName: client.name,
+                          clientColor: color,
+                          completed,
+                          completedBy,
+                          notes
                         });
                       });
                     });
-                    
-                    // Add custom tasks
-                    const clientCustomTasks = customTasks.filter(t => t.clientId === client.id);
-                    clientCustomTasks.forEach(item => {
-                      allTasks.push({
-                        id: item.id,
-                        text: item.text,
-                        clientId: client.id,
-                        clientName: client.name,
-                        clientColor: color,
-                        sectionTitle: 'Custom Tasks',
-                        phaseId: 'custom',
-                        phaseName: 'Custom',
-                        phaseColor: 'from-pink-500 to-pink-600',
-                        completed: isTaskCompleted(item.id, client.id),
-                        isCustom: true
-                      });
-                    });
                   });
                   
-                  // Sort tasks
-                  if (allClientsSort === 'phase') {
+                  // Convert to array and sort
+                  let taskList = Object.values(taskGroups);
+                  
+                  // Calculate completion for each task group
+                  taskList.forEach(task => {
+                    task.completedCount = task.clients.filter(c => c.completed).length;
+                    task.totalCount = task.clients.length;
+                  });
+                  
+                  // Group based on sort selection
+                  let grouped = {};
+                  
+                  if (allClientsSort === 'task' || allClientsSort === 'phase') {
+                    // Group by section/phase
                     const phaseOrder = ['preSprint', 'week1', 'week2', 'week3', 'week4', 'custom'];
-                    allTasks.sort((a, b) => {
+                    taskList.sort((a, b) => {
                       const aPhase = phaseOrder.indexOf(a.phaseId);
                       const bPhase = phaseOrder.indexOf(b.phaseId);
-                      if (aPhase !== bPhase) return aPhase - bPhase;
-                      return a.clientName.localeCompare(b.clientName);
+                      return aPhase - bPhase;
+                    });
+                    
+                    taskList.forEach(task => {
+                      const key = `${task.phaseName} - ${task.sectionTitle}`;
+                      if (!grouped[key]) grouped[key] = { tasks: [], phaseId: task.phaseId, phaseColor: task.phaseColor };
+                      grouped[key].tasks.push(task);
                     });
                   } else if (allClientsSort === 'client') {
-                    allTasks.sort((a, b) => {
-                      if (a.clientName !== b.clientName) return a.clientName.localeCompare(b.clientName);
-                      const phaseOrder = ['preSprint', 'week1', 'week2', 'week3', 'week4', 'custom'];
-                      return phaseOrder.indexOf(a.phaseId) - phaseOrder.indexOf(b.phaseId);
-                    });
-                  } else if (allClientsSort === 'status') {
-                    allTasks.sort((a, b) => {
-                      if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                      return a.clientName.localeCompare(b.clientName);
+                    // Group by client - different structure
+                    clients.forEach(client => {
+                      const color = getClientColor(client.id);
+                      grouped[client.name] = { 
+                        tasks: taskList.map(task => ({
+                          ...task,
+                          clientData: task.clients.find(c => c.clientId === client.id)
+                        })),
+                        clientColor: color
+                      };
                     });
                   }
                   
-                  // Group for display
-                  let groupedTasks = {};
-                  const groupKey = allClientsSort === 'client' ? 'clientName' : 
-                                   allClientsSort === 'status' ? (t => t.completed ? 'Completed' : 'To Do') :
-                                   'phaseName';
-                  
-                  allTasks.forEach(task => {
-                    const key = typeof groupKey === 'function' ? groupKey(task) : task[groupKey];
-                    if (!groupedTasks[key]) groupedTasks[key] = [];
-                    groupedTasks[key].push(task);
-                  });
-                  
-                  return Object.entries(groupedTasks).map(([groupName, groupTasks]) => (
+                  return Object.entries(grouped).map(([groupName, groupData]) => (
                     <div key={groupName} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                       <div className="p-4 border-b border-gray-100 bg-slate-50">
                         <h3 className="font-semibold text-slate-800">{groupName}</h3>
-                        <p className="text-sm text-slate-500">
-                          {groupTasks.filter(t => t.completed).length} / {groupTasks.length} completed
-                        </p>
+                        {allClientsSort !== 'client' && (
+                          <p className="text-sm text-slate-500">
+                            {groupData.tasks.length} tasks × {clients.length} clients
+                          </p>
+                        )}
                       </div>
-                      <div className="p-4">
-                        <div className="space-y-2">
-                          {groupTasks.map((task, idx) => {
-                            const taskNotes = getTaskNotes(task.id, task.clientId);
-                            const completedBy = getCompletedBy(task.id, task.clientId);
+                      <div className="divide-y divide-gray-100">
+                        {groupData.tasks.map((task, idx) => (
+                          <div key={`${task.taskId}-${idx}`} className="p-4">
+                            {/* Task Header */}
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="font-medium text-slate-800">{task.text}</span>
+                              {task.critical && (
+                                <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Critical</span>
+                              )}
+                              <span className="text-sm text-slate-400 ml-auto">
+                                {task.completedCount}/{task.totalCount} done
+                              </span>
+                            </div>
                             
-                            return (
-                              <div 
-                                key={`${task.clientId}-${task.id}-${idx}`}
-                                className={`flex items-start gap-3 p-3 rounded-lg border ${task.clientColor.bg} ${task.clientColor.border}`}
-                              >
-                                <button
-                                  onClick={() => toggleItem(task.id, task.clientId)}
-                                  disabled={saving}
-                                  className="flex-shrink-0 mt-0.5"
+                            {/* Client Rows */}
+                            <div className="space-y-2">
+                              {allClientsSort === 'client' ? (
+                                // Single client view
+                                <div 
+                                  className={`flex items-center gap-3 p-2 rounded-lg ${task.clientData.completed ? 'bg-emerald-50' : 'bg-slate-50'}`}
                                 >
-                                  {task.completed ? (
-                                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                  ) : (
-                                    <Circle className="w-5 h-5 text-slate-400 hover:text-blue-500 transition-colors" />
-                                  )}
-                                </button>
-                                
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : task.clientColor.text}`}>
-                                      {task.text}
+                                  <button
+                                    onClick={() => toggleItem(task.taskId, task.clientData.clientId)}
+                                    disabled={saving}
+                                    className="flex-shrink-0"
+                                  >
+                                    {task.clientData.completed ? (
+                                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                    ) : (
+                                      <Circle className="w-5 h-5 text-slate-400 hover:text-blue-500 transition-colors" />
+                                    )}
+                                  </button>
+                                  {task.clientData.completedBy && (
+                                    <span className="text-xs text-slate-500 flex items-center gap-1">
+                                      <User className="w-3 h-3" />
+                                      {task.clientData.completedBy}
                                     </span>
-                                    {task.critical && (
-                                      <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Critical</span>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                                    <span className={`font-medium ${task.clientColor.text}`}>{task.clientName}</span>
-                                    <span>•</span>
-                                    <span>{task.sectionTitle}</span>
-                                    {completedBy && (
-                                      <>
-                                        <span>•</span>
-                                        <span className="flex items-center gap-1">
-                                          <User className="w-3 h-3" />
-                                          {completedBy}
-                                        </span>
-                                      </>
-                                    )}
-                                  </div>
-                                  
-                                  {taskNotes && (
-                                    <div className="mt-2 text-xs text-slate-600 bg-white/50 rounded p-2">
-                                      {taskNotes}
-                                    </div>
                                   )}
                                 </div>
-                                
-                                <button
-                                  onClick={() => setNoteModal({ 
-                                    open: true, 
-                                    taskId: task.id, 
-                                    note: taskNotes,
-                                    clientId: task.clientId
-                                  })}
-                                  className={`flex-shrink-0 p-1 rounded transition-colors ${
-                                    taskNotes ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300 hover:text-slate-500 hover:bg-slate-50'
-                                  }`}
-                                  title="Add/Edit Note"
-                                >
-                                  <MessageSquare className="w-4 h-4" />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
+                              ) : (
+                                // All clients view - show each client as a row
+                                task.clients.map(clientData => (
+                                  <div 
+                                    key={clientData.clientId}
+                                    className={`flex items-center gap-3 p-2 rounded-lg border ${clientData.clientColor.bg} ${clientData.clientColor.border}`}
+                                  >
+                                    <button
+                                      onClick={() => toggleItem(task.taskId, clientData.clientId)}
+                                      disabled={saving}
+                                      className="flex-shrink-0"
+                                    >
+                                      {clientData.completed ? (
+                                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                      ) : (
+                                        <Circle className="w-5 h-5 text-slate-400 hover:text-blue-500 transition-colors" />
+                                      )}
+                                    </button>
+                                    
+                                    <div className={`w-2.5 h-2.5 rounded-full ${clientData.clientColor.dot}`}></div>
+                                    
+                                    <span className={`font-medium text-sm ${clientData.completed ? 'line-through text-slate-400' : clientData.clientColor.text}`}>
+                                      {clientData.clientName}
+                                    </span>
+                                    
+                                    {clientData.completedBy && (
+                                      <span className="text-xs text-slate-500 flex items-center gap-1 ml-auto">
+                                        <User className="w-3 h-3" />
+                                        {clientData.completedBy}
+                                      </span>
+                                    )}
+                                    
+                                    <button
+                                      onClick={() => setNoteModal({ 
+                                        open: true, 
+                                        taskId: task.taskId, 
+                                        note: clientData.notes || '',
+                                        clientId: clientData.clientId
+                                      })}
+                                      className={`flex-shrink-0 p-1 rounded transition-colors ${
+                                        clientData.notes ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300 hover:text-slate-500 hover:bg-white/50'
+                                      }`}
+                                      title="Add/Edit Note"
+                                    >
+                                      <MessageSquare className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ));
