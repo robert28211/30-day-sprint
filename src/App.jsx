@@ -423,7 +423,9 @@ export default function App() {
   };
 
   // Job tracker functions
-  const clientJobs = jobs.filter(j => j.clientId === activeClientId);
+  const [showArchived, setShowArchived] = useState(false);
+  const clientJobs = jobs.filter(j => j.clientId === activeClientId && (showArchived || j.status !== 'Complete'));
+  const archivedCount = jobs.filter(j => j.clientId === activeClientId && j.status === 'Complete').length;
   const getJobTasks = (jobId) => tasks.filter(t => t.jobId === jobId);
 
   const createJob = async () => {
@@ -759,9 +761,25 @@ export default function App() {
                   <div className="text-center py-16"><Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" /><h2 className="text-xl font-semibold text-slate-700 mb-2">Select a Client</h2><p className="text-slate-500">Choose a client from the sidebar to view their jobs.</p></div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold text-slate-800">{activeClient.name}</h2><p className="text-slate-500">{clientJobs.filter(j => j.status === 'Active').length} active jobs</p></div><button onClick={() => setShowNewJobModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium flex items-center gap-2"><Plus className="w-5 h-5" />New Job</button></div>
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-800">{activeClient.name}</h2>
+                        <p className="text-slate-500">{clientJobs.filter(j => j.status === 'Active').length} active jobs{archivedCount > 0 && ` · ${archivedCount} archived`}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {archivedCount > 0 && (
+                          <button 
+                            onClick={() => setShowArchived(!showArchived)} 
+                            className={`text-sm px-3 py-1.5 rounded-lg transition-colors ${showArchived ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                          >
+                            {showArchived ? 'Hide Archived' : 'Show Archived'}
+                          </button>
+                        )}
+                        <button onClick={() => setShowNewJobModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium flex items-center gap-2"><Plus className="w-5 h-5" />New Job</button>
+                      </div>
+                    </div>
                     {clientJobs.length === 0 ? (
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center"><Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No jobs yet. Create one to get started.</p></div>
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center"><Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">{showArchived ? 'No archived jobs.' : 'No active jobs. Create one to get started.'}</p></div>
                     ) : (
                       <div className="space-y-4">
                         {clientJobs.map(job => {
