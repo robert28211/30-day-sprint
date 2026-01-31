@@ -440,12 +440,10 @@ export default function App() {
       if (newJobTemplate) {
         jobFields.Template = [newJobTemplate];
       }
-      console.log('Creating job with fields:', JSON.stringify({ records: [{ fields: jobFields }] }));
       const jobResult = await airtableFetch(JOBS_TABLE, { 
         method: 'POST', 
         body: JSON.stringify({ records: [{ fields: jobFields }] }) 
       });
-      console.log('Job created:', jobResult);
       const newJob = { id: jobResult.records[0].id, name: jobResult.records[0].fields.Name, clientId: activeClientId, templateId: newJobTemplate || null, type: newJobType, status: 'Active', created: new Date().toISOString().split('T')[0] };
       setJobs([...jobs, newJob]);
       setExpandedJobs({ ...expandedJobs, [newJob.id]: true });
@@ -461,7 +459,6 @@ export default function App() {
               Completed: false,
               Notes: taskText.trim()
             };
-            console.log('Creating task with fields:', JSON.stringify({ records: [{ fields: taskFields }] }));
             const taskResult = await airtableFetch(TASKS_TABLE, { 
               method: 'POST', 
               body: JSON.stringify({ records: [{ fields: taskFields }] }) 
