@@ -555,7 +555,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className={`text-white ${appMode === 'sprint' ? 'bg-gradient-to-r from-slate-800 to-slate-900' : 'bg-gradient-to-r from-emerald-600 to-teal-700'}`}>
+      <div className={`text-white ${appMode === 'sprint' ? 'bg-gradient-to-r from-slate-800 to-slate-900' : 'bg-gradient-to-r from-slate-800 to-slate-900'}`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-6">
@@ -563,7 +563,7 @@ export default function App() {
                 <button onClick={() => setAppMode('sprint')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${appMode === 'sprint' ? 'bg-white text-slate-800' : 'text-white/70 hover:text-white'}`}>
                   <ClipboardList className="w-4 h-4" />Sprint Tracker
                 </button>
-                <button onClick={() => setAppMode('jobs')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${appMode === 'jobs' ? 'bg-white text-emerald-800' : 'text-white/70 hover:text-white'}`}>
+                <button onClick={() => setAppMode('jobs')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${appMode === 'jobs' ? 'bg-white text-slate-800' : 'text-white/70 hover:text-white'}`}>
                   <Briefcase className="w-4 h-4" />Job Tracker
                 </button>
               </div>
@@ -748,8 +748,8 @@ export default function App() {
                       const jobCount = jobs.filter(j => j.clientId === c.id && j.status === 'Active').length;
                       const isActive = activeClientId === c.id;
                       return (
-                        <button key={c.id} onClick={() => { setActiveClientId(c.id); setActiveJobId(null); }} className={`w-full text-left p-3 rounded-lg mb-1 transition-all ${isActive ? 'bg-emerald-100 border border-emerald-300' : 'hover:bg-slate-50'}`}>
-                          <div className="flex items-center justify-between"><span className="font-medium text-slate-800">{c.name}</span>{jobCount > 0 && <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full">{jobCount}</span>}</div>
+                        <button key={c.id} onClick={() => { setActiveClientId(c.id); setActiveJobId(null); }} className={`w-full text-left p-3 rounded-lg mb-1 transition-all ${isActive ? 'bg-slate-100 border border-slate-300' : 'hover:bg-slate-50'}`}>
+                          <div className="flex items-center justify-between"><span className="font-medium text-slate-800">{c.name}</span>{jobCount > 0 && <span className="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-full">{jobCount}</span>}</div>
                         </button>
                       );
                     })}
@@ -823,7 +823,7 @@ export default function App() {
                                       </div>
                                     ))}
                                   </div>
-                                  <button onClick={() => { setActiveJobId(job.id); setShowAddJobTaskModal(true); }} className="mt-3 w-full border-2 border-dashed border-slate-200 rounded-lg p-2 text-slate-500 hover:border-emerald-300 hover:text-emerald-600 flex items-center justify-center gap-2"><Plus className="w-4 h-4" />Add Task</button>
+                                  <button onClick={() => { setActiveJobId(job.id); setShowAddJobTaskModal(true); }} className="mt-3 w-full border-2 border-dashed border-slate-200 rounded-lg p-2 text-slate-500 hover:border-emerald-400 hover:text-emerald-600 flex items-center justify-center gap-2"><Plus className="w-4 h-4" />Add Task</button>
                                 </div>
                               )}
                             </div>
