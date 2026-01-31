@@ -430,7 +430,20 @@ export default function App() {
     if (!activeClientId || !newJobName.trim()) return;
     try {
       setSaving(true);
-      const jobResult = await airtableFetch(JOBS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Name: newJobName.trim(), Client: [activeClientId], Template: newJobTemplate ? [newJobTemplate] : undefined, Type: newJobType, Status: 'Active', Created: new Date().toISOString().split('T')[0] } }] }) });
+      const jobFields = {
+        Name: newJobName.trim(),
+        Client: [activeClientId],
+        Type: newJobType,
+        Status: 'Active',
+        Created: new Date().toISOString().split('T')[0]
+      };
+      if (newJobTemplate) {
+        jobFields.Template = [newJobTemplate];
+      }
+      const jobResult = await airtableFetch(JOBS_TABLE, { 
+        method: 'POST', 
+        body: JSON.stringify({ records: [{ fields: jobFields }] }) 
+      });
       const newJob = { id: jobResult.records[0].id, name: jobResult.records[0].fields.Name, clientId: activeClientId, templateId: newJobTemplate || null, type: newJobType, status: 'Active', created: new Date().toISOString().split('T')[0] };
       setJobs([...jobs, newJob]);
       setExpandedJobs({ ...expandedJobs, [newJob.id]: true });
@@ -439,7 +452,17 @@ export default function App() {
         const template = jobTemplates.find(t => t.id === newJobTemplate);
         if (template?.subTasks) {
           for (const taskText of template.subTasks.split('\n').filter(l => l.trim())) {
-            const taskResult = await airtableFetch(TASKS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Client: [activeClientId], Job: [newJob.id], 'Task ID': `job-${newJob.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, Completed: false, Notes: taskText.trim() } }] }) });
+            const taskFields = {
+              Client: [activeClientId],
+              Job: [newJob.id],
+              'Task ID': `job-${newJob.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              Completed: false,
+              Notes: taskText.trim()
+            };
+            const taskResult = await airtableFetch(TASKS_TABLE, { 
+              method: 'POST', 
+              body: JSON.stringify({ records: [{ fields: taskFields }] }) 
+            });
             setTasks(prev => [...prev, { id: taskResult.records[0].id, clientId: activeClientId, jobId: newJob.id, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: taskText.trim(), assignedTo: '', dueDate: '' }]);
           }
         }
@@ -452,7 +475,23 @@ export default function App() {
     if (!activeJobId || !newJobTaskText.trim()) return;
     try {
       setSaving(true);
-      const taskResult = await airtableFetch(TASKS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Client: [activeClientId], Job: [activeJobId], 'Task ID': `manual-${activeJobId}-${Date.now()}`, Completed: false, Notes: newJobTaskText.trim(), 'Assigned To': newJobTaskAssignee || undefined, 'Due Date': newJobTaskDueDate || undefined } }] }) });
+      const taskFields = {
+        Client: [activeClientId],
+        Job: [activeJobId],
+        'Task ID': `manual-${activeJobId}-${Date.now()}`,
+        Completed: false,
+        Notes: newJobTaskText.trim()
+      };
+      if (newJobTaskAssignee) {
+        taskFields['Assigned To'] = newJobTaskAssignee;
+      }
+      if (newJobTaskDueDate) {
+        taskFields['Due Date'] = newJobTaskDueDate;
+      }
+      const taskResult = await airtableFetch(TASKS_TABLE, { 
+        method: 'POST', 
+        body: JSON.stringify({ records: [{ fields: taskFields }] }) 
+      });
       setTasks([...tasks, { id: taskResult.records[0].id, clientId: activeClientId, jobId: activeJobId, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: newJobTaskText.trim(), assignedTo: newJobTaskAssignee, dueDate: newJobTaskDueDate }]);
       setShowAddJobTaskModal(false); setNewJobTaskText(''); setNewJobTaskAssignee(''); setNewJobTaskDueDate('');
     } catch (err) { console.error('Failed:', err); setError('Failed to add task'); } finally { setSaving(false); }
