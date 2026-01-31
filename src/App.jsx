@@ -257,7 +257,7 @@ const categoryColors = {
 };
 
 const jobTypeColors = {
-  'Sprint': { bg: 'bg-indigo-100', text: 'text-indigo-800' },
+  'Sprint': { bg: 'bg-emerald-100', text: 'text-emerald-800' },
   'Recurring': { bg: 'bg-green-100', text: 'text-green-800' },
   'Job': { bg: 'bg-orange-100', text: 'text-orange-800' },
 };
@@ -555,7 +555,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className={`text-white ${appMode === 'sprint' ? 'bg-gradient-to-r from-slate-800 to-slate-900' : 'bg-gradient-to-r from-indigo-800 to-indigo-900'}`}>
+      <div className={`text-white ${appMode === 'sprint' ? 'bg-gradient-to-r from-slate-800 to-slate-900' : 'bg-gradient-to-r from-emerald-600 to-teal-700'}`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-6">
@@ -563,7 +563,7 @@ export default function App() {
                 <button onClick={() => setAppMode('sprint')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${appMode === 'sprint' ? 'bg-white text-slate-800' : 'text-white/70 hover:text-white'}`}>
                   <ClipboardList className="w-4 h-4" />Sprint Tracker
                 </button>
-                <button onClick={() => setAppMode('jobs')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${appMode === 'jobs' ? 'bg-white text-indigo-800' : 'text-white/70 hover:text-white'}`}>
+                <button onClick={() => setAppMode('jobs')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${appMode === 'jobs' ? 'bg-white text-emerald-800' : 'text-white/70 hover:text-white'}`}>
                   <Briefcase className="w-4 h-4" />Job Tracker
                 </button>
               </div>
@@ -748,8 +748,8 @@ export default function App() {
                       const jobCount = jobs.filter(j => j.clientId === c.id && j.status === 'Active').length;
                       const isActive = activeClientId === c.id;
                       return (
-                        <button key={c.id} onClick={() => { setActiveClientId(c.id); setActiveJobId(null); }} className={`w-full text-left p-3 rounded-lg mb-1 transition-all ${isActive ? 'bg-indigo-100 border border-indigo-300' : 'hover:bg-slate-50'}`}>
-                          <div className="flex items-center justify-between"><span className="font-medium text-slate-800">{c.name}</span>{jobCount > 0 && <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full">{jobCount}</span>}</div>
+                        <button key={c.id} onClick={() => { setActiveClientId(c.id); setActiveJobId(null); }} className={`w-full text-left p-3 rounded-lg mb-1 transition-all ${isActive ? 'bg-emerald-100 border border-emerald-300' : 'hover:bg-slate-50'}`}>
+                          <div className="flex items-center justify-between"><span className="font-medium text-slate-800">{c.name}</span>{jobCount > 0 && <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full">{jobCount}</span>}</div>
                         </button>
                       );
                     })}
@@ -775,7 +775,7 @@ export default function App() {
                             {showArchived ? 'Hide Archived' : 'Show Archived'}
                           </button>
                         )}
-                        <button onClick={() => setShowNewJobModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium flex items-center gap-2"><Plus className="w-5 h-5" />New Job</button>
+                        <button onClick={() => setShowNewJobModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-4 py-2 font-medium flex items-center gap-2"><Plus className="w-5 h-5" />New Job</button>
                       </div>
                     </div>
                     {clientJobs.length === 0 ? (
@@ -799,7 +799,7 @@ export default function App() {
                                     <div className="text-sm text-slate-500 mt-1">{completedTasks}/{totalTasks} tasks complete</div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full transition-all ${job.status === 'Complete' ? 'bg-green-500' : 'bg-indigo-500'}`} style={{ width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` }} /></div>
+                                    <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full transition-all ${job.status === 'Complete' ? 'bg-green-500' : 'bg-emerald-500'}`} style={{ width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` }} /></div>
                                     <button onClick={(e) => { e.stopPropagation(); toggleJobComplete(job.id); }} className={`p-1 rounded ${job.status === 'Complete' ? 'text-green-600 hover:bg-green-100' : 'text-slate-400 hover:bg-slate-100'}`}><CheckCircle2 className="w-5 h-5" /></button>
                                     <button onClick={(e) => { e.stopPropagation(); deleteJob(job.id); }} className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50"><Trash2 className="w-5 h-5" /></button>
                                   </div>
@@ -810,7 +810,7 @@ export default function App() {
                                   <div className="space-y-2">
                                     {jobTasks.map(task => (
                                       <div key={task.id} className={`flex items-start gap-3 p-3 rounded-lg border ${task.completed ? 'bg-slate-50 border-slate-200' : 'bg-white border-gray-200'}`}>
-                                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5">{task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-indigo-500" />}</button>
+                                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5">{task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-emerald-500" />}</button>
                                         <div className="flex-1 min-w-0">
                                           <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes}</span>
                                           <div className="flex items-center gap-4 mt-2">
@@ -823,7 +823,7 @@ export default function App() {
                                       </div>
                                     ))}
                                   </div>
-                                  <button onClick={() => { setActiveJobId(job.id); setShowAddJobTaskModal(true); }} className="mt-3 w-full border-2 border-dashed border-slate-200 rounded-lg p-2 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 flex items-center justify-center gap-2"><Plus className="w-4 h-4" />Add Task</button>
+                                  <button onClick={() => { setActiveJobId(job.id); setShowAddJobTaskModal(true); }} className="mt-3 w-full border-2 border-dashed border-slate-200 rounded-lg p-2 text-slate-500 hover:border-emerald-300 hover:text-emerald-600 flex items-center justify-center gap-2"><Plus className="w-4 h-4" />Add Task</button>
                                 </div>
                               )}
                             </div>
@@ -847,7 +847,7 @@ export default function App() {
                     const client = clients.find(c => c.id === task.clientId);
                     return (
                       <div key={task.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-start gap-3">
-                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5"><Circle className="w-5 h-5 text-slate-400 hover:text-indigo-500" /></button>
+                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5"><Circle className="w-5 h-5 text-slate-400 hover:text-emerald-500" /></button>
                         <div className="flex-1 min-w-0"><span className="text-sm text-slate-700">{task.notes}</span><div className="flex items-center gap-2 mt-1 text-xs text-slate-500"><span className="font-medium">{client?.name}</span><span>•</span><span>{job?.name}</span>{task.dueDate && <><span>•</span><span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{task.dueDate}</span></>}</div></div>
                       </div>
                     );
@@ -871,7 +871,7 @@ export default function App() {
                     const isToday = dueDate.toDateString() === today.toDateString();
                     return (
                       <div key={task.id} className={`bg-white rounded-lg shadow-sm border p-4 flex items-start gap-3 ${isOverdue ? 'border-red-300 bg-red-50' : isToday ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}>
-                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5"><Circle className="w-5 h-5 text-slate-400 hover:text-indigo-500" /></button>
+                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5"><Circle className="w-5 h-5 text-slate-400 hover:text-emerald-500" /></button>
                         <div className="flex-1 min-w-0"><span className="text-sm text-slate-700">{task.notes}</span><div className="flex items-center gap-2 mt-1 text-xs text-slate-500"><span className="font-medium">{client?.name}</span><span>•</span><span>{job?.name}</span>{task.assignedTo && <><span>•</span><span className="flex items-center gap-1"><User className="w-3 h-3" />{task.assignedTo}</span></>}</div></div>
                         <div className={`text-xs font-medium px-2 py-1 rounded ${isOverdue ? 'bg-red-100 text-red-700' : isToday ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{isOverdue ? 'Overdue' : isToday ? 'Today' : task.dueDate}</div>
                       </div>
@@ -913,14 +913,14 @@ export default function App() {
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">New Job</h2><button onClick={() => setShowNewJobModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
             <div className="p-6 space-y-4">
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Name</label><input type="text" value={newJobName} onChange={(e) => setNewJobName(e.target.value)} placeholder="e.g., January Meta Campaign" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" autoFocus /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Type</label><select value={newJobType} onChange={(e) => setNewJobType(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="Job">Job (One-time)</option><option value="Recurring">Recurring (Monthly)</option><option value="Sprint">Sprint</option></select></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Template (optional)</label><select value={newJobTemplate} onChange={(e) => setNewJobTemplate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="">No template - start blank</option>{Object.entries(templatesByCategory).map(([cat, temps]) => <optgroup key={cat} label={cat}>{temps.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}</select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Name</label><input type="text" value={newJobName} onChange={(e) => setNewJobName(e.target.value)} placeholder="e.g., January Meta Campaign" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" autoFocus /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Type</label><select value={newJobType} onChange={(e) => setNewJobType(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"><option value="Job">Job (One-time)</option><option value="Recurring">Recurring (Monthly)</option><option value="Sprint">Sprint</option></select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Template (optional)</label><select value={newJobTemplate} onChange={(e) => setNewJobTemplate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"><option value="">No template - start blank</option>{Object.entries(templatesByCategory).map(([cat, temps]) => <optgroup key={cat} label={cat}>{temps.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}</select></div>
               {newJobTemplate && (
                 <div className="bg-slate-50 rounded-lg p-3"><p className="text-xs font-medium text-slate-500 mb-2">Tasks that will be created:</p><ul className="text-sm text-slate-600 space-y-1">{jobTemplates.find(t => t.id === newJobTemplate)?.subTasks.split('\n').filter(s => s.trim()).map((task, i) => <li key={i} className="flex items-center gap-2"><Circle className="w-3 h-3 text-slate-400" />{task.trim()}</li>)}</ul></div>
               )}
             </div>
-            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowNewJobModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={createJob} disabled={!newJobName.trim() || saving} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create Job</button></div>
+            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowNewJobModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={createJob} disabled={!newJobName.trim() || saving} className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create Job</button></div>
           </div>
         </div>
       )}
@@ -930,11 +930,11 @@ export default function App() {
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">Add Task</h2><button onClick={() => setShowAddJobTaskModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
             <div className="p-6 space-y-4">
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Task</label><input type="text" value={newJobTaskText} onChange={(e) => setNewJobTaskText(e.target.value)} placeholder="What needs to be done?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" autoFocus /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To (optional)</label><input type="text" value={newJobTaskAssignee} onChange={(e) => setNewJobTaskAssignee(e.target.value)} placeholder="Who's responsible?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Due Date (optional)</label><input type="date" value={newJobTaskDueDate} onChange={(e) => setNewJobTaskDueDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Task</label><input type="text" value={newJobTaskText} onChange={(e) => setNewJobTaskText(e.target.value)} placeholder="What needs to be done?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" autoFocus /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To (optional)</label><input type="text" value={newJobTaskAssignee} onChange={(e) => setNewJobTaskAssignee(e.target.value)} placeholder="Who's responsible?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Due Date (optional)</label><input type="date" value={newJobTaskDueDate} onChange={(e) => setNewJobTaskDueDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
             </div>
-            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowAddJobTaskModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={addTaskToJob} disabled={!newJobTaskText.trim() || saving} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Add Task</button></div>
+            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowAddJobTaskModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={addTaskToJob} disabled={!newJobTaskText.trim() || saving} className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Add Task</button></div>
           </div>
         </div>
       )}
