@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User, Briefcase, Calendar, Clock, ClipboardList } from 'lucide-react';
 
 const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
 const CLIENTS_TABLE = 'Clients';
 const TASKS_TABLE = 'Tasks';
+const JOBS_TABLE = 'Jobs';
+const JOB_TEMPLATES_TABLE = 'Job Templates';
 
 const airtableFetch = async (table, options = {}) => {
-  // Don't encode if it contains a record ID (has a slash)
   const tablePart = table.includes('/') ? table : encodeURIComponent(table);
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tablePart}${options.params || ''}`;
   const response = await fetch(url, {
@@ -25,7 +26,6 @@ const airtableFetch = async (table, options = {}) => {
   return response.json();
 };
 
-// Separate function for updating records using batch update format
 const updateRecord = async (table, recordId, fields) => {
   const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(table)}`;
   const response = await fetch(url, {
@@ -35,10 +35,7 @@ const updateRecord = async (table, recordId, fields) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      records: [{
-        id: recordId,
-        fields: fields
-      }]
+      records: [{ id: recordId, fields: fields }]
     })
   });
   if (!response.ok) {
@@ -101,297 +98,145 @@ const sprintTemplate = {
     ]
   },
   week1Technical: {
-    title: "Day 1-2: Technical Infrastructure",
+    title: "Technical Audit",
     items: [
-      { id: "pixel-install", text: "Install EngageEngine Identity Pixel", critical: true },
-      { id: "pixel-verify", text: "Verify pixel firing in diagnostics" },
-      { id: "pixel-test", text: "Test across desktop, mobile, tablet" },
-      { id: "clarity-create", text: "Create Clarity project", critical: true },
-      { id: "clarity-install", text: "Install Clarity tracking code" },
-      { id: "clarity-recordings", text: "Enable session recordings" },
-      { id: "clarity-heatmaps", text: "Enable heatmaps" },
-      { id: "clarity-verify", text: "Verify data collection" },
-      { id: "ga4-verify", text: "Verify GA4 property exists" },
-      { id: "ga4-enhanced", text: "Enable Enhanced Measurement" },
-      { id: "ga4-conversions", text: "Configure conversion events (phone, form, email)" },
-      { id: "ga4-audiences", text: "Set up audience definitions" },
-      { id: "ga4-link-gads", text: "Link to Google Ads" },
-      { id: "ga4-link-gsc", text: "Link to Search Console" },
-      { id: "gtm-access", text: "Access/create GTM container" },
-      { id: "gtm-verify", text: "Verify container on all pages" },
-      { id: "gtm-phone", text: "Configure phone click tracking" },
-      { id: "gtm-form", text: "Configure form submission tracking" },
-      { id: "gtm-test", text: "Test all tags in Preview mode" },
-      { id: "gtm-publish", text: "Publish container" }
+      { id: "speed-test", text: "Run PageSpeed Insights audit", critical: true },
+      { id: "mobile-test", text: "Mobile responsiveness check" },
+      { id: "ssl-check", text: "SSL certificate verification" },
+      { id: "indexing", text: "Google Search Console indexing status" },
+      { id: "broken-links", text: "Broken link scan" },
+      { id: "schema", text: "Schema markup review" }
     ]
   },
   week1Speed: {
-    title: "Day 3-4: Speed & Technical Audit",
+    title: "Speed Optimization",
     items: [
-      { id: "speed-psi", text: "Run PageSpeed Insights (mobile + desktop)", critical: true },
-      { id: "speed-gtmetrix", text: "Run GTmetrix full report" },
-      { id: "speed-document", text: "Document current LCP, FID, CLS scores" },
-      { id: "speed-compress", text: "Compress all images (80% reduction)" },
-      { id: "speed-cache", text: "Enable browser caching" },
-      { id: "speed-gzip", text: "Enable GZIP compression" },
-      { id: "speed-minify", text: "Minify CSS and JavaScript" },
-      { id: "speed-plugins", text: "Remove unused plugins/scripts" },
-      { id: "speed-fonts", text: "Optimize web fonts" },
-      { id: "speed-lazy", text: "Implement lazy loading" },
-      { id: "speed-retest", text: "Re-test and document improvements" }
+      { id: "image-opt", text: "Image compression and optimization" },
+      { id: "caching", text: "Browser caching implementation" },
+      { id: "minify", text: "CSS/JS minification" },
+      { id: "cdn", text: "CDN setup (if applicable)" }
     ]
   },
   week1Listings: {
-    title: "Day 5-6: Listings & Presence",
+    title: "Listings Audit",
     items: [
-      { id: "gbp-verify", text: "Verify GBP ownership", critical: true },
-      { id: "gbp-audit", text: "Audit profile completeness" },
-      { id: "gbp-nap", text: "Verify NAP accuracy" },
-      { id: "gbp-categories", text: "Add/update service categories" },
-      { id: "gbp-description", text: "Write optimized description" },
-      { id: "gbp-photos", text: "Upload 15+ quality photos" },
-      { id: "gbp-messaging", text: "Enable messaging" },
-      { id: "gbp-services", text: "Add products/services" },
-      { id: "gbp-reviews", text: "Respond to unanswered reviews" },
-      { id: "listings-scan", text: "Run Vendasta listings scan", critical: true },
-      { id: "listings-document", text: "Document accuracy score" },
-      { id: "listings-errors", text: "Identify incorrect listings" },
-      { id: "listings-correct", text: "Submit corrections" },
-      { id: "listings-suppress", text: "Suppress duplicates" },
-      { id: "listings-add", text: "Add to missing directories" }
+      { id: "nap-audit", text: "NAP consistency audit", critical: true },
+      { id: "gbp-optimize", text: "Google Business Profile optimization" },
+      { id: "categories", text: "Category selection review" },
+      { id: "photos-gbp", text: "GBP photo upload" },
+      { id: "services-gbp", text: "Services/Products setup in GBP" }
     ]
   },
   week1Diagnosis: {
-    title: "Day 7: Failure Mode Diagnosis",
+    title: "Initial Diagnosis",
     items: [
-      { id: "diag-traffic", text: "Review current traffic levels", critical: true },
-      { id: "diag-sources", text: "Review traffic sources breakdown" },
-      { id: "diag-bounce", text: "Review bounce rate and time on site" },
-      { id: "diag-clarity", text: "Review Clarity recordings (min 10)" },
-      { id: "diag-heatmaps", text: "Review homepage heatmaps" },
-      { id: "diag-maps", text: "Review Maps visibility (5 key terms)" },
-      { id: "diag-reviews", text: "Review review profile" },
-      { id: "diag-competitors", text: "Audit top 3 competitors" },
-      { id: "diag-conversion", text: "Document conversion rate estimate" },
-      { id: "diag-declare", text: "Declare dominant failure mode", critical: true }
+      { id: "competitor-review", text: "Top 3 competitor analysis" },
+      { id: "keyword-baseline", text: "Current keyword rankings baseline" },
+      { id: "traffic-baseline", text: "Traffic baseline documentation" },
+      { id: "conversion-baseline", text: "Conversion baseline setup" }
     ]
   },
   week2Headlines: {
-    title: "Day 8-10: Homepage Hero Rewrite",
+    title: "Messaging Overhaul",
     items: [
-      { id: "hero-review", text: "Review Clarity heatmaps for above-fold" },
-      { id: "hero-pain", text: "Identify primary pain point" },
-      { id: "hero-draft", text: "Draft 3-5 headline options", critical: true },
-      { id: "hero-select", text: "Select top 2 for A/B testing" },
-      { id: "hero-subhead", text: "Write benefit-focused subhead" },
-      { id: "vp-document", text: "Document current value props" },
-      { id: "vp-reframe", text: "Reframe features as benefits", critical: true },
-      { id: "vp-update", text: "Update homepage copy" }
+      { id: "headline-audit", text: "Current headline effectiveness audit" },
+      { id: "value-prop", text: "Value proposition refinement", critical: true },
+      { id: "headline-variants", text: "Create 5+ headline variants" },
+      { id: "subheadline", text: "Supporting subheadline copy" }
     ]
   },
   week2Offer: {
-    title: "Day 11-12: Offer Creation",
+    title: "Offer Development",
     items: [
-      { id: "offer-audit", text: "Review competitor offers" },
-      { id: "offer-select", text: "Select offer type", critical: true },
-      { id: "offer-scarcity", text: "Add scarcity element" },
-      { id: "offer-homepage", text: "Create homepage copy" },
-      { id: "offer-landing", text: "Create landing page copy" },
-      { id: "offer-ads", text: "Create ad creative copy" },
-      { id: "offer-document", text: "Document offer in client file" }
+      { id: "offer-audit", text: "Current offer analysis" },
+      { id: "offer-create", text: "Develop irresistible offer", critical: true },
+      { id: "urgency", text: "Add urgency/scarcity elements" },
+      { id: "guarantee", text: "Guarantee formulation" }
     ]
   },
   week2Landing: {
-    title: "Day 13-14: Landing Pages",
+    title: "Landing Page Optimization",
     items: [
-      { id: "lp-build", text: "Build primary conversion page", critical: true },
-      { id: "lp-headline", text: "Structure above-fold headline" },
-      { id: "lp-benefits", text: "Add 3 key benefits" },
-      { id: "lp-form", text: "Add simple form" },
-      { id: "lp-trust", text: "Add trust element" },
-      { id: "lp-process", text: "Add process explanation" },
-      { id: "lp-faq", text: "Add FAQ section" },
-      { id: "lp-testimonials", text: "Add testimonials" },
-      { id: "lp-conversion", text: "Configure GA4 conversion event" },
-      { id: "lp-notification", text: "Configure instant form notification" },
-      { id: "lp-emergency", text: "Build emergency landing page (if applicable)" }
+      { id: "hero-section", text: "Hero section redesign" },
+      { id: "benefit-blocks", text: "Benefit blocks creation" },
+      { id: "social-proof-section", text: "Social proof section" },
+      { id: "cta-placement", text: "CTA button optimization" }
     ]
   },
   week3Reviews: {
-    title: "Day 15-17: Review Acceleration",
+    title: "Review Generation",
     items: [
-      { id: "review-document", text: "Document current review profile", critical: true },
-      { id: "review-vendasta-email", text: "Set up review request email template" },
-      { id: "review-vendasta-sms", text: "Set up review request SMS template" },
-      { id: "review-link", text: "Configure direct Google review link" },
-      { id: "review-alerts", text: "Enable review monitoring alerts" },
-      { id: "review-train", text: "Train client on review request process" },
-      { id: "review-script", text: "Create review request script for staff" },
-      { id: "review-response", text: "Set up review response protocol" },
-      { id: "testimonial-identify", text: "Identify past customers for outreach" },
-      { id: "testimonial-send", text: "Send testimonial requests (20+)" },
-      { id: "testimonial-incentive", text: "Offer video testimonial incentive" }
+      { id: "review-audit", text: "Current review audit", critical: true },
+      { id: "review-response", text: "Respond to existing reviews" },
+      { id: "review-system", text: "Implement review request system" },
+      { id: "review-training", text: "Train client on review requests" }
     ]
   },
   week3Proof: {
-    title: "Day 18-19: Proof Stacking",
+    title: "Social Proof Assets",
     items: [
-      { id: "proof-badge", text: "Add review count badge to hero" },
-      { id: "proof-stars", text: "Add star rating display" },
-      { id: "proof-years", text: "Add years in business" },
-      { id: "proof-jobs", text: "Add total jobs served (if impressive)" },
-      { id: "proof-area", text: "Add service area coverage" },
-      { id: "proof-certs", text: "Add certification badges" },
-      { id: "proof-testimonials", text: "Create rotating testimonial section" },
-      { id: "proof-service", text: "Add testimonials to service pages" },
-      { id: "proof-conversion", text: "Add testimonials to conversion pages" }
+      { id: "testimonial-collect", text: "Collect written testimonials" },
+      { id: "case-study", text: "Create 1 case study" },
+      { id: "before-after", text: "Before/after examples" },
+      { id: "credentials", text: "Credentials/certifications display" }
     ]
   },
   week3Guarantee: {
-    title: "Day 20-21: Guarantee Creation",
+    title: "Trust Elements",
     items: [
-      { id: "guarantee-advantage", text: "Identify competitive advantage for guarantee" },
-      { id: "guarantee-primary", text: "Draft primary guarantee", critical: true },
-      { id: "guarantee-secondary", text: "Draft secondary service guarantee" },
-      { id: "guarantee-approval", text: "Get client approval" },
-      { id: "guarantee-homepage", text: "Add to homepage" },
-      { id: "guarantee-conversion", text: "Add to conversion pages" },
-      { id: "guarantee-footer", text: "Add to footer" }
+      { id: "guarantee-badge", text: "Guarantee badge creation" },
+      { id: "trust-badges", text: "Trust badges implementation" },
+      { id: "about-page", text: "About page humanization" },
+      { id: "team-photos", text: "Team photos (if applicable)" }
     ]
   },
   week4CTA: {
-    title: "Day 22-24: CTA Optimization",
+    title: "Conversion Optimization",
     items: [
-      { id: "cta-recordings", text: "Review new Clarity recordings (10+)" },
-      { id: "cta-friction", text: "Identify friction points" },
-      { id: "cta-phone-visible", text: "Verify phone visible on all pages" },
-      { id: "cta-click-to-call", text: "Verify click-to-call on mobile" },
-      { id: "cta-sticky", text: "Implement sticky header with phone" },
-      { id: "cta-floating", text: "Add floating Call Now button" },
-      { id: "cta-forms", text: "Verify forms work on mobile" },
-      { id: "cta-test", text: "Test conversion path on 3 devices" },
-      { id: "cta-exit", text: "Configure exit-intent popup" }
+      { id: "cta-audit", text: "CTA audit and optimization", critical: true },
+      { id: "form-optimization", text: "Form field optimization" },
+      { id: "click-to-call", text: "Click-to-call implementation" },
+      { id: "chat-widget", text: "Chat widget setup (if applicable)" }
     ]
   },
   week4Retargeting: {
-    title: "Day 25-27: Retargeting Setup",
+    title: "Retargeting Setup",
     items: [
-      { id: "meta-access", text: "Access Meta Business Manager", critical: true },
-      { id: "meta-pixel", text: "Create/verify Meta Pixel" },
-      { id: "meta-install", text: "Install pixel on all pages" },
-      { id: "meta-events", text: "Configure standard events" },
-      { id: "meta-test", text: "Test pixel in Events Manager" },
-      { id: "audience-visitors", text: "Create Website Visitors audience" },
-      { id: "audience-service", text: "Create Service Page Visitors audience" },
-      { id: "audience-exclude", text: "Create Converters exclusion audience" },
-      { id: "gads-access", text: "Access/create Google Ads account" },
-      { id: "gads-link", text: "Link to GA4" },
-      { id: "gads-import", text: "Import conversion events" },
-      { id: "gads-remarketing", text: "Create remarketing audience" },
-      { id: "gads-campaigns", text: "Build campaign structure", critical: true },
-      { id: "gads-geo", text: "Set geographic targeting" },
-      { id: "gads-schedule", text: "Set ad scheduling" },
-      { id: "gads-copy", text: "Create ad copy variations (3+ per campaign)" }
+      { id: "pixel-install", text: "Facebook pixel installation" },
+      { id: "google-remarketing", text: "Google remarketing tag" },
+      { id: "audience-creation", text: "Custom audience creation" },
+      { id: "retargeting-ads", text: "Retargeting ad creation" }
     ]
   },
   week4Launch: {
-    title: "Day 28-29: Campaign Launch",
+    title: "Campaign Launch",
     items: [
-      { id: "launch-tracking", text: "Verify all conversion tracking", critical: true },
-      { id: "launch-speed", text: "Verify landing pages < 3 seconds" },
-      { id: "launch-notifications", text: "Verify form notifications instant" },
-      { id: "launch-phone", text: "Verify phone tracking" },
-      { id: "launch-oviond", text: "Verify Oviond pulling data" },
-      { id: "launch-meta", text: "Launch Meta retargeting ($10-20/day)" },
-      { id: "launch-gads", text: "Launch Google Ads campaigns" },
-      { id: "launch-monitor", text: "Monitor first 24 hours" },
-      { id: "launch-approvals", text: "Verify ad approvals" },
-      { id: "launch-policy", text: "Check for policy violations" }
+      { id: "campaign-structure", text: "Campaign structure finalization" },
+      { id: "ad-copy-final", text: "Final ad copy approval" },
+      { id: "budget-confirm", text: "Budget confirmation" },
+      { id: "launch", text: "Campaign launch", critical: true }
     ]
   },
   week4Handoff: {
-    title: "Day 30: Sprint Close & Handoff",
+    title: "Client Handoff",
     items: [
-      { id: "handoff-credentials", text: "Compile all credentials securely" },
-      { id: "handoff-changes", text: "Document all changes made" },
-      { id: "handoff-diagnosis", text: "Document failure mode diagnosis" },
-      { id: "handoff-roadmap", text: "Create ongoing optimization roadmap" },
-      { id: "handoff-oviond", text: "Verify Oviond reports configured" },
-      { id: "handoff-first-report", text: "Send first weekly report" },
-      { id: "handoff-cadence", text: "Schedule ongoing reporting" },
-      { id: "handoff-call", text: "Schedule Sprint Complete call", critical: true },
-      { id: "handoff-walkthrough", text: "Walk through all changes" },
-      { id: "handoff-performance", text: "Review performance vs baseline" },
-      { id: "handoff-present", text: "Present 60-90 day roadmap" },
-      { id: "handoff-confirm", text: "Confirm ongoing retainer scope" },
-      { id: "handoff-feedback", text: "Collect sprint feedback" }
+      { id: "dashboard-walkthrough", text: "Reporting dashboard walkthrough" },
+      { id: "expectations", text: "Set ongoing expectations" },
+      { id: "communication", text: "Establish communication cadence" },
+      { id: "documentation", text: "Handoff documentation complete" }
     ]
-  },
-  customTasks: {
-    title: "Custom Tasks",
-    items: []
   }
 };
 
 const phases = [
-  { 
-    id: 'preSprint', 
-    name: 'Pre-Sprint', 
-    subtitle: 'Days -7 to 0',
-    icon: Settings,
-    color: 'from-slate-500 to-slate-600',
-    sections: ['preSprintAccess', 'preSprintVendasta', 'preSprintOviond', 'preSprintAssets']
-  },
-  { 
-    id: 'week1', 
-    name: 'Week 1', 
-    subtitle: 'Foundation & Diagnosis',
-    icon: Target,
-    color: 'from-blue-500 to-blue-600',
-    sections: ['week1Technical', 'week1Speed', 'week1Listings', 'week1Diagnosis']
-  },
-  { 
-    id: 'week2', 
-    name: 'Week 2', 
-    subtitle: 'Messaging & Positioning',
-    icon: Zap,
-    color: 'from-purple-500 to-purple-600',
-    sections: ['week2Headlines', 'week2Offer', 'week2Landing']
-  },
-  { 
-    id: 'week3', 
-    name: 'Week 3', 
-    subtitle: 'Social Proof & Trust',
-    icon: Shield,
-    color: 'from-emerald-500 to-emerald-600',
-    sections: ['week3Reviews', 'week3Proof', 'week3Guarantee']
-  },
-  { 
-    id: 'week4', 
-    name: 'Week 4', 
-    subtitle: 'Conversion & Launch',
-    icon: TrendingUp,
-    color: 'from-orange-500 to-orange-600',
-    sections: ['week4CTA', 'week4Retargeting', 'week4Launch', 'week4Handoff']
-  },
-  { 
-    id: 'custom', 
-    name: 'Custom', 
-    subtitle: 'Added Tasks',
-    icon: Plus,
-    color: 'from-pink-500 to-pink-600',
-    sections: ['customTasks']
-  }
+  { id: 'preSprint', name: 'Pre-Sprint', subtitle: 'Foundation Setup', icon: Target, color: 'from-slate-500 to-slate-600', sections: ['preSprintAccess', 'preSprintVendasta', 'preSprintOviond', 'preSprintAssets'] },
+  { id: 'week1', name: 'Week 1', subtitle: 'Technical Foundation', icon: Settings, color: 'from-blue-500 to-blue-600', sections: ['week1Technical', 'week1Speed', 'week1Listings', 'week1Diagnosis'] },
+  { id: 'week2', name: 'Week 2', subtitle: 'Messaging & Positioning', icon: Zap, color: 'from-purple-500 to-purple-600', sections: ['week2Headlines', 'week2Offer', 'week2Landing'] },
+  { id: 'week3', name: 'Week 3', subtitle: 'Social Proof & Trust', icon: Shield, color: 'from-emerald-500 to-emerald-600', sections: ['week3Reviews', 'week3Proof', 'week3Guarantee'] },
+  { id: 'week4', name: 'Week 4', subtitle: 'Conversion & Launch', icon: TrendingUp, color: 'from-orange-500 to-orange-600', sections: ['week4CTA', 'week4Retargeting', 'week4Launch', 'week4Handoff'] },
+  { id: 'custom', name: 'Custom', subtitle: 'Added Tasks', icon: Plus, color: 'from-pink-500 to-pink-600', sections: ['customTasks'] }
 ];
 
-const failureModes = [
-  { id: 'Not Seen', name: 'Not Seen When Decisions Are Made', control: 'Presence Control', color: 'bg-red-100 border-red-300 text-red-800' },
-  { id: 'Not Trusted', name: 'Seen But Not Trusted', control: 'Confidence Control', color: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
-  { id: 'Still Compared', name: 'Trusted But Still Compared', control: 'Comparison Control', color: 'bg-blue-100 border-blue-300 text-blue-800' },
-  { id: 'No Action', name: 'Intended Choice, No Action', control: 'Momentum Control', color: 'bg-purple-100 border-purple-300 text-purple-800' }
-];
-
-// Color palette for clients in All Clients view
 const clientColors = [
   { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-800', dot: 'bg-blue-500' },
   { bg: 'bg-emerald-100', border: 'border-emerald-300', text: 'text-emerald-800', dot: 'bg-emerald-500' },
@@ -399,1463 +244,640 @@ const clientColors = [
   { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-800', dot: 'bg-orange-500' },
   { bg: 'bg-pink-100', border: 'border-pink-300', text: 'text-pink-800', dot: 'bg-pink-500' },
   { bg: 'bg-cyan-100', border: 'border-cyan-300', text: 'text-cyan-800', dot: 'bg-cyan-500' },
-  { bg: 'bg-amber-100', border: 'border-amber-300', text: 'text-amber-800', dot: 'bg-amber-500' },
-  { bg: 'bg-indigo-100', border: 'border-indigo-300', text: 'text-indigo-800', dot: 'bg-indigo-500' },
-  { bg: 'bg-rose-100', border: 'border-rose-300', text: 'text-rose-800', dot: 'bg-rose-500' },
-  { bg: 'bg-teal-100', border: 'border-teal-300', text: 'text-teal-800', dot: 'bg-teal-500' },
 ];
 
+const categoryColors = {
+  'Digital Ads': { bg: 'bg-blue-100', text: 'text-blue-800' },
+  'Traditional Media': { bg: 'bg-purple-100', text: 'text-purple-800' },
+  'Website': { bg: 'bg-emerald-100', text: 'text-emerald-800' },
+  'Social Media': { bg: 'bg-pink-100', text: 'text-pink-800' },
+  'Email': { bg: 'bg-amber-100', text: 'text-amber-800' },
+  'SEO': { bg: 'bg-cyan-100', text: 'text-cyan-800' },
+  'Tech Setup': { bg: 'bg-slate-100', text: 'text-slate-800' },
+};
+
+const jobTypeColors = {
+  'Sprint': { bg: 'bg-indigo-100', text: 'text-indigo-800' },
+  'Recurring': { bg: 'bg-green-100', text: 'text-green-800' },
+  'Job': { bg: 'bg-orange-100', text: 'text-orange-800' },
+};
+
 export default function App() {
+  const [appMode, setAppMode] = useState(() => localStorage.getItem('engageengine-mode') || 'sprint');
   const [clients, setClients] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [jobTemplates, setJobTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [userName, setUserName] = useState(() => localStorage.getItem('engageengine-username') || '');
+  const [showUserModal, setShowUserModal] = useState(false);
   const [activeClientId, setActiveClientId] = useState(null);
   const [activePhase, setActivePhase] = useState('preSprint');
   const [expandedSections, setExpandedSections] = useState({});
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientStartDate, setNewClientStartDate] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [userName, setUserName] = useState(() => localStorage.getItem('engageengine-username') || '');
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [noteModal, setNoteModal] = useState({ open: false, taskId: null, note: '', clientId: null });
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  const [newTaskText, setNewTaskText] = useState('');
   const [customTasks, setCustomTasks] = useState([]);
-  const [viewMode, setViewMode] = useState('byClient'); // 'byClient' or 'allClients'
-  const [allClientsSort, setAllClientsSort] = useState('phase'); // 'phase', 'client', 'status'
+  const [viewMode, setViewMode] = useState('byClient');
+  const [allClientsSort, setAllClientsSort] = useState('task');
+  const [activeJobId, setActiveJobId] = useState(null);
+  const [showNewJobModal, setShowNewJobModal] = useState(false);
+  const [showAddJobTaskModal, setShowAddJobTaskModal] = useState(false);
+  const [newJobName, setNewJobName] = useState('');
+  const [newJobTemplate, setNewJobTemplate] = useState('');
+  const [newJobType, setNewJobType] = useState('Job');
+  const [newJobTaskText, setNewJobTaskText] = useState('');
+  const [newJobTaskDueDate, setNewJobTaskDueDate] = useState('');
+  const [newJobTaskAssignee, setNewJobTaskAssignee] = useState('');
+  const [jobViewMode, setJobViewMode] = useState('byClient');
+  const [expandedJobs, setExpandedJobs] = useState({});
 
-  // Load clients and tasks from Airtable
+  useEffect(() => { localStorage.setItem('engageengine-mode', appMode); }, [appMode]);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Load clients
       const clientsData = await airtableFetch(CLIENTS_TABLE);
-      const loadedClients = clientsData.records.map(record => ({
-        id: record.id,
-        name: record.fields.Name || '',
-        startDate: record.fields['Start Date'] || '',
-        status: record.fields.Status || 'Active',
-        failureMode: record.fields['Failure Mode'] || null
+      const loadedClients = clientsData.records.map(r => ({
+        id: r.id, name: r.fields.Name || '', startDate: r.fields['Start Date'] || '', status: r.fields.Status || 'Active'
       }));
       setClients(loadedClients);
 
-      // Load tasks
       const tasksData = await airtableFetch(TASKS_TABLE);
-      const loadedTasks = tasksData.records.map(record => ({
-        id: record.id,
-        clientId: record.fields.Client?.[0] || null,
-        taskId: record.fields['Task ID'] || '',
-        completed: record.fields.Completed || false,
-        completedAt: record.fields['Completed Date'] || null,
-        completedBy: record.fields['Completed By'] || null,
-        notes: record.fields.Notes || '',
-        isCustom: record.fields['Task ID']?.startsWith('custom-') || false,
-        customText: record.fields['Task ID']?.startsWith('custom-') ? (record.fields.Notes?.split('|||')[0] || '') : ''
+      const loadedTasks = tasksData.records.map(r => ({
+        id: r.id, clientId: r.fields.Client?.[0] || null, jobId: r.fields.Job?.[0] || null,
+        taskId: r.fields['Task ID'] || '', completed: r.fields.Completed || false,
+        completedAt: r.fields['Completed Date'] || null, completedBy: r.fields['Completed By'] || null,
+        notes: r.fields.Notes || '', assignedTo: r.fields['Assigned To'] || '', dueDate: r.fields['Due Date'] || '',
+        isCustom: r.fields['Task ID']?.startsWith('custom-') || false,
+        customText: r.fields['Task ID']?.startsWith('custom-') ? (r.fields.Notes?.split('|||')[0] || '') : ''
       }));
       setTasks(loadedTasks);
-      
-      // Extract custom tasks for display
-      const customs = loadedTasks
-        .filter(t => t.isCustom && t.clientId)
-        .map(t => ({
-          id: t.taskId,
-          text: t.customText,
-          clientId: t.clientId
-        }));
-      setCustomTasks(customs);
+      setCustomTasks(loadedTasks.filter(t => t.isCustom && t.clientId && !t.jobId).map(t => ({ id: t.taskId, text: t.customText, clientId: t.clientId })));
 
+      const templatesData = await airtableFetch(JOB_TEMPLATES_TABLE);
+      setJobTemplates(templatesData.records.map(r => ({ id: r.id, name: r.fields.Name || '', category: r.fields.Category || '', subTasks: r.fields['Sub-Tasks'] || '' })));
+
+      const jobsData = await airtableFetch(JOBS_TABLE);
+      const loadedJobs = jobsData.records.map(r => ({
+        id: r.id, name: r.fields.Name || '', clientId: r.fields.Client?.[0] || null, templateId: r.fields.Template?.[0] || null,
+        type: r.fields.Type || 'Job', status: r.fields.Status || 'Active', created: r.fields.Created || ''
+      }));
+      setJobs(loadedJobs);
+      const expanded = {}; loadedJobs.forEach(j => { expanded[j.id] = true; }); setExpandedJobs(expanded);
     } catch (err) {
-      console.error('Failed to load data:', err);
-      setError('Failed to load data from Airtable. Check your API key and Base ID.');
+      console.error('Failed to load:', err);
+      setError('Failed to load data from Airtable.');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-  
-  useEffect(() => {
-    if (!userName) {
-      setShowUserModal(true);
-    }
-  }, [userName]);
+  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { if (!userName) setShowUserModal(true); }, [userName]);
 
+  const saveUserName = (name) => { localStorage.setItem('engageengine-username', name); setUserName(name); setShowUserModal(false); };
   const activeClient = clients.find(c => c.id === activeClientId);
+  const getClientColor = (clientId) => { const idx = clients.findIndex(c => c.id === clientId); return clientColors[idx % clientColors.length]; };
 
-  // Get color for a client based on their index
-  const getClientColor = (clientId) => {
-    const index = clients.findIndex(c => c.id === clientId);
-    return clientColors[index % clientColors.length];
-  };
-
-  // Get task record for a task (with optional clientId for All Clients view)
+  // Sprint functions
   const getTaskRecord = (taskId, clientId = null) => {
     const cid = clientId || activeClientId;
-    if (!cid) return null;
-    return tasks.find(t => t.clientId === cid && t.taskId === taskId);
+    return cid ? tasks.find(t => t.clientId === cid && t.taskId === taskId && !t.jobId) : null;
+  };
+  const isTaskCompleted = (taskId, clientId = null) => getTaskRecord(taskId, clientId)?.completed || false;
+  const getCompletedBy = (taskId, clientId = null) => getTaskRecord(taskId, clientId)?.completedBy || null;
+
+  const toggleSprintItem = async (taskId, clientId = null) => {
+    const targetClientId = clientId || activeClientId;
+    if (!targetClientId || !userName) { if (!userName) setShowUserModal(true); return; }
+    const existingTask = tasks.find(t => t.clientId === targetClientId && t.taskId === taskId && !t.jobId);
+    const newCompleted = !existingTask?.completed;
+    try {
+      setSaving(true);
+      if (existingTask) {
+        const updateFields = { Completed: newCompleted };
+        if (newCompleted) { updateFields['Completed Date'] = new Date().toISOString().split('T')[0]; updateFields['Completed By'] = userName; }
+        await updateRecord(TASKS_TABLE, existingTask.id, updateFields);
+        setTasks(tasks.map(t => t.id === existingTask.id ? { ...t, completed: newCompleted, completedAt: newCompleted ? new Date().toISOString().split('T')[0] : null, completedBy: newCompleted ? userName : null } : t));
+      } else {
+        const result = await airtableFetch(TASKS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Client: [targetClientId], 'Task ID': taskId, Completed: true, 'Completed Date': new Date().toISOString().split('T')[0], 'Completed By': userName } }] }) });
+        setTasks([...tasks, { id: result.records[0].id, clientId: targetClientId, jobId: null, taskId, completed: true, completedAt: new Date().toISOString().split('T')[0], completedBy: userName, notes: '' }]);
+      }
+    } catch (err) { console.error('Failed:', err); setError('Failed to update task'); } finally { setSaving(false); }
   };
 
-  // Get completed status for a task
-  const isTaskCompleted = (taskId, clientId = null) => {
-    const task = getTaskRecord(taskId, clientId);
-    return task?.completed || false;
-  };
-  
-  // Get task notes
-  const getTaskNotes = (taskId, clientId = null) => {
-    const task = getTaskRecord(taskId, clientId);
-    if (!task?.notes) return '';
-    // For custom tasks, notes are stored as "taskText|||actualNotes"
-    if (task.isCustom && task.notes.includes('|||')) {
-      return task.notes.split('|||')[1] || '';
-    }
-    return task.notes;
-  };
-  
-  // Get who completed the task
-  const getCompletedBy = (taskId, clientId = null) => {
-    const task = getTaskRecord(taskId, clientId);
-    return task?.completedBy || null;
-  };
-
-  // Save username
-  const saveUserName = (name) => {
-    localStorage.setItem('engageengine-username', name);
-    setUserName(name);
-    setShowUserModal(false);
-  };
-
-  // Create new client
   const createNewClient = async () => {
     if (!newClientName.trim()) return;
-    
     try {
       setSaving(true);
-      const result = await airtableFetch(CLIENTS_TABLE, {
-        method: 'POST',
-        body: JSON.stringify({
-          records: [{
-            fields: {
-              Name: newClientName.trim(),
-              'Start Date': newClientStartDate || new Date().toISOString().split('T')[0],
-              Status: 'Active'
-            }
-          }]
-        })
-      });
-      
-      const newClient = {
-        id: result.records[0].id,
-        name: result.records[0].fields.Name,
-        startDate: result.records[0].fields['Start Date'],
-        status: result.records[0].fields.Status,
-        failureMode: null
-      };
-      
+      const result = await airtableFetch(CLIENTS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Name: newClientName.trim(), 'Start Date': newClientStartDate || new Date().toISOString().split('T')[0], Status: 'Active' } }] }) });
+      const newClient = { id: result.records[0].id, name: result.records[0].fields.Name, startDate: result.records[0].fields['Start Date'], status: 'Active' };
       setClients([...clients, newClient]);
       setActiveClientId(newClient.id);
-      setNewClientName('');
-      setNewClientStartDate('');
-      setShowNewClientModal(false);
-    } catch (err) {
-      console.error('Failed to create client:', err);
-      setError('Failed to create client');
-    } finally {
-      setSaving(false);
-    }
+      setNewClientName(''); setNewClientStartDate(''); setShowNewClientModal(false);
+    } catch (err) { console.error('Failed:', err); setError('Failed to create client'); } finally { setSaving(false); }
   };
 
-  // Delete client
   const deleteClient = async (clientId) => {
-    if (!confirm('Delete this client and all their tasks? This cannot be undone.')) return;
-    
+    if (!confirm('Delete this client and all their data?')) return;
     try {
       setSaving(true);
-      
-      // Delete all tasks for this client
-      const clientTasks = tasks.filter(t => t.clientId === clientId);
-      for (const task of clientTasks) {
-        await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' });
-      }
-      
-      // Delete the client
+      for (const task of tasks.filter(t => t.clientId === clientId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
       await airtableFetch(`${CLIENTS_TABLE}/${clientId}`, { method: 'DELETE' });
-      
-      setClients(clients.filter(c => c.id !== clientId));
-      setTasks(tasks.filter(t => t.clientId !== clientId));
-      
-      if (activeClientId === clientId) {
-        setActiveClientId(null);
-      }
-    } catch (err) {
-      console.error('Failed to delete client:', err);
-      setError('Failed to delete client');
-    } finally {
-      setSaving(false);
-    }
+      setClients(clients.filter(c => c.id !== clientId)); setTasks(tasks.filter(t => t.clientId !== clientId));
+      if (activeClientId === clientId) setActiveClientId(null);
+    } catch (err) { console.error('Failed:', err); setError('Failed to delete'); } finally { setSaving(false); }
   };
 
-  // Toggle task completion
-  const toggleItem = async (taskId, clientId = null) => {
-    const targetClientId = clientId || activeClientId;
-    if (!targetClientId || !userName) {
-      if (!userName) setShowUserModal(true);
-      return;
-    }
-    
-    const existingTask = tasks.find(t => t.clientId === targetClientId && t.taskId === taskId);
-    const newCompleted = !existingTask?.completed;
-    
-    try {
-      setSaving(true);
-      
-      if (existingTask) {
-        // Update existing task
-        const updateFields = {
-          Completed: newCompleted
-        };
-        
-        if (newCompleted) {
-          updateFields['Completed Date'] = new Date().toISOString().split('T')[0];
-          updateFields['Completed By'] = userName;
-        }
-        
-        await updateRecord(TASKS_TABLE, existingTask.id, updateFields);
-        
-        setTasks(tasks.map(t => 
-          t.id === existingTask.id 
-            ? { 
-                ...t, 
-                completed: newCompleted, 
-                completedAt: newCompleted ? new Date().toISOString().split('T')[0] : null,
-                completedBy: newCompleted ? userName : null
-              }
-            : t
-        ));
-      } else {
-        // Create new task record
-        const result = await airtableFetch(TASKS_TABLE, {
-          method: 'POST',
-          body: JSON.stringify({
-            records: [{
-              fields: {
-                Client: [targetClientId],
-                'Task ID': taskId,
-                Completed: true,
-                'Completed Date': new Date().toISOString().split('T')[0],
-                'Completed By': userName
-              }
-            }]
-          })
-        });
-        
-        const newTask = {
-          id: result.records[0].id,
-          clientId: targetClientId,
-          taskId: taskId,
-          completed: true,
-          completedAt: new Date().toISOString().split('T')[0],
-          completedBy: userName,
-          notes: ''
-        };
-        
-        setTasks([...tasks, newTask]);
-      }
-    } catch (err) {
-      console.error('Failed to update task:', err);
-      setError('Failed to update task');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Save note for a task
-  const saveNote = async () => {
-    const targetClientId = noteModal.clientId || activeClientId;
-    if (!targetClientId || !noteModal.taskId) return;
-    
-    const existingTask = tasks.find(t => t.clientId === targetClientId && t.taskId === noteModal.taskId);
-    const isCustom = noteModal.taskId.startsWith('custom-');
-    
-    try {
-      setSaving(true);
-      
-      // For custom tasks, preserve the task text in notes
-      let noteValue = noteModal.note;
-      if (isCustom && existingTask) {
-        const taskText = existingTask.customText || '';
-        noteValue = taskText + '|||' + noteModal.note;
-      }
-      
-      if (existingTask) {
-        await updateRecord(TASKS_TABLE, existingTask.id, { Notes: noteValue });
-        
-        setTasks(tasks.map(t => 
-          t.id === existingTask.id ? { ...t, notes: noteValue } : t
-        ));
-      } else {
-        const result = await airtableFetch(TASKS_TABLE, {
-          method: 'POST',
-          body: JSON.stringify({
-            records: [{
-              fields: {
-                Client: [targetClientId],
-                'Task ID': noteModal.taskId,
-                Completed: false,
-                Notes: noteValue
-              }
-            }]
-          })
-        });
-        
-        const newTask = {
-          id: result.records[0].id,
-          clientId: targetClientId,
-          taskId: noteModal.taskId,
-          completed: false,
-          completedAt: null,
-          completedBy: null,
-          notes: noteValue
-        };
-        
-        setTasks([...tasks, newTask]);
-      }
-      
-      setNoteModal({ open: false, taskId: null, note: '' });
-    } catch (err) {
-      console.error('Failed to save note:', err);
-      setError('Failed to save note');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Add custom task
-  const addCustomTask = async () => {
-    if (!activeClientId || !newTaskText.trim()) return;
-    
-    const customId = `custom-${Date.now()}`;
-    
-    try {
-      setSaving(true);
-      
-      const result = await airtableFetch(TASKS_TABLE, {
-        method: 'POST',
-        body: JSON.stringify({
-          records: [{
-            fields: {
-              Client: [activeClientId],
-              'Task ID': customId,
-              Completed: false,
-              Notes: newTaskText.trim() + '|||'
-            }
-          }]
-        })
-      });
-      
-      const newTask = {
-        id: result.records[0].id,
-        clientId: activeClientId,
-        taskId: customId,
-        completed: false,
-        completedAt: null,
-        completedBy: null,
-        notes: newTaskText.trim() + '|||',
-        isCustom: true,
-        customText: newTaskText.trim()
-      };
-      
-      setTasks([...tasks, newTask]);
-      setCustomTasks([...customTasks, { id: customId, text: newTaskText.trim(), clientId: activeClientId }]);
-      setNewTaskText('');
-      setShowAddTaskModal(false);
-    } catch (err) {
-      console.error('Failed to add custom task:', err);
-      setError('Failed to add custom task');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Delete custom task
-  const deleteCustomTask = async (taskId) => {
-    const existingTask = tasks.find(t => t.clientId === activeClientId && t.taskId === taskId);
-    if (!existingTask) return;
-    
-    try {
-      setSaving(true);
-      await airtableFetch(`${TASKS_TABLE}/${existingTask.id}`, { method: 'DELETE' });
-      setTasks(tasks.filter(t => t.id !== existingTask.id));
-      setCustomTasks(customTasks.filter(t => t.id !== taskId));
-    } catch (err) {
-      console.error('Failed to delete task:', err);
-      setError('Failed to delete task');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Set failure mode
-  const setFailureMode = async (modeId) => {
-    if (!activeClient) return;
-    
-    try {
-      setSaving(true);
-      await airtableFetch(`${CLIENTS_TABLE}/${activeClientId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          fields: {
-            'Failure Mode': modeId
-          }
-        })
-      });
-      
-      setClients(clients.map(c => 
-        c.id === activeClientId ? { ...c, failureMode: modeId } : c
-      ));
-    } catch (err) {
-      console.error('Failed to update failure mode:', err);
-      setError('Failed to update failure mode');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleSection = (sectionId) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [sectionId]: !prev[sectionId]
-    }));
-  };
-
-  // Get custom tasks for current client
-  const getClientCustomTasks = () => {
-    return customTasks.filter(t => t.clientId === activeClientId);
-  };
+  const getClientCustomTasks = () => customTasks.filter(t => t.clientId === activeClientId);
+  const toggleSection = (sectionId) => setExpandedSections(prev => ({ ...prev, [sectionId]: prev[sectionId] === false ? true : false }));
 
   const getPhaseProgress = (phase) => {
     if (!activeClientId) return { completed: 0, total: 0, percent: 0 };
-    
-    let completed = 0;
-    let total = 0;
-    
-    phase.sections.forEach(sectionId => {
-      if (sectionId === 'customTasks') {
-        const clientCustom = getClientCustomTasks();
-        clientCustom.forEach(item => {
-          total++;
-          if (isTaskCompleted(item.id)) completed++;
-        });
-      } else {
-        const section = sprintTemplate[sectionId];
-        if (section) {
-          section.items.forEach(item => {
-            total++;
-            if (isTaskCompleted(item.id)) completed++;
-          });
-        }
-      }
+    let completed = 0, total = 0;
+    phase.sections.forEach(key => {
+      const section = sprintTemplate[key];
+      if (!section) return;
+      if (key === 'customTasks') { getClientCustomTasks().forEach(item => { total++; if (isTaskCompleted(item.id)) completed++; }); }
+      else { section.items.forEach(item => { total++; if (isTaskCompleted(item.id)) completed++; }); }
     });
-    
     return { completed, total, percent: total > 0 ? Math.round((completed / total) * 100) : 0 };
   };
 
   const getTotalProgress = () => {
     if (!activeClientId) return { completed: 0, total: 0, percent: 0 };
-    
-    let completed = 0;
-    let total = 0;
-    
-    Object.entries(sprintTemplate).forEach(([key, section]) => {
-      if (key === 'customTasks') {
-        const clientCustom = getClientCustomTasks();
-        clientCustom.forEach(item => {
-          total++;
-          if (isTaskCompleted(item.id)) completed++;
-        });
-      } else {
-        section.items.forEach(item => {
-          total++;
-          if (isTaskCompleted(item.id)) completed++;
-        });
-      }
+    let completed = 0, total = 0;
+    phases.forEach(phase => {
+      phase.sections.forEach(key => {
+        const section = sprintTemplate[key];
+        if (!section) return;
+        if (key === 'customTasks') { getClientCustomTasks().forEach(item => { total++; if (isTaskCompleted(item.id)) completed++; }); }
+        else { section.items.forEach(item => { total++; if (isTaskCompleted(item.id)) completed++; }); }
+      });
     });
-    
     return { completed, total, percent: total > 0 ? Math.round((completed / total) * 100) : 0 };
   };
 
-  const getCriticalIncomplete = () => {
-    if (!activeClientId) return [];
-    
-    const incomplete = [];
-    Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
-      if (sectionId !== 'customTasks') {
-        section.items.forEach(item => {
-          if (item.critical && !isTaskCompleted(item.id)) {
-            incomplete.push({ ...item, section: section.title });
+  // Job tracker functions
+  const clientJobs = jobs.filter(j => j.clientId === activeClientId);
+  const getJobTasks = (jobId) => tasks.filter(t => t.jobId === jobId);
+
+  const createJob = async () => {
+    if (!activeClientId || !newJobName.trim()) return;
+    try {
+      setSaving(true);
+      const jobResult = await airtableFetch(JOBS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Name: newJobName.trim(), Client: [activeClientId], Template: newJobTemplate ? [newJobTemplate] : undefined, Type: newJobType, Status: 'Active', Created: new Date().toISOString().split('T')[0] } }] }) });
+      const newJob = { id: jobResult.records[0].id, name: jobResult.records[0].fields.Name, clientId: activeClientId, templateId: newJobTemplate || null, type: newJobType, status: 'Active', created: new Date().toISOString().split('T')[0] };
+      setJobs([...jobs, newJob]);
+      setExpandedJobs({ ...expandedJobs, [newJob.id]: true });
+
+      if (newJobTemplate) {
+        const template = jobTemplates.find(t => t.id === newJobTemplate);
+        if (template?.subTasks) {
+          for (const taskText of template.subTasks.split('\n').filter(l => l.trim())) {
+            const taskResult = await airtableFetch(TASKS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Client: [activeClientId], Job: [newJob.id], 'Task ID': `job-${newJob.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, Completed: false, Notes: taskText.trim() } }] }) });
+            setTasks(prev => [...prev, { id: taskResult.records[0].id, clientId: activeClientId, jobId: newJob.id, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: taskText.trim(), assignedTo: '', dueDate: '' }]);
           }
-        });
+        }
       }
-    });
-    return incomplete;
+      setShowNewJobModal(false); setNewJobName(''); setNewJobTemplate(''); setNewJobType('Job'); setActiveJobId(newJob.id);
+    } catch (err) { console.error('Failed:', err); setError('Failed to create job'); } finally { setSaving(false); }
   };
 
+  const addTaskToJob = async () => {
+    if (!activeJobId || !newJobTaskText.trim()) return;
+    try {
+      setSaving(true);
+      const taskResult = await airtableFetch(TASKS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Client: [activeClientId], Job: [activeJobId], 'Task ID': `manual-${activeJobId}-${Date.now()}`, Completed: false, Notes: newJobTaskText.trim(), 'Assigned To': newJobTaskAssignee || undefined, 'Due Date': newJobTaskDueDate || undefined } }] }) });
+      setTasks([...tasks, { id: taskResult.records[0].id, clientId: activeClientId, jobId: activeJobId, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: newJobTaskText.trim(), assignedTo: newJobTaskAssignee, dueDate: newJobTaskDueDate }]);
+      setShowAddJobTaskModal(false); setNewJobTaskText(''); setNewJobTaskAssignee(''); setNewJobTaskDueDate('');
+    } catch (err) { console.error('Failed:', err); setError('Failed to add task'); } finally { setSaving(false); }
+  };
+
+  const toggleJobTask = async (taskId) => {
+    if (!userName) { setShowUserModal(true); return; }
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const newCompleted = !task.completed;
+    try {
+      setSaving(true);
+      const updateFields = { Completed: newCompleted };
+      if (newCompleted) { updateFields['Completed Date'] = new Date().toISOString().split('T')[0]; updateFields['Completed By'] = userName; }
+      await updateRecord(TASKS_TABLE, taskId, updateFields);
+      setTasks(tasks.map(t => t.id === taskId ? { ...t, completed: newCompleted, completedAt: newCompleted ? new Date().toISOString().split('T')[0] : null, completedBy: newCompleted ? userName : null } : t));
+    } catch (err) { console.error('Failed:', err); setError('Failed to update'); } finally { setSaving(false); }
+  };
+
+  const updateTaskAssignee = async (taskId, assignee) => { try { setSaving(true); await updateRecord(TASKS_TABLE, taskId, { 'Assigned To': assignee }); setTasks(tasks.map(t => t.id === taskId ? { ...t, assignedTo: assignee } : t)); } catch (err) { console.error('Failed:', err); } finally { setSaving(false); } };
+  const updateTaskDueDate = async (taskId, dueDate) => { try { setSaving(true); await updateRecord(TASKS_TABLE, taskId, { 'Due Date': dueDate }); setTasks(tasks.map(t => t.id === taskId ? { ...t, dueDate } : t)); } catch (err) { console.error('Failed:', err); } finally { setSaving(false); } };
+
+  const deleteJobTask = async (taskId) => {
+    if (!confirm('Delete this task?')) return;
+    try { setSaving(true); await airtableFetch(`${TASKS_TABLE}/${taskId}`, { method: 'DELETE' }); setTasks(tasks.filter(t => t.id !== taskId)); } catch (err) { console.error('Failed:', err); setError('Failed to delete'); } finally { setSaving(false); }
+  };
+
+  const deleteJob = async (jobId) => {
+    if (!confirm('Delete this job and all tasks?')) return;
+    try {
+      setSaving(true);
+      for (const task of tasks.filter(t => t.jobId === jobId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
+      await airtableFetch(`${JOBS_TABLE}/${jobId}`, { method: 'DELETE' });
+      setTasks(tasks.filter(t => t.jobId !== jobId)); setJobs(jobs.filter(j => j.id !== jobId));
+      if (activeJobId === jobId) setActiveJobId(null);
+    } catch (err) { console.error('Failed:', err); setError('Failed to delete'); } finally { setSaving(false); }
+  };
+
+  const toggleJobComplete = async (jobId) => {
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    const newStatus = job.status === 'Active' ? 'Complete' : 'Active';
+    try { setSaving(true); await updateRecord(JOBS_TABLE, jobId, { Status: newStatus }); setJobs(jobs.map(j => j.id === jobId ? { ...j, status: newStatus } : j)); } catch (err) { console.error('Failed:', err); } finally { setSaving(false); }
+  };
+
+  const getMyTasks = () => tasks.filter(t => t.assignedTo && t.assignedTo.toLowerCase() === userName.toLowerCase() && !t.completed && t.jobId);
+  const getDueSoonTasks = () => {
+    const today = new Date();
+    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return tasks.filter(t => t.dueDate && !t.completed && t.jobId && new Date(t.dueDate) <= weekFromNow).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  };
+
+  const templatesByCategory = jobTemplates.reduce((acc, t) => { const cat = t.category || 'Other'; if (!acc[cat]) acc[cat] = []; acc[cat].push(t); return acc; }, {});
   const currentPhase = phases.find(p => p.id === activePhase);
   const totalProgress = getTotalProgress();
-  const criticalIncomplete = getCriticalIncomplete();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading from Airtable...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && clients.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-slate-800 mb-2">Connection Error</h2>
-          <p className="text-slate-600 mb-4">{error}</p>
-          <button
-            onClick={loadData}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-2 font-medium transition-colors inline-flex items-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-center"><Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" /><p className="text-slate-600">Loading...</p></div></div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className={`text-white ${appMode === 'sprint' ? 'bg-gradient-to-r from-slate-800 to-slate-900' : 'bg-gradient-to-r from-indigo-800 to-indigo-900'}`}>
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <h1 className="text-2xl font-bold">EngageEngine 30-Day Sprint</h1>
-              <p className="text-slate-300 text-sm flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Team Tracker
-                {userName && (
-                  <button 
-                    onClick={() => setShowUserModal(true)}
-                    className="ml-2 bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-xs"
-                  >
-                    {userName}
-                  </button>
-                )}
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Refresh */}
-              <button
-                onClick={loadData}
-                disabled={loading}
-                className="bg-slate-700 hover:bg-slate-600 rounded-lg p-2 transition-colors disabled:opacity-50"
-                title="Refresh Data"
-              >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-              </button>
-              
-              {/* Saving indicator */}
-              {saving && (
-                <div className="flex items-center gap-2 text-slate-300 text-sm">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving...
-                </div>
-              )}
-              
-              {/* View Toggle */}
-              <div className="flex items-center bg-slate-700 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('byClient')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'byClient' 
-                      ? 'bg-slate-600 text-white' 
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  By Client
+            <div className="flex items-center gap-6">
+              <div className="flex items-center bg-black/20 rounded-lg p-1">
+                <button onClick={() => setAppMode('sprint')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${appMode === 'sprint' ? 'bg-white text-slate-800' : 'text-white/70 hover:text-white'}`}>
+                  <ClipboardList className="w-4 h-4" />Sprint Tracker
                 </button>
-                <button
-                  onClick={() => setViewMode('allClients')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'allClients' 
-                      ? 'bg-slate-600 text-white' 
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  All Clients
+                <button onClick={() => setAppMode('jobs')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${appMode === 'jobs' ? 'bg-white text-indigo-800' : 'text-white/70 hover:text-white'}`}>
+                  <Briefcase className="w-4 h-4" />Job Tracker
                 </button>
               </div>
+              {userName && <button onClick={() => setShowUserModal(true)} className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded text-sm">{userName}</button>}
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button onClick={loadData} disabled={loading} className="bg-white/10 hover:bg-white/20 rounded-lg p-2 transition-colors"><RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} /></button>
+              {saving && <div className="flex items-center gap-2 text-white/70 text-sm"><Loader2 className="w-4 h-4 animate-spin" />Saving...</div>}
               
-              {/* Client Selector - only show in byClient mode */}
-              {viewMode === 'byClient' && (
-                <div className="flex items-center gap-2">
-                  <select
-                    value={activeClientId || ''}
-                    onChange={(e) => setActiveClientId(e.target.value || null)}
-                    className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Client...</option>
-                    {clients.map(client => (
-                      <option key={client.id} value={client.id}>{client.name}</option>
-                    ))}
-                  </select>
-                  
-                  <button
-                    onClick={() => setShowNewClientModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 rounded-lg p-2 transition-colors"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
+              {appMode === 'sprint' && (
+                <div className="flex items-center bg-white/10 rounded-lg p-1">
+                  <button onClick={() => setViewMode('byClient')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${viewMode === 'byClient' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>By Client</button>
+                  <button onClick={() => setViewMode('allClients')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${viewMode === 'allClients' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>All Clients</button>
                 </div>
               )}
               
-              {/* Add Client button in allClients mode */}
-              {viewMode === 'allClients' && (
-                <button
-                  onClick={() => setShowNewClientModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 rounded-lg p-2 transition-colors"
-                  title="Add New Client"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
+              {appMode === 'jobs' && (
+                <div className="flex items-center bg-white/10 rounded-lg p-1">
+                  <button onClick={() => setJobViewMode('byClient')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${jobViewMode === 'byClient' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>By Client</button>
+                  <button onClick={() => setJobViewMode('myTasks')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${jobViewMode === 'myTasks' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>My Tasks</button>
+                  <button onClick={() => setJobViewMode('dueSoon')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${jobViewMode === 'dueSoon' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>Due Soon</button>
+                </div>
+              )}
+              
+              {appMode === 'sprint' && viewMode === 'byClient' && (
+                <div className="flex items-center gap-2">
+                  <select value={activeClientId || ''} onChange={(e) => setActiveClientId(e.target.value || null)} className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm">
+                    <option value="">Select Client...</option>
+                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <button onClick={() => setShowNewClientModal(true)} className="bg-blue-600 hover:bg-blue-700 rounded-lg p-2"><Plus className="w-5 h-5" /></button>
+                </div>
               )}
             </div>
           </div>
-          
-          {/* Error banner */}
-          {error && (
-            <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-lg px-4 py-2 text-red-200 text-sm">
-              {error}
-            </div>
-          )}
-          
-          {/* Total Progress */}
-          {activeClient && (
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-slate-300">Overall Progress</span>
-                <span className="text-sm font-medium">{totalProgress.completed} / {totalProgress.total} tasks ({totalProgress.percent}%)</span>
-              </div>
-              <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500"
-                  style={{ width: `${totalProgress.percent}%` }}
-                />
-              </div>
-            </div>
-          )}
+          {error && <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-lg px-4 py-2 text-red-200 text-sm">{error}</div>}
         </div>
       </div>
 
-      {/* All Clients View */}
-      {viewMode === 'allClients' ? (
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          {clients.length === 0 ? (
-            <div className="text-center py-16">
-              <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-slate-700 mb-2">No Clients Yet</h2>
-              <p className="text-slate-500 mb-6">Create your first sprint to get started.</p>
-              <button
-                onClick={() => setShowNewClientModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors inline-flex items-center gap-2"
-              >
-                <Plus className="w-5 h-5" />
-                Start New Sprint
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Sort Options */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600">Group by:</span>
-                  <select
-                    value={allClientsSort}
-                    onChange={(e) => setAllClientsSort(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="task">Task (same tasks together)</option>
-                    <option value="phase">Phase</option>
-                    <option value="client">Client</option>
-                  </select>
+      {/* SPRINT TRACKER */}
+      {appMode === 'sprint' ? (
+        viewMode === 'allClients' ? (
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            {clients.length === 0 ? (
+              <div className="text-center py-16"><Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" /><h2 className="text-xl font-semibold text-slate-700 mb-2">No Clients Yet</h2><button onClick={() => setShowNewClientModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium inline-flex items-center gap-2"><Plus className="w-5 h-5" />Start New Sprint</button></div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2"><span className="text-sm text-slate-600">Group by:</span>
+                    <select value={allClientsSort} onChange={(e) => setAllClientsSort(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+                      <option value="task">Task</option><option value="phase">Phase</option><option value="client">Client</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {clients.map(c => { const color = getClientColor(c.id); return <div key={c.id} className="flex items-center gap-1.5 text-sm"><div className={`w-3 h-3 rounded-full ${color.dot}`}></div><span className="text-slate-600">{c.name}</span></div>; })}
+                  </div>
                 </div>
-                
-                {/* Client Legend */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  {clients.map(client => {
-                    const color = getClientColor(client.id);
-                    return (
-                      <div key={client.id} className="flex items-center gap-1.5 text-sm">
-                        <div className={`w-3 h-3 rounded-full ${color.dot}`}></div>
-                        <span className="text-slate-600">{client.name}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              
-              {/* All Tasks Grid */}
-              <div className="space-y-4">
-                {(() => {
-                  // Build task map - group same tasks across clients
-                  let taskGroups = {};
-                  
-                  // Process template tasks - first create all task entries
-                  Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
-                    const phase = phases.find(p => p.sections?.includes(sectionId));
-                    section.items.forEach(item => {
-                      if (!taskGroups[item.id]) {
-                        taskGroups[item.id] = {
-                          taskId: item.id,
-                          text: item.text,
-                          critical: item.critical,
-                          sectionTitle: section.title,
-                          phaseId: phase?.id || 'preSprint',
-                          phaseName: phase?.name || 'Pre-Sprint',
-                          phaseColor: phase?.color || 'from-slate-500 to-slate-600',
-                          clients: []
-                        };
-                      }
-                    });
-                  });
-                  
-                  // Now add each client's status for each task
-                  Object.keys(taskGroups).forEach(taskId => {
-                    clients.forEach(client => {
-                      const color = getClientColor(client.id);
-                      const completed = isTaskCompleted(taskId, client.id);
-                      const completedBy = getCompletedBy(taskId, client.id);
-                      const notes = getTaskNotes(taskId, client.id);
-                      
-                      taskGroups[taskId].clients.push({
-                        clientId: client.id,
-                        clientName: client.name,
-                        clientColor: color,
-                        completed,
-                        completedBy,
-                        notes
+                <div className="space-y-4">
+                  {(() => {
+                    let taskGroups = {};
+                    Object.entries(sprintTemplate).forEach(([sectionId, section]) => {
+                      const phase = phases.find(p => p.sections?.includes(sectionId));
+                      section.items.forEach(item => {
+                        if (!taskGroups[item.id]) taskGroups[item.id] = { taskId: item.id, text: item.text, critical: item.critical, sectionTitle: section.title, phaseId: phase?.id || 'preSprint', phaseName: phase?.name || 'Pre-Sprint', clients: [] };
                       });
                     });
-                    
-                    // Sort clients: incomplete first, then by name
-                    taskGroups[taskId].clients.sort((a, b) => {
-                      if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                      return a.clientName.localeCompare(b.clientName);
+                    Object.keys(taskGroups).forEach(taskId => {
+                      clients.forEach(c => {
+                        const color = getClientColor(c.id);
+                        taskGroups[taskId].clients.push({ clientId: c.id, clientName: c.name, clientColor: color, completed: isTaskCompleted(taskId, c.id), completedBy: getCompletedBy(taskId, c.id) });
+                      });
+                      taskGroups[taskId].clients.sort((a, b) => a.completed !== b.completed ? (a.completed ? 1 : -1) : a.clientName.localeCompare(b.clientName));
                     });
-                  });
-                  
-                  // Convert to array and sort
-                  let taskList = Object.values(taskGroups);
-                  
-                  // Calculate completion for each task group
-                  taskList.forEach(task => {
-                    task.completedCount = task.clients.filter(c => c.completed).length;
-                    task.totalCount = task.clients.length;
-                  });
-                  
-                  // Group based on sort selection
-                  let grouped = {};
-                  
-                  if (allClientsSort === 'task' || allClientsSort === 'phase') {
-                    // Group by section/phase
+                    let taskList = Object.values(taskGroups);
+                    taskList.forEach(t => { t.completedCount = t.clients.filter(c => c.completed).length; t.totalCount = t.clients.length; });
                     const phaseOrder = ['preSprint', 'week1', 'week2', 'week3', 'week4', 'custom'];
-                    taskList.sort((a, b) => {
-                      const aPhase = phaseOrder.indexOf(a.phaseId);
-                      const bPhase = phaseOrder.indexOf(b.phaseId);
-                      return aPhase - bPhase;
-                    });
-                    
-                    taskList.forEach(task => {
-                      const key = `${task.phaseName} - ${task.sectionTitle}`;
-                      if (!grouped[key]) grouped[key] = { tasks: [], phaseId: task.phaseId, phaseColor: task.phaseColor };
-                      grouped[key].tasks.push(task);
-                    });
-                  } else if (allClientsSort === 'client') {
-                    // Group by client - different structure
-                    clients.forEach(client => {
-                      const color = getClientColor(client.id);
-                      grouped[client.name] = { 
-                        tasks: taskList.map(task => ({
-                          ...task,
-                          clientData: task.clients.find(c => c.clientId === client.id)
-                        })),
-                        clientColor: color
-                      };
-                    });
-                  }
-                  
-                  return Object.entries(grouped).map(([groupName, groupData]) => (
-                    <div key={groupName} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                      <div className="p-4 border-b border-gray-100 bg-slate-50">
-                        <h3 className="font-semibold text-slate-800">{groupName}</h3>
-                        {allClientsSort !== 'client' && (
-                          <p className="text-sm text-slate-500">
-                            {groupData.tasks.length} tasks × {clients.length} clients
-                          </p>
-                        )}
-                      </div>
-                      <div className="divide-y divide-gray-100">
-                        {groupData.tasks.map((task, idx) => (
-                          <div key={`${task.taskId}-${idx}`} className="p-4">
-                            {/* Task Header */}
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="font-medium text-slate-800">{task.text}</span>
-                              {task.critical && (
-                                <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Critical</span>
-                              )}
-                              <span className="text-sm text-slate-400 ml-auto">
-                                {task.completedCount}/{task.totalCount} done
-                              </span>
-                            </div>
-                            
-                            {/* Client Rows */}
-                            <div className="space-y-2">
-                              {allClientsSort === 'client' ? (
-                                // Single client view
-                                <div 
-                                  className={`flex items-center gap-3 p-2 rounded-lg ${task.clientData.completed ? 'bg-emerald-50' : 'bg-slate-50'}`}
-                                >
-                                  <button
-                                    onClick={() => toggleItem(task.taskId, task.clientData.clientId)}
-                                    disabled={saving}
-                                    className="flex-shrink-0"
-                                  >
-                                    {task.clientData.completed ? (
-                                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                    ) : (
-                                      <Circle className="w-5 h-5 text-slate-400 hover:text-blue-500 transition-colors" />
-                                    )}
-                                  </button>
-                                  {task.clientData.completedBy && (
-                                    <span className="text-xs text-slate-500 flex items-center gap-1">
-                                      <User className="w-3 h-3" />
-                                      {task.clientData.completedBy}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                // All clients view - show each client as a row
-                                task.clients.map(clientData => (
-                                  <div 
-                                    key={clientData.clientId}
-                                    className={`flex items-center gap-3 p-2 rounded-lg border ${clientData.clientColor.bg} ${clientData.clientColor.border}`}
-                                  >
-                                    <button
-                                      onClick={() => toggleItem(task.taskId, clientData.clientId)}
-                                      disabled={saving}
-                                      className="flex-shrink-0"
-                                    >
-                                      {clientData.completed ? (
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                      ) : (
-                                        <Circle className="w-5 h-5 text-slate-400 hover:text-blue-500 transition-colors" />
-                                      )}
-                                    </button>
-                                    
-                                    <div className={`w-2.5 h-2.5 rounded-full ${clientData.clientColor.dot}`}></div>
-                                    
-                                    <span className={`font-medium text-sm ${clientData.completed ? 'line-through text-slate-400' : clientData.clientColor.text}`}>
-                                      {clientData.clientName}
-                                    </span>
-                                    
-                                    {clientData.completedBy && (
-                                      <span className="text-xs text-slate-500 flex items-center gap-1 ml-auto">
-                                        <User className="w-3 h-3" />
-                                        {clientData.completedBy}
-                                      </span>
-                                    )}
-                                    
-                                    <button
-                                      onClick={() => setNoteModal({ 
-                                        open: true, 
-                                        taskId: task.taskId, 
-                                        note: clientData.notes || '',
-                                        clientId: clientData.clientId
-                                      })}
-                                      className={`flex-shrink-0 p-1 rounded transition-colors ${
-                                        clientData.notes ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300 hover:text-slate-500 hover:bg-white/50'
-                                      }`}
-                                      title="Add/Edit Note"
-                                    >
-                                      <MessageSquare className="w-4 h-4" />
-                                    </button>
+                    taskList.sort((a, b) => phaseOrder.indexOf(a.phaseId) - phaseOrder.indexOf(b.phaseId));
+                    let grouped = {};
+                    taskList.forEach(t => { const key = `${t.phaseName} - ${t.sectionTitle}`; if (!grouped[key]) grouped[key] = { tasks: [] }; grouped[key].tasks.push(t); });
+                    return Object.entries(grouped).map(([groupName, groupData]) => (
+                      <div key={groupName} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 bg-slate-50"><h3 className="font-semibold text-slate-800">{groupName}</h3><p className="text-sm text-slate-500">{groupData.tasks.length} tasks × {clients.length} clients</p></div>
+                        <div className="divide-y divide-gray-100">
+                          {groupData.tasks.map((task, idx) => (
+                            <div key={`${task.taskId}-${idx}`} className="p-4">
+                              <div className="flex items-center gap-2 mb-3"><span className="font-medium text-slate-800">{task.text}</span>{task.critical && <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Critical</span>}<span className="text-sm text-slate-400 ml-auto">{task.completedCount}/{task.totalCount} done</span></div>
+                              <div className="space-y-2">
+                                {task.clients.map(cd => (
+                                  <div key={cd.clientId} className={`flex items-center gap-3 p-2 rounded-lg border ${cd.clientColor.bg} ${cd.clientColor.border}`}>
+                                    <button onClick={() => toggleSprintItem(task.taskId, cd.clientId)} disabled={saving} className="flex-shrink-0">{cd.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-blue-500" />}</button>
+                                    <div className={`w-2.5 h-2.5 rounded-full ${cd.clientColor.dot}`}></div>
+                                    <span className={`font-medium text-sm ${cd.completed ? 'line-through text-slate-400' : cd.clientColor.text}`}>{cd.clientName}</span>
+                                    {cd.completedBy && <span className="text-xs text-slate-500 flex items-center gap-1 ml-auto"><User className="w-3 h-3" />{cd.completedBy}</span>}
                                   </div>
-                                ))
-                              )}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </>
-          )}
-        </div>
-      ) : !activeClient ? (
-        /* No Client Selected */
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-slate-700 mb-2">No Client Selected</h2>
-          <p className="text-slate-500 mb-6">Select an existing client or create a new sprint.</p>
-          <button
-            onClick={() => setShowNewClientModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-colors inline-flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Start New Sprint
-          </button>
-        </div>
-      ) : (
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Sidebar - Phase Navigation */}
-            <div className="lg:col-span-3">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-slate-800">{activeClient.name}</h3>
-                    <button
-                      onClick={() => deleteClient(activeClient.id)}
-                      className="text-slate-400 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    ));
+                  })()}
+                </div>
+              </>
+            )}
+          </div>
+        ) : !activeClient ? (
+          <div className="max-w-2xl mx-auto px-4 py-16 text-center"><Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" /><h2 className="text-xl font-semibold text-slate-700 mb-2">No Client Selected</h2><p className="text-slate-500 mb-6">Select an existing client or create a new sprint.</p><button onClick={() => setShowNewClientModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium inline-flex items-center gap-2"><Plus className="w-5 h-5" />Start New Sprint</button></div>
+        ) : (
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-3">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex items-center justify-between"><h3 className="font-semibold text-slate-800">{activeClient.name}</h3><button onClick={() => deleteClient(activeClient.id)} className="text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button></div>
+                    <p className="text-xs text-slate-500 mt-1">Started {activeClient.startDate}</p>
+                    <div className="mt-3"><div className="flex items-center justify-between text-sm mb-1"><span className="text-slate-500">Progress</span><span className="font-medium">{totalProgress.percent}%</span></div><div className="h-2 bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all" style={{ width: `${totalProgress.percent}%` }} /></div></div>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">Started {activeClient.startDate}</p>
-                </div>
-                
-                <div className="p-2">
-                  {phases.map(phase => {
-                    const progress = getPhaseProgress(phase);
-                    const Icon = phase.icon;
-                    const isActive = activePhase === phase.id;
-                    
-                    // Hide custom phase if no custom tasks
-                    if (phase.id === 'custom' && getClientCustomTasks().length === 0) {
-                      return null;
-                    }
-                    
-                    return (
-                      <button
-                        key={phase.id}
-                        onClick={() => setActivePhase(phase.id)}
-                        className={`w-full text-left p-3 rounded-lg mb-1 transition-all ${
-                          isActive 
-                            ? 'bg-slate-100 border border-slate-200' 
-                            : 'hover:bg-slate-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${phase.color} flex items-center justify-center flex-shrink-0`}>
-                            <Icon className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-slate-800 text-sm">{phase.name}</div>
-                            <div className="text-xs text-slate-500 truncate">{phase.subtitle}</div>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className={`text-sm font-semibold ${progress.percent === 100 ? 'text-emerald-600' : 'text-slate-600'}`}>
-                              {progress.percent}%
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-2 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full bg-gradient-to-r ${phase.color} transition-all duration-300`}
-                            style={{ width: `${progress.percent}%` }}
-                          />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-                
-                {/* Add Custom Task Button */}
-                <div className="p-4 border-t border-gray-100">
-                  <button
-                    onClick={() => setShowAddTaskModal(true)}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Custom Task
-                  </button>
-                </div>
-                
-                {/* Failure Mode Selector */}
-                <div className="p-4 border-t border-gray-100">
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Failure Mode</h4>
-                  <div className="space-y-2">
-                    {failureModes.map(mode => (
-                      <button
-                        key={mode.id}
-                        onClick={() => setFailureMode(mode.id)}
-                        className={`w-full text-left p-2 rounded-lg border text-xs transition-all ${
-                          activeClient.failureMode === mode.id
-                            ? mode.color + ' border-2'
-                            : 'bg-white border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="font-medium">{mode.name}</div>
-                        {activeClient.failureMode === mode.id && (
-                          <div className="text-xs opacity-75 mt-0.5">→ {mode.control}</div>
-                        )}
-                      </button>
-                    ))}
+                  <div className="p-2">
+                    {phases.map(phase => {
+                      const progress = getPhaseProgress(phase); const Icon = phase.icon; const isActive = activePhase === phase.id;
+                      if (phase.id === 'custom' && getClientCustomTasks().length === 0) return null;
+                      return (
+                        <button key={phase.id} onClick={() => setActivePhase(phase.id)} className={`w-full text-left p-3 rounded-lg mb-1 transition-all ${isActive ? 'bg-slate-100 border border-slate-200' : 'hover:bg-slate-50'}`}>
+                          <div className="flex items-center gap-3"><div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${phase.color} flex items-center justify-center flex-shrink-0`}><Icon className="w-5 h-5 text-white" /></div><div className="flex-1 min-w-0"><div className="font-medium text-slate-800 text-sm">{phase.name}</div><div className="text-xs text-slate-500 truncate">{phase.subtitle}</div></div><div className={`text-sm font-semibold ${progress.percent === 100 ? 'text-emerald-600' : 'text-slate-600'}`}>{progress.percent}%</div></div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-              
-              {/* Critical Items Warning */}
-              {criticalIncomplete.length > 0 && (
-                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-amber-700 mb-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span className="text-sm font-semibold">{criticalIncomplete.length} Critical Items</span>
-                  </div>
-                  <div className="space-y-1">
-                    {criticalIncomplete.slice(0, 5).map(item => (
-                      <div key={item.id} className="text-xs text-amber-600 truncate">
-                        • {item.text}
-                      </div>
-                    ))}
-                    {criticalIncomplete.length > 5 && (
-                      <div className="text-xs text-amber-500">+{criticalIncomplete.length - 5} more...</div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Main Content */}
-            <div className="lg:col-span-9">
-              {currentPhase && (
-                <div className="space-y-4">
-                  {/* Phase Header */}
-                  <div className={`bg-gradient-to-r ${currentPhase.color} rounded-xl p-6 text-white`}>
-                    <div className="flex items-center gap-4">
-                      <currentPhase.icon className="w-10 h-10" />
-                      <div>
-                        <h2 className="text-2xl font-bold">{currentPhase.name}</h2>
-                        <p className="text-white/80">{currentPhase.subtitle}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sections */}
-                  {currentPhase.sections.map(sectionId => {
-                    // Handle custom tasks section
-                    if (sectionId === 'customTasks') {
-                      const clientCustom = getClientCustomTasks();
-                      if (clientCustom.length === 0) return null;
-                      
+              <div className="lg:col-span-9">
+                {currentPhase && (
+                  <div className="space-y-4">
+                    <div className={`bg-gradient-to-r ${currentPhase.color} rounded-xl p-6 text-white`}><div className="flex items-center gap-4"><currentPhase.icon className="w-10 h-10" /><div><h2 className="text-2xl font-bold">{currentPhase.name}</h2><p className="text-white/80">{currentPhase.subtitle}</p></div></div></div>
+                    {currentPhase.sections.map(sectionId => {
+                      const section = sprintTemplate[sectionId]; if (!section) return null;
                       const isExpanded = expandedSections[sectionId] !== false;
-                      const sectionCompleted = clientCustom.filter(item => isTaskCompleted(item.id)).length;
-                      const sectionTotal = clientCustom.length;
-                      const sectionPercent = Math.round((sectionCompleted / sectionTotal) * 100);
-                      
+                      const sectionItems = section.items;
+                      const sectionCompleted = sectionItems.filter(item => isTaskCompleted(item.id)).length;
+                      const sectionTotal = sectionItems.length;
                       return (
                         <div key={sectionId} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                          <button
-                            onClick={() => toggleSection(sectionId)}
-                            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              {isExpanded ? (
-                                <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                              ) : (
-                                <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                              )}
-                              <h3 className="font-semibold text-slate-800 text-left">Custom Tasks</h3>
-                            </div>
-                            <div className="flex items-center gap-3 flex-shrink-0">
-                              <span className={`text-sm font-medium ${sectionPercent === 100 ? 'text-emerald-600' : 'text-slate-500'}`}>
-                                {sectionCompleted}/{sectionTotal}
-                              </span>
-                              <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full transition-all duration-300 ${sectionPercent === 100 ? 'bg-emerald-500' : 'bg-pink-500'}`}
-                                  style={{ width: `${sectionPercent}%` }}
-                                />
-                              </div>
-                            </div>
+                          <button onClick={() => toggleSection(sectionId)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50">
+                            <div className="flex items-center gap-3">{isExpanded ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}<h3 className="font-semibold text-slate-800">{section.title}</h3></div>
+                            <div className="flex items-center gap-3"><span className={`text-sm font-medium ${sectionCompleted === sectionTotal ? 'text-emerald-600' : 'text-slate-500'}`}>{sectionCompleted}/{sectionTotal}</span><div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full transition-all ${sectionCompleted === sectionTotal ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${sectionTotal > 0 ? (sectionCompleted / sectionTotal) * 100 : 0}%` }} /></div></div>
                           </button>
-                          
                           {isExpanded && (
-                            <div className="border-t border-gray-100 p-4">
-                              <div className="space-y-2">
-                                {clientCustom.map(item => {
-                                  const completed = isTaskCompleted(item.id);
-                                  const completedBy = getCompletedBy(item.id);
-                                  const notes = getTaskNotes(item.id);
-                                  
-                                  return (
-                                    <div
-                                      key={item.id}
-                                      className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all ${
-                                        completed
-                                          ? 'bg-emerald-50'
-                                          : 'bg-slate-50'
-                                      }`}
-                                    >
-                                      <button
-                                        onClick={() => toggleItem(item.id)}
-                                        disabled={saving}
-                                        className="flex-shrink-0 mt-0.5"
-                                      >
-                                        {completed ? (
-                                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                        ) : (
-                                          <Circle className="w-5 h-5 text-slate-300 hover:text-slate-400" />
-                                        )}
-                                      </button>
-                                      <div className="flex-1 min-w-0">
-                                        <span className={`text-sm ${
-                                          completed ? 'text-emerald-800 line-through' : 'text-slate-700'
-                                        }`}>
-                                          {item.text}
-                                        </span>
-                                        {completedBy && (
-                                          <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                                            <User className="w-3 h-3" />
-                                            {completedBy}
-                                          </div>
-                                        )}
-                                        {notes && (
-                                          <div className="text-xs text-slate-500 mt-1 bg-white rounded p-2 border border-slate-200">
-                                            {notes}
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="flex items-center gap-1 flex-shrink-0">
-                                        <button
-                                          onClick={() => setNoteModal({ open: true, taskId: item.id, note: notes })}
-                                          className="text-slate-400 hover:text-slate-600 p-1"
-                                          title="Add note"
-                                        >
-                                          <MessageSquare className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                          onClick={() => deleteCustomTask(item.id)}
-                                          className="text-slate-400 hover:text-red-500 p-1"
-                                          title="Delete task"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                    
-                    const section = sprintTemplate[sectionId];
-                    if (!section) return null;
-                    
-                    const isExpanded = expandedSections[sectionId] !== false;
-                    const sectionCompleted = section.items.filter(item => isTaskCompleted(item.id)).length;
-                    const sectionTotal = section.items.length;
-                    const sectionPercent = Math.round((sectionCompleted / sectionTotal) * 100);
-                    
-                    return (
-                      <div key={sectionId} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <button
-                          onClick={() => toggleSection(sectionId)}
-                          className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            {isExpanded ? (
-                              <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                            ) : (
-                              <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                            )}
-                            <h3 className="font-semibold text-slate-800 text-left">{section.title}</h3>
-                          </div>
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            <span className={`text-sm font-medium ${sectionPercent === 100 ? 'text-emerald-600' : 'text-slate-500'}`}>
-                              {sectionCompleted}/{sectionTotal}
-                            </span>
-                            <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full transition-all duration-300 ${sectionPercent === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                                style={{ width: `${sectionPercent}%` }}
-                              />
-                            </div>
-                          </div>
-                        </button>
-                        
-                        {isExpanded && (
-                          <div className="border-t border-gray-100 p-4">
-                            <div className="space-y-2">
-                              {section.items.map(item => {
-                                const completed = isTaskCompleted(item.id);
-                                const completedBy = getCompletedBy(item.id);
-                                const notes = getTaskNotes(item.id);
-                                
+                            <div className="border-t border-gray-100 p-4"><div className="space-y-2">
+                              {sectionItems.map(item => {
+                                const completed = isTaskCompleted(item.id); const completedBy = getCompletedBy(item.id);
                                 return (
-                                  <div
-                                    key={item.id}
-                                    className={`w-full flex items-start gap-3 p-3 rounded-lg transition-all ${
-                                      completed
-                                        ? 'bg-emerald-50'
-                                        : 'bg-slate-50'
-                                    } ${saving ? 'opacity-50' : ''}`}
-                                  >
-                                    <button
-                                      onClick={() => toggleItem(item.id)}
-                                      disabled={saving}
-                                      className="flex-shrink-0 mt-0.5"
-                                    >
-                                      {completed ? (
-                                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                                      ) : (
-                                        <Circle className="w-5 h-5 text-slate-300 hover:text-slate-400" />
-                                      )}
-                                    </button>
-                                    <div className="flex-1 min-w-0">
-                                      <span className={`text-sm ${
-                                        completed ? 'text-emerald-800 line-through' : 'text-slate-700'
-                                      }`}>
-                                        {item.text}
-                                        {item.critical && !completed && (
-                                          <span className="ml-2 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
-                                            CRITICAL
-                                          </span>
-                                        )}
-                                      </span>
-                                      {completedBy && (
-                                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                                          <User className="w-3 h-3" />
-                                          {completedBy}
-                                        </div>
-                                      )}
-                                      {notes && (
-                                        <div className="text-xs text-slate-500 mt-1 bg-white rounded p-2 border border-slate-200">
-                                          {notes}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <button
-                                      onClick={() => setNoteModal({ open: true, taskId: item.id, note: notes })}
-                                      className={`flex-shrink-0 p-1 ${notes ? 'text-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
-                                      title="Add note"
-                                    >
-                                      <MessageSquare className="w-4 h-4" />
-                                    </button>
+                                  <div key={item.id} className={`flex items-center gap-3 p-3 rounded-lg border ${completed ? 'bg-slate-50 border-slate-200' : 'bg-white border-gray-200'}`}>
+                                    <button onClick={() => toggleSprintItem(item.id)} disabled={saving} className="flex-shrink-0">{completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-blue-500" />}</button>
+                                    <span className={`flex-1 text-sm ${completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{item.text}</span>
+                                    {item.critical && <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Critical</span>}
+                                    {completedBy && <span className="text-xs text-slate-400 flex items-center gap-1"><User className="w-3 h-3" />{completedBy}</span>}
                                   </div>
                                 );
                               })}
+                            </div></div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      ) : (
+        /* JOB TRACKER */
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {jobViewMode === 'byClient' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-3">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100"><h3 className="font-semibold text-slate-800">Clients</h3></div>
+                  <div className="p-2 max-h-96 overflow-y-auto">
+                    {clients.map(c => {
+                      const jobCount = jobs.filter(j => j.clientId === c.id && j.status === 'Active').length;
+                      const isActive = activeClientId === c.id;
+                      return (
+                        <button key={c.id} onClick={() => { setActiveClientId(c.id); setActiveJobId(null); }} className={`w-full text-left p-3 rounded-lg mb-1 transition-all ${isActive ? 'bg-indigo-100 border border-indigo-300' : 'hover:bg-slate-50'}`}>
+                          <div className="flex items-center justify-between"><span className="font-medium text-slate-800">{c.name}</span>{jobCount > 0 && <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full">{jobCount}</span>}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div className="lg:col-span-9">
+                {!activeClient ? (
+                  <div className="text-center py-16"><Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" /><h2 className="text-xl font-semibold text-slate-700 mb-2">Select a Client</h2><p className="text-slate-500">Choose a client from the sidebar to view their jobs.</p></div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between"><div><h2 className="text-2xl font-bold text-slate-800">{activeClient.name}</h2><p className="text-slate-500">{clientJobs.filter(j => j.status === 'Active').length} active jobs</p></div><button onClick={() => setShowNewJobModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium flex items-center gap-2"><Plus className="w-5 h-5" />New Job</button></div>
+                    {clientJobs.length === 0 ? (
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center"><Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No jobs yet. Create one to get started.</p></div>
+                    ) : (
+                      <div className="space-y-4">
+                        {clientJobs.map(job => {
+                          const jobTasks = getJobTasks(job.id);
+                          const completedTasks = jobTasks.filter(t => t.completed).length;
+                          const totalTasks = jobTasks.length;
+                          const isExpanded = expandedJobs[job.id];
+                          const template = jobTemplates.find(t => t.id === job.templateId);
+                          const catColor = template ? categoryColors[template.category] || {} : {};
+                          return (
+                            <div key={job.id} className={`bg-white rounded-xl shadow-sm border ${job.status === 'Complete' ? 'border-green-200 bg-green-50/30' : 'border-gray-200'} overflow-hidden`}>
+                              <div className="p-4 cursor-pointer hover:bg-slate-50" onClick={() => setExpandedJobs({ ...expandedJobs, [job.id]: !isExpanded })}>
+                                <div className="flex items-center gap-3">
+                                  {isExpanded ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap"><span className={`font-semibold ${job.status === 'Complete' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{job.name}</span><span className={`text-xs px-2 py-0.5 rounded ${jobTypeColors[job.type]?.bg} ${jobTypeColors[job.type]?.text}`}>{job.type}</span>{template && <span className={`text-xs px-2 py-0.5 rounded ${catColor.bg} ${catColor.text}`}>{template.category}</span>}</div>
+                                    <div className="text-sm text-slate-500 mt-1">{completedTasks}/{totalTasks} tasks complete</div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full transition-all ${job.status === 'Complete' ? 'bg-green-500' : 'bg-indigo-500'}`} style={{ width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` }} /></div>
+                                    <button onClick={(e) => { e.stopPropagation(); toggleJobComplete(job.id); }} className={`p-1 rounded ${job.status === 'Complete' ? 'text-green-600 hover:bg-green-100' : 'text-slate-400 hover:bg-slate-100'}`}><CheckCircle2 className="w-5 h-5" /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); deleteJob(job.id); }} className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50"><Trash2 className="w-5 h-5" /></button>
+                                  </div>
+                                </div>
+                              </div>
+                              {isExpanded && (
+                                <div className="border-t border-gray-100 p-4">
+                                  <div className="space-y-2">
+                                    {jobTasks.map(task => (
+                                      <div key={task.id} className={`flex items-start gap-3 p-3 rounded-lg border ${task.completed ? 'bg-slate-50 border-slate-200' : 'bg-white border-gray-200'}`}>
+                                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5">{task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-indigo-500" />}</button>
+                                        <div className="flex-1 min-w-0">
+                                          <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes}</span>
+                                          <div className="flex items-center gap-4 mt-2">
+                                            <div className="flex items-center gap-1"><User className="w-3 h-3 text-slate-400" /><input type="text" value={task.assignedTo} onChange={(e) => updateTaskAssignee(task.id, e.target.value)} placeholder="Assign..." className="text-xs border-none bg-transparent p-0 w-20 focus:outline-none text-slate-600" /></div>
+                                            <div className="flex items-center gap-1"><Calendar className="w-3 h-3 text-slate-400" /><input type="date" value={task.dueDate} onChange={(e) => updateTaskDueDate(task.id, e.target.value)} className="text-xs border-none bg-transparent p-0 focus:outline-none text-slate-600" /></div>
+                                            {task.completedBy && <span className="text-xs text-slate-400">✓ {task.completedBy}</span>}
+                                          </div>
+                                        </div>
+                                        <button onClick={() => deleteJobTask(task.id)} className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <button onClick={() => { setActiveJobId(job.id); setShowAddJobTaskModal(true); }} className="mt-3 w-full border-2 border-dashed border-slate-200 rounded-lg p-2 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 flex items-center justify-center gap-2"><Plus className="w-4 h-4" />Add Task</button>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        )}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : jobViewMode === 'myTasks' ? (
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-2xl font-bold text-slate-800 mb-6">My Tasks</h2>
+              {getMyTasks().length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center"><User className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No tasks assigned to you.</p></div>
+              ) : (
+                <div className="space-y-2">
+                  {getMyTasks().map(task => {
+                    const job = jobs.find(j => j.id === task.jobId);
+                    const client = clients.find(c => c.id === task.clientId);
+                    return (
+                      <div key={task.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-start gap-3">
+                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5"><Circle className="w-5 h-5 text-slate-400 hover:text-indigo-500" /></button>
+                        <div className="flex-1 min-w-0"><span className="text-sm text-slate-700">{task.notes}</span><div className="flex items-center gap-2 mt-1 text-xs text-slate-500"><span className="font-medium">{client?.name}</span><span>•</span><span>{job?.name}</span>{task.dueDate && <><span>•</span><span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{task.dueDate}</span></>}</div></div>
                       </div>
                     );
                   })}
                 </div>
               )}
             </div>
-          </div>
+          ) : (
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-2xl font-bold text-slate-800 mb-6">Due Soon (Next 7 Days)</h2>
+              {getDueSoonTasks().length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center"><Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No tasks due in the next 7 days.</p></div>
+              ) : (
+                <div className="space-y-2">
+                  {getDueSoonTasks().map(task => {
+                    const job = jobs.find(j => j.id === task.jobId);
+                    const client = clients.find(c => c.id === task.clientId);
+                    const dueDate = new Date(task.dueDate);
+                    const today = new Date();
+                    const isOverdue = dueDate < today;
+                    const isToday = dueDate.toDateString() === today.toDateString();
+                    return (
+                      <div key={task.id} className={`bg-white rounded-lg shadow-sm border p-4 flex items-start gap-3 ${isOverdue ? 'border-red-300 bg-red-50' : isToday ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}>
+                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5"><Circle className="w-5 h-5 text-slate-400 hover:text-indigo-500" /></button>
+                        <div className="flex-1 min-w-0"><span className="text-sm text-slate-700">{task.notes}</span><div className="flex items-center gap-2 mt-1 text-xs text-slate-500"><span className="font-medium">{client?.name}</span><span>•</span><span>{job?.name}</span>{task.assignedTo && <><span>•</span><span className="flex items-center gap-1"><User className="w-3 h-3" />{task.assignedTo}</span></>}</div></div>
+                        <div className={`text-xs font-medium px-2 py-1 rounded ${isOverdue ? 'bg-red-100 text-red-700' : isToday ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{isOverdue ? 'Overdue' : isToday ? 'Today' : task.dueDate}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* User Name Modal */}
+      {/* MODALS */}
       {showUserModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-slate-800">What's your name?</h2>
-              <p className="text-sm text-slate-500 mt-1">This will be shown when you complete tasks</p>
-            </div>
-            
-            <div className="p-6">
-              <input
-                type="text"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                placeholder="e.g., Robbie"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && userName.trim() && saveUserName(userName.trim())}
-              />
-            </div>
-            
-            <div className="p-6 bg-slate-50 flex justify-end">
-              <button
-                onClick={() => saveUserName(userName.trim())}
-                disabled={!userName.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors"
-              >
-                Save
-              </button>
-            </div>
+            <div className="p-6 border-b border-gray-100"><h2 className="text-xl font-semibold text-slate-800">What's your name?</h2><p className="text-sm text-slate-500 mt-1">This will be shown when you complete tasks.</p></div>
+            <div className="p-6"><input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Enter your name..." className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" autoFocus onKeyDown={(e) => e.key === 'Enter' && userName.trim() && saveUserName(userName.trim())} /></div>
+            <div className="p-6 bg-slate-50 flex justify-end"><button onClick={() => saveUserName(userName.trim())} disabled={!userName.trim()} className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium">Continue</button></div>
           </div>
         </div>
       )}
 
-      {/* New Client Modal */}
       {showNewClientModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-slate-800">Start New Sprint</h2>
-              <p className="text-sm text-slate-500 mt-1">Create a new client sprint tracker</p>
-            </div>
-            
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">New Client Sprint</h2><button onClick={() => setShowNewClientModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
             <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Client Name</label>
-                <input
-                  type="text"
-                  value={newClientName}
-                  onChange={(e) => setNewClientName(e.target.value)}
-                  placeholder="e.g., Austin Drilling"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  autoFocus
-                  onKeyDown={(e) => e.key === 'Enter' && createNewClient()}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Sprint Start Date</label>
-                <input
-                  type="date"
-                  value={newClientStartDate}
-                  onChange={(e) => setNewClientStartDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Client Name</label><input type="text" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Enter client name..." className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" autoFocus /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label><input type="date" value={newClientStartDate} onChange={(e) => setNewClientStartDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
             </div>
-            
-            <div className="p-6 bg-slate-50 flex justify-end gap-3">
-              <button
-                onClick={() => setShowNewClientModal(false)}
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createNewClient}
-                disabled={!newClientName.trim() || saving}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors inline-flex items-center gap-2"
-              >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Create Sprint
-              </button>
-            </div>
+            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowNewClientModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={createNewClient} disabled={!newClientName.trim() || saving} className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create Sprint</button></div>
           </div>
         </div>
       )}
 
-      {/* Note Modal */}
-      {noteModal.open && (
+      {showNewJobModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-slate-800">Task Notes</h2>
-              <button
-                onClick={() => setNoteModal({ open: false, taskId: null, note: '' })}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">New Job</h2><button onClick={() => setShowNewJobModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
+            <div className="p-6 space-y-4">
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Name</label><input type="text" value={newJobName} onChange={(e) => setNewJobName(e.target.value)} placeholder="e.g., January Meta Campaign" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" autoFocus /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Type</label><select value={newJobType} onChange={(e) => setNewJobType(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="Job">Job (One-time)</option><option value="Recurring">Recurring (Monthly)</option><option value="Sprint">Sprint</option></select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Template (optional)</label><select value={newJobTemplate} onChange={(e) => setNewJobTemplate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="">No template - start blank</option>{Object.entries(templatesByCategory).map(([cat, temps]) => <optgroup key={cat} label={cat}>{temps.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}</select></div>
+              {newJobTemplate && (
+                <div className="bg-slate-50 rounded-lg p-3"><p className="text-xs font-medium text-slate-500 mb-2">Tasks that will be created:</p><ul className="text-sm text-slate-600 space-y-1">{jobTemplates.find(t => t.id === newJobTemplate)?.subTasks.split('\n').filter(s => s.trim()).map((task, i) => <li key={i} className="flex items-center gap-2"><Circle className="w-3 h-3 text-slate-400" />{task.trim()}</li>)}</ul></div>
+              )}
             </div>
-            
-            <div className="p-6">
-              <textarea
-                value={noteModal.note}
-                onChange={(e) => setNoteModal({ ...noteModal, note: e.target.value })}
-                placeholder="Add notes about this task..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-32 resize-none"
-                autoFocus
-              />
-            </div>
-            
-            <div className="p-6 bg-slate-50 flex justify-end gap-3">
-              <button
-                onClick={() => setNoteModal({ open: false, taskId: null, note: '' })}
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveNote}
-                disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors inline-flex items-center gap-2"
-              >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Save Note
-              </button>
-            </div>
+            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowNewJobModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={createJob} disabled={!newJobName.trim() || saving} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create Job</button></div>
           </div>
         </div>
       )}
 
-      {/* Add Custom Task Modal */}
-      {showAddTaskModal && (
+      {showAddJobTaskModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-slate-800">Add Custom Task</h2>
-              <button
-                onClick={() => setShowAddTaskModal(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">Add Task</h2><button onClick={() => setShowAddJobTaskModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
+            <div className="p-6 space-y-4">
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Task</label><input type="text" value={newJobTaskText} onChange={(e) => setNewJobTaskText(e.target.value)} placeholder="What needs to be done?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" autoFocus /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To (optional)</label><input type="text" value={newJobTaskAssignee} onChange={(e) => setNewJobTaskAssignee(e.target.value)} placeholder="Who's responsible?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Due Date (optional)</label><input type="date" value={newJobTaskDueDate} onChange={(e) => setNewJobTaskDueDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
             </div>
-            
-            <div className="p-6">
-              <input
-                type="text"
-                value={newTaskText}
-                onChange={(e) => setNewTaskText(e.target.value)}
-                placeholder="What needs to be done?"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && newTaskText.trim() && addCustomTask()}
-              />
-            </div>
-            
-            <div className="p-6 bg-slate-50 flex justify-end gap-3">
-              <button
-                onClick={() => setShowAddTaskModal(false)}
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={addCustomTask}
-                disabled={!newTaskText.trim() || saving}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium transition-colors inline-flex items-center gap-2"
-              >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Add Task
-              </button>
-            </div>
+            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowAddJobTaskModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={addTaskToJob} disabled={!newJobTaskText.trim() || saving} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Add Task</button></div>
           </div>
         </div>
       )}
