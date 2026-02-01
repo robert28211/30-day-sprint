@@ -304,7 +304,7 @@ export default function App() {
       const loadedClients = clientsData.records.map(r => ({
         id: r.id, name: r.fields.Name || '', startDate: r.fields['Start Date'] || '', status: r.fields.Status || 'Active', hasSprint: r.fields['Has Sprint'] || false
       }));
-      setClients(loadedClients);
+      setClients(loadedClients.sort((a, b) => a.name.localeCompare(b.name)));
 
       const tasksData = await airtableFetch(TASKS_TABLE);
       const loadedTasks = tasksData.records.map(r => ({
