@@ -301,6 +301,7 @@ export default function App() {
       setLoading(true);
       setError(null);
       const clientsData = await airtableFetch(CLIENTS_TABLE);
+      console.log('Raw Airtable clients:', clientsData.records.length, clientsData.records.map(r => r.fields.Name));
       const loadedClients = clientsData.records.map(r => ({
         id: r.id, name: r.fields.Name || '', startDate: r.fields['Start Date'] || '', status: r.fields.Status || 'Active', hasSprint: r.fields['Has Sprint'] || false
       }));
