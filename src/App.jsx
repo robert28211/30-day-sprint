@@ -627,6 +627,7 @@ export default function App() {
               {appMode === 'jobs' && (
                 <div className="flex items-center bg-white/10 rounded-lg p-1">
                   <button onClick={() => setJobViewMode('byClient')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${jobViewMode === 'byClient' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>By Client</button>
+                  <button onClick={() => setJobViewMode('allJobs')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${jobViewMode === 'allJobs' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>All Jobs</button>
                   <button onClick={() => setJobViewMode('myTasks')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${jobViewMode === 'myTasks' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>My Tasks</button>
                   <button onClick={() => setJobViewMode('dueSoon')} className={`px-3 py-1.5 rounded-md text-sm font-medium ${jobViewMode === 'dueSoon' ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white'}`}>Due Soon</button>
                 </div>
@@ -878,6 +879,61 @@ export default function App() {
                   </div>
                 )}
               </div>
+            </div>
+          ) : jobViewMode === 'allJobs' ? (
+            <div className="space-y-6">
+              {(() => {
+                const activeJobs = jobs.filter(j => j.status === 'Active');
+                const clientsWithJobs = clients.filter(c => activeJobs.some(j => j.clientId === c.id)).sort((a, b) => a.name.localeCompare(b.name));
+                if (clientsWithJobs.length === 0) return <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center"><Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" /><p className="text-slate-500">No active jobs.</p></div>;
+                return clientsWithJobs.map(client => {
+                  const clientActiveJobs = activeJobs.filter(j => j.clientId === client.id);
+                  return (
+                    <div key={client.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      <div className="p-4 border-b border-gray-100 bg-slate-50">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-slate-800 text-lg">{client.name}</h3>
+                          <span className="text-sm text-slate-500">{clientActiveJobs.length} active job{clientActiveJobs.length !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {clientActiveJobs.map(job => {
+                          const jobTasks = tasks.filter(t => t.jobId === job.id);
+                          const completedCount = jobTasks.filter(t => t.completed).length;
+                          const totalCount = jobTasks.length;
+                          const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+                          return (
+                            <div key={job.id} className="p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-medium text-slate-800">{job.name}</span>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${job.type === 'Recurring' ? 'bg-blue-100 text-blue-700' : job.type === 'Sprint' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>{job.type}</span>
+                                </div>
+                                <span className="text-sm text-slate-500">{completedCount}/{totalCount} tasks</span>
+                              </div>
+                              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500 transition-all rounded-full" style={{ width: `${percent}%` }} />
+                              </div>
+                              {jobTasks.filter(t => !t.completed).length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                  {jobTasks.filter(t => !t.completed).map(task => (
+                                    <div key={task.id} className="flex items-center gap-2 text-sm text-slate-600 pl-1">
+                                      <Circle className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                                      <span className="flex-1">{task.notes || task.taskId}</span>
+                                      {task.assignedTo && <span className="text-xs text-slate-400">{task.assignedTo}</span>}
+                                      {task.dueDate && <span className="text-xs text-slate-400">{task.dueDate}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           ) : jobViewMode === 'myTasks' ? (
             <div className="max-w-3xl mx-auto">
