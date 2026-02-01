@@ -301,7 +301,6 @@ export default function App() {
       setLoading(true);
       setError(null);
       const clientsData = await airtableFetch(CLIENTS_TABLE);
-      console.log('Raw Airtable clients:', clientsData.records.length, clientsData.records.map(r => r.fields.Name));
       const loadedClients = clientsData.records.map(r => ({
         id: r.id, name: r.fields.Name || '', startDate: r.fields['Start Date'] || '', status: r.fields.Status || 'Active', hasSprint: r.fields['Has Sprint'] || false
       }));
@@ -788,7 +787,7 @@ export default function App() {
               <div className="lg:col-span-3">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                   <div className="p-4 border-b border-gray-100 flex items-center justify-between"><h3 className="font-semibold text-slate-800">Clients</h3><button onClick={() => setShowNewClientModal(true)} className="bg-emerald-600 hover:bg-emerald-700 rounded-lg p-1.5 text-white"><Plus className="w-4 h-4" /></button></div>
-                  <div className="p-2 max-h-96 overflow-y-auto">
+                  <div className="p-2 overflow-y-auto">
                     {clients.map(c => {
                       const jobCount = jobs.filter(j => j.clientId === c.id && j.status === 'Active').length;
                       const isActive = activeClientId === c.id;
