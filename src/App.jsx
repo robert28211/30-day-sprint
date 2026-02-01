@@ -373,10 +373,31 @@ export default function App() {
 
   const createNewClient = async () => {
     if (!newClientName.trim()) return;
+    const trimmedName = newClientName.trim();
+    const existing = clients.find(c => c.name.toLowerCase() === trimmedName.toLowerCase());
+    if (existing) {
+      if (appMode === 'sprint' && existing.hasSprint) {
+        alert(`"${existing.name}" already has a sprint.`);
+        return;
+      }
+      if (appMode === 'sprint' && !existing.hasSprint) {
+        if (!confirm(`"${existing.name}" already exists. Add a sprint for this client?`)) return;
+        try {
+          setSaving(true);
+          await updateRecord(CLIENTS_TABLE, existing.id, { 'Has Sprint': true, 'Start Date': newClientStartDate || new Date().toISOString().split('T')[0] });
+          setClients(clients.map(c => c.id === existing.id ? { ...c, hasSprint: true, startDate: newClientStartDate || c.startDate } : c));
+          setActiveClientId(existing.id);
+          setNewClientName(''); setNewClientStartDate(''); setShowNewClientModal(false);
+        } catch (err) { console.error('Failed:', err); setError('Failed to update client'); } finally { setSaving(false); }
+        return;
+      }
+      alert(`"${existing.name}" already exists.`);
+      return;
+    }
     try {
       setSaving(true);
       const fields = { 
-        Name: newClientName.trim(), 
+        Name: trimmedName, 
         'Start Date': newClientStartDate || new Date().toISOString().split('T')[0], 
         Status: 'Active' 
       };
@@ -385,7 +406,7 @@ export default function App() {
       }
       const result = await airtableFetch(CLIENTS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields }] }) });
       const newClient = { id: result.records[0].id, name: result.records[0].fields.Name, startDate: result.records[0].fields['Start Date'], status: 'Active', hasSprint: appMode === 'sprint' };
-      setClients([...clients, newClient]);
+      setClients([...clients, newClient].sort((a, b) => a.name.localeCompare(b.name)));
       setActiveClientId(newClient.id);
       setNewClientName(''); setNewClientStartDate(''); setShowNewClientModal(false);
     } catch (err) { console.error('Failed:', err); setError('Failed to create client'); } finally { setSaving(false); }
