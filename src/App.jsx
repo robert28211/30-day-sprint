@@ -392,19 +392,19 @@ export default function App() {
   };
 
   const deleteClient = async (clientId) => {
-    const clientHasJobs = jobs.some(j => j.clientId === clientId);
-    if (appMode === 'sprint' && clientHasJobs) {
-      if (!confirm('Remove this client from Sprint Tracker? Their jobs will remain.')) return;
+    if (appMode === 'sprint') {
+      if (!confirm('Remove this client from Sprint Tracker?')) return;
       try {
         setSaving(true);
         for (const task of tasks.filter(t => t.clientId === clientId && !t.jobId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
         await updateRecord(CLIENTS_TABLE, clientId, { 'Has Sprint': false });
         setClients(clients.map(c => c.id === clientId ? { ...c, hasSprint: false } : c));
         setTasks(tasks.filter(t => !(t.clientId === clientId && !t.jobId)));
+        setCustomTasks(customTasks.filter(t => t.clientId !== clientId));
         if (activeClientId === clientId) setActiveClientId(null);
       } catch (err) { console.error('Failed:', err); setError('Failed to remove sprint'); } finally { setSaving(false); }
     } else {
-      if (!confirm('Delete this client and all their data?')) return;
+      if (!confirm('Delete this client and all their data? This cannot be undone.')) return;
       try {
         setSaving(true);
         for (const task of tasks.filter(t => t.clientId === clientId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
@@ -921,12 +921,12 @@ export default function App() {
       {showNewClientModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">New Client Sprint</h2><button onClick={() => setShowNewClientModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">{appMode === 'sprint' ? 'New Client Sprint' : 'New Client'}</h2><button onClick={() => setShowNewClientModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
             <div className="p-6 space-y-4">
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Client Name</label><input type="text" value={newClientName} onChange={(e) => setNewClientName(e.target.value)} placeholder="Enter client name..." className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" autoFocus /></div>
-              <div><label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label><input type="date" value={newClientStartDate} onChange={(e) => setNewClientStartDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              {appMode === 'sprint' && <div><label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label><input type="date" value={newClientStartDate} onChange={(e) => setNewClientStartDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>}
             </div>
-            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowNewClientModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={createNewClient} disabled={!newClientName.trim() || saving} className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Create Sprint</button></div>
+            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowNewClientModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={createNewClient} disabled={!newClientName.trim() || saving} className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}{appMode === 'sprint' ? 'Create Sprint' : 'Add Client'}</button></div>
           </div>
         </div>
       )}
