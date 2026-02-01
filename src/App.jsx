@@ -397,13 +397,12 @@ export default function App() {
       try {
         setSaving(true);
         await updateRecord(CLIENTS_TABLE, clientId, { 'Has Sprint': false });
-        setClients(clients.map(c => c.id === clientId ? { ...c, hasSprint: false } : c));
         const sprintTasks = tasks.filter(t => t.clientId === clientId && !t.jobId);
         for (const task of sprintTasks) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
-        setTasks(tasks.filter(t => !(t.clientId === clientId && !t.jobId)));
-        setCustomTasks(customTasks.filter(t => t.clientId !== clientId));
         if (activeClientId === clientId) setActiveClientId(null);
-      } catch (err) { console.error('Sprint remove failed:', err); setError('Failed to remove sprint'); } finally { setSaving(false); }
+        setSaving(false);
+        loadData();
+      } catch (err) { console.error('Sprint remove failed:', err); setError('Failed to remove sprint'); setSaving(false); }
     } else {
       if (!confirm('FULL DELETE: This will permanently delete this client, all jobs, and all tasks. Cannot be undone.')) return;
       try {
