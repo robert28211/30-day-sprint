@@ -393,18 +393,19 @@ export default function App() {
 
   const deleteClient = async (clientId) => {
     if (appMode === 'sprint') {
-      if (!confirm('Remove this client from Sprint Tracker?')) return;
+      if (!confirm('SPRINT REMOVE: This only removes the sprint. Client stays in Job Tracker.')) return;
       try {
         setSaving(true);
-        for (const task of tasks.filter(t => t.clientId === clientId && !t.jobId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
         await updateRecord(CLIENTS_TABLE, clientId, { 'Has Sprint': false });
         setClients(clients.map(c => c.id === clientId ? { ...c, hasSprint: false } : c));
+        const sprintTasks = tasks.filter(t => t.clientId === clientId && !t.jobId);
+        for (const task of sprintTasks) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
         setTasks(tasks.filter(t => !(t.clientId === clientId && !t.jobId)));
         setCustomTasks(customTasks.filter(t => t.clientId !== clientId));
         if (activeClientId === clientId) setActiveClientId(null);
-      } catch (err) { console.error('Failed:', err); setError('Failed to remove sprint'); } finally { setSaving(false); }
+      } catch (err) { console.error('Sprint remove failed:', err); setError('Failed to remove sprint'); } finally { setSaving(false); }
     } else {
-      if (!confirm('Delete this client and all their data? This cannot be undone.')) return;
+      if (!confirm('FULL DELETE: This will permanently delete this client, all jobs, and all tasks. Cannot be undone.')) return;
       try {
         setSaving(true);
         for (const task of tasks.filter(t => t.clientId === clientId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
@@ -412,7 +413,7 @@ export default function App() {
         await airtableFetch(`${CLIENTS_TABLE}/${clientId}`, { method: 'DELETE' });
         setClients(clients.filter(c => c.id !== clientId)); setTasks(tasks.filter(t => t.clientId !== clientId)); setJobs(jobs.filter(j => j.clientId !== clientId));
         if (activeClientId === clientId) setActiveClientId(null);
-      } catch (err) { console.error('Failed:', err); setError('Failed to delete'); } finally { setSaving(false); }
+      } catch (err) { console.error('Full delete failed:', err); setError('Failed to delete'); } finally { setSaving(false); }
     }
   };
 
