@@ -302,7 +302,7 @@ export default function App() {
       setError(null);
       const clientsData = await airtableFetch(CLIENTS_TABLE);
       const loadedClients = clientsData.records.map(r => ({
-        id: r.id, name: r.fields.Name || '', startDate: r.fields['Start Date'] || '', status: r.fields.Status || 'Active'
+        id: r.id, name: r.fields.Name || '', startDate: r.fields['Start Date'] || '', status: r.fields.Status || 'Active', hasSprint: r.fields['Has Sprint'] || false
       }));
       setClients(loadedClients);
 
@@ -341,6 +341,7 @@ export default function App() {
 
   const saveUserName = (name) => { localStorage.setItem('engageengine-username', name); setUserName(name); setShowUserModal(false); };
   const activeClient = clients.find(c => c.id === activeClientId);
+  const sprintClients = clients.filter(c => c.hasSprint);
   const getClientColor = (clientId) => { const idx = clients.findIndex(c => c.id === clientId); return clientColors[idx % clientColors.length]; };
 
   // Sprint functions
@@ -374,8 +375,16 @@ export default function App() {
     if (!newClientName.trim()) return;
     try {
       setSaving(true);
-      const result = await airtableFetch(CLIENTS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields: { Name: newClientName.trim(), 'Start Date': newClientStartDate || new Date().toISOString().split('T')[0], Status: 'Active' } }] }) });
-      const newClient = { id: result.records[0].id, name: result.records[0].fields.Name, startDate: result.records[0].fields['Start Date'], status: 'Active' };
+      const fields = { 
+        Name: newClientName.trim(), 
+        'Start Date': newClientStartDate || new Date().toISOString().split('T')[0], 
+        Status: 'Active' 
+      };
+      if (appMode === 'sprint') {
+        fields['Has Sprint'] = true;
+      }
+      const result = await airtableFetch(CLIENTS_TABLE, { method: 'POST', body: JSON.stringify({ records: [{ fields }] }) });
+      const newClient = { id: result.records[0].id, name: result.records[0].fields.Name, startDate: result.records[0].fields['Start Date'], status: 'Active', hasSprint: appMode === 'sprint' };
       setClients([...clients, newClient]);
       setActiveClientId(newClient.id);
       setNewClientName(''); setNewClientStartDate(''); setShowNewClientModal(false);
@@ -383,14 +392,28 @@ export default function App() {
   };
 
   const deleteClient = async (clientId) => {
-    if (!confirm('Delete this client and all their data?')) return;
-    try {
-      setSaving(true);
-      for (const task of tasks.filter(t => t.clientId === clientId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
-      await airtableFetch(`${CLIENTS_TABLE}/${clientId}`, { method: 'DELETE' });
-      setClients(clients.filter(c => c.id !== clientId)); setTasks(tasks.filter(t => t.clientId !== clientId));
-      if (activeClientId === clientId) setActiveClientId(null);
-    } catch (err) { console.error('Failed:', err); setError('Failed to delete'); } finally { setSaving(false); }
+    const clientHasJobs = jobs.some(j => j.clientId === clientId);
+    if (appMode === 'sprint' && clientHasJobs) {
+      if (!confirm('Remove this client from Sprint Tracker? Their jobs will remain.')) return;
+      try {
+        setSaving(true);
+        for (const task of tasks.filter(t => t.clientId === clientId && !t.jobId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
+        await updateRecord(CLIENTS_TABLE, clientId, { 'Has Sprint': false });
+        setClients(clients.map(c => c.id === clientId ? { ...c, hasSprint: false } : c));
+        setTasks(tasks.filter(t => !(t.clientId === clientId && !t.jobId)));
+        if (activeClientId === clientId) setActiveClientId(null);
+      } catch (err) { console.error('Failed:', err); setError('Failed to remove sprint'); } finally { setSaving(false); }
+    } else {
+      if (!confirm('Delete this client and all their data?')) return;
+      try {
+        setSaving(true);
+        for (const task of tasks.filter(t => t.clientId === clientId)) { await airtableFetch(`${TASKS_TABLE}/${task.id}`, { method: 'DELETE' }); }
+        for (const job of jobs.filter(j => j.clientId === clientId)) { await airtableFetch(`${JOBS_TABLE}/${job.id}`, { method: 'DELETE' }); }
+        await airtableFetch(`${CLIENTS_TABLE}/${clientId}`, { method: 'DELETE' });
+        setClients(clients.filter(c => c.id !== clientId)); setTasks(tasks.filter(t => t.clientId !== clientId)); setJobs(jobs.filter(j => j.clientId !== clientId));
+        if (activeClientId === clientId) setActiveClientId(null);
+      } catch (err) { console.error('Failed:', err); setError('Failed to delete'); } finally { setSaving(false); }
+    }
   };
 
   const getClientCustomTasks = () => customTasks.filter(t => t.clientId === activeClientId);
@@ -592,7 +615,7 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <select value={activeClientId || ''} onChange={(e) => setActiveClientId(e.target.value || null)} className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm">
                     <option value="">Select Client...</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {clients.filter(c => c.hasSprint).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                   <button onClick={() => setShowNewClientModal(true)} className="bg-blue-600 hover:bg-blue-700 rounded-lg p-2"><Plus className="w-5 h-5" /></button>
                 </div>
@@ -607,7 +630,7 @@ export default function App() {
       {appMode === 'sprint' ? (
         viewMode === 'allClients' ? (
           <div className="max-w-7xl mx-auto px-4 py-6">
-            {clients.length === 0 ? (
+            {sprintClients.length === 0 ? (
               <div className="text-center py-16"><Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" /><h2 className="text-xl font-semibold text-slate-700 mb-2">No Clients Yet</h2><button onClick={() => setShowNewClientModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-3 font-medium inline-flex items-center gap-2"><Plus className="w-5 h-5" />Start New Sprint</button></div>
             ) : (
               <>
@@ -618,7 +641,7 @@ export default function App() {
                     </select>
                   </div>
                   <div className="flex items-center gap-3 flex-wrap">
-                    {clients.map(c => { const color = getClientColor(c.id); return <div key={c.id} className="flex items-center gap-1.5 text-sm"><div className={`w-3 h-3 rounded-full ${color.dot}`}></div><span className="text-slate-600">{c.name}</span></div>; })}
+                    {sprintClients.map(c => { const color = getClientColor(c.id); return <div key={c.id} className="flex items-center gap-1.5 text-sm"><div className={`w-3 h-3 rounded-full ${color.dot}`}></div><span className="text-slate-600">{c.name}</span></div>; })}
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -631,7 +654,7 @@ export default function App() {
                       });
                     });
                     Object.keys(taskGroups).forEach(taskId => {
-                      clients.forEach(c => {
+                      sprintClients.forEach(c => {
                         const color = getClientColor(c.id);
                         taskGroups[taskId].clients.push({ clientId: c.id, clientName: c.name, clientColor: color, completed: isTaskCompleted(taskId, c.id), completedBy: getCompletedBy(taskId, c.id) });
                       });
@@ -645,7 +668,7 @@ export default function App() {
                     taskList.forEach(t => { const key = `${t.phaseName} - ${t.sectionTitle}`; if (!grouped[key]) grouped[key] = { tasks: [] }; grouped[key].tasks.push(t); });
                     return Object.entries(grouped).map(([groupName, groupData]) => (
                       <div key={groupName} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-slate-50"><h3 className="font-semibold text-slate-800">{groupName}</h3><p className="text-sm text-slate-500">{groupData.tasks.length} tasks × {clients.length} clients</p></div>
+                        <div className="p-4 border-b border-gray-100 bg-slate-50"><h3 className="font-semibold text-slate-800">{groupName}</h3><p className="text-sm text-slate-500">{groupData.tasks.length} tasks × {sprintClients.length} clients</p></div>
                         <div className="divide-y divide-gray-100">
                           {groupData.tasks.map((task, idx) => (
                             <div key={`${task.taskId}-${idx}`} className="p-4">
