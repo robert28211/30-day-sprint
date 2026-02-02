@@ -355,6 +355,7 @@ export default function App() {
   const getCompletedBy = (taskId, clientId = null) => getTaskRecord(taskId, clientId)?.completedBy || null;
 
   const toggleSprintItem = async (taskId, clientId = null) => {
+    console.log('toggleSprintItem called:', taskId, 'saving:', saving, 'userName:', userName);
     const targetClientId = clientId || activeClientId;
     if (!targetClientId || !userName) { if (!userName) setShowUserModal(true); return; }
     const existingTask = tasks.find(t => t.clientId === targetClientId && t.taskId === taskId && !t.jobId);
@@ -563,6 +564,7 @@ export default function App() {
   };
 
   const toggleJobTask = async (taskId) => {
+    console.log('toggleJobTask called:', taskId, 'saving:', saving, 'userName:', userName);
     if (!userName) { setShowUserModal(true); return; }
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
