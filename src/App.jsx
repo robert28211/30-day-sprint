@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User, Briefcase, Calendar, Clock, ClipboardList, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User, Briefcase, Calendar, Clock, ClipboardList, ExternalLink, Mail } from 'lucide-react';
 
 const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -563,6 +563,108 @@ export default function App() {
     } catch (err) { console.error('Failed:', err); setError('Failed to add task'); } finally { setSaving(false); }
   };
 
+  const parseEml = (text) => {
+    const headers = {};
+    const lines = text.split(/\r?\n/);
+    let i = 0;
+    let currentHeader = '';
+    // Parse headers
+    for (; i < lines.length; i++) {
+      if (lines[i] === '') break;
+      if (/^\s/.test(lines[i]) && currentHeader) {
+        headers[currentHeader] += ' ' + lines[i].trim();
+      } else {
+        const match = lines[i].match(/^([^:]+):\s*(.*)/);
+        if (match) {
+          currentHeader = match[1].toLowerCase();
+          headers[currentHeader] = match[2].trim();
+        }
+      }
+    }
+    // Body is everything after the blank line
+    const body = lines.slice(i + 1).join('\n').trim();
+    // Clean up body - strip HTML if present
+    let cleanBody = body;
+    if (cleanBody.includes('<html') || cleanBody.includes('<div') || cleanBody.includes('<p')) {
+      cleanBody = cleanBody.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+      cleanBody = cleanBody.replace(/<br\s*\/?>/gi, '\n');
+      cleanBody = cleanBody.replace(/<\/p>/gi, '\n');
+      cleanBody = cleanBody.replace(/<\/div>/gi, '\n');
+      cleanBody = cleanBody.replace(/<[^>]+>/g, '');
+      cleanBody = cleanBody.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+      cleanBody = cleanBody.replace(/\n{3,}/g, '\n\n').trim();
+    }
+    // Handle quoted-printable encoding
+    if (headers['content-transfer-encoding']?.includes('quoted-printable')) {
+      cleanBody = cleanBody.replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    }
+    const fromMatch = (headers['from'] || '').match(/(?:"?([^"<]*)"?\s*)?<?([^>]*)>?/);
+    return {
+      subject: headers['subject'] || 'No Subject',
+      from: fromMatch ? (fromMatch[1]?.trim() || fromMatch[2] || headers['from']) : (headers['from'] || 'Unknown'),
+      fromEmail: fromMatch ? fromMatch[2] : '',
+      date: headers['date'] || '',
+      body: cleanBody.substring(0, 2000) // Cap at 2000 chars
+    };
+  };
+
+  const [dragOverJob, setDragOverJob] = useState(null);
+
+  const handleEmailDrop = async (e, jobId, clientId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverJob(null);
+
+    let emailData = null;
+
+    // Check for .eml files
+    const files = Array.from(e.dataTransfer.files);
+    const emlFile = files.find(f => f.name.endsWith('.eml') || f.type === 'message/rfc822');
+    if (emlFile) {
+      const text = await emlFile.text();
+      emailData = parseEml(text);
+    }
+
+    // Check for dragged text (from some email clients)
+    if (!emailData) {
+      const text = e.dataTransfer.getData('text/plain');
+      if (text && text.length > 20) {
+        // Check if it looks like an email (has common headers)
+        if (text.match(/^(From|Subject|Date|To):/mi)) {
+          emailData = parseEml(text);
+        } else {
+          // Just plain text - use as note
+          emailData = { subject: 'Dropped Note', from: '', fromEmail: '', date: new Date().toISOString().split('T')[0], body: text.substring(0, 2000) };
+        }
+      }
+    }
+
+    if (!emailData) { setError('Could not read email data. Try dragging an .eml file.'); return; }
+
+    // Build the note
+    const noteParts = [`📧 ${emailData.subject}`];
+    if (emailData.from) noteParts.push(`From: ${emailData.from}${emailData.fromEmail ? ` (${emailData.fromEmail})` : ''}`);
+    if (emailData.date) noteParts.push(`Date: ${emailData.date}`);
+    if (emailData.body) noteParts.push(`---\n${emailData.body}`);
+    const noteText = noteParts.join('\n');
+
+    try {
+      setSaving(true);
+      const taskFields = {
+        Client: [clientId],
+        Job: [jobId],
+        'Task ID': `email-${jobId}-${Date.now()}`,
+        Completed: false,
+        Notes: noteText
+      };
+      const taskResult = await airtableFetch(TASKS_TABLE, {
+        method: 'POST',
+        body: JSON.stringify({ records: [{ fields: taskFields }] })
+      });
+      setTasks(prev => [...prev, { id: taskResult.records[0].id, clientId, jobId, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: noteText, assignedTo: '', dueDate: '' }]);
+    } catch (err) { console.error('Failed:', err); setError('Failed to save email note'); } finally { setSaving(false); }
+  };
+
   const toggleJobTask = async (taskId) => {
     if (!userName) { setShowUserModal(true); return; }
     const task = tasks.find(t => t.id === taskId);
@@ -877,7 +979,14 @@ export default function App() {
                                       <div key={task.id} className={`flex items-start gap-3 p-3 rounded-lg border ${task.completed ? 'bg-slate-50 border-slate-200' : 'bg-white border-gray-200'}`}>
                                         <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5">{task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-emerald-500" />}</button>
                                         <div className="flex-1 min-w-0">
-                                          <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes}</span>
+                                          {task.notes?.includes('\n') ? (
+                                            <div className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                              <div className="font-medium">{task.notes.split('\n')[0]}</div>
+                                              <pre className="whitespace-pre-wrap text-xs text-slate-500 mt-1 max-h-32 overflow-y-auto font-sans">{task.notes.split('\n').slice(1).join('\n').trim()}</pre>
+                                            </div>
+                                          ) : (
+                                            <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes}</span>
+                                          )}
                                           <div className="flex items-center gap-4 mt-2">
                                             <div className="flex items-center gap-1"><User className="w-3 h-3 text-slate-400" /><input type="text" value={task.assignedTo} onChange={(e) => updateTaskAssignee(task.id, e.target.value)} placeholder="Assign..." className="text-xs border-none bg-transparent p-0 w-20 focus:outline-none text-slate-600" /></div>
                                             <div className="flex items-center gap-1"><Calendar className="w-3 h-3 text-slate-400" /><input type="date" value={task.dueDate} onChange={(e) => updateTaskDueDate(task.id, e.target.value)} className="text-xs border-none bg-transparent p-0 focus:outline-none text-slate-600" /></div>
@@ -889,6 +998,15 @@ export default function App() {
                                     ))}
                                   </div>
                                   <button onClick={() => { setActiveJobId(job.id); setShowAddJobTaskModal(true); }} className="mt-3 w-full border-2 border-dashed border-slate-200 rounded-lg p-2 text-slate-500 hover:border-emerald-400 hover:text-emerald-600 flex items-center justify-center gap-2"><Plus className="w-4 h-4" />Add Task</button>
+                                  <div
+                                    onDragOver={(e) => { e.preventDefault(); setDragOverJob(job.id); }}
+                                    onDragLeave={() => setDragOverJob(null)}
+                                    onDrop={(e) => handleEmailDrop(e, job.id, activeClientId)}
+                                    className={`mt-2 w-full border-2 border-dashed rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${dragOverJob === job.id ? 'border-blue-400 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500'}`}
+                                  >
+                                    <Mail className="w-4 h-4" />
+                                    <span className="text-sm">{dragOverJob === job.id ? 'Drop email here' : 'Drag email (.eml) here'}</span>
+                                  </div>
                                 </div>
                               )}
                             </div>
