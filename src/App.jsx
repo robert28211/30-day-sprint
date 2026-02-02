@@ -609,6 +609,7 @@ export default function App() {
   };
 
   const [dragOverJob, setDragOverJob] = useState(null);
+  const [expandedNotes, setExpandedNotes] = useState({});
 
   const handleEmailDrop = async (e, jobId, clientId) => {
     e.preventDefault();
@@ -980,9 +981,14 @@ export default function App() {
                                         <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5">{task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-emerald-500" />}</button>
                                         <div className="flex-1 min-w-0">
                                           {task.notes?.includes('\n') ? (
-                                            <div className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                              <div className="font-medium">{task.notes.split('\n')[0]}</div>
-                                              <pre className="whitespace-pre-wrap text-xs text-slate-500 mt-1 max-h-32 overflow-y-auto font-sans">{task.notes.split('\n').slice(1).join('\n').trim()}</pre>
+                                            <div className={`text-sm ${task.completed ? 'text-slate-400' : 'text-slate-700'}`}>
+                                              <button onClick={() => setExpandedNotes(prev => ({ ...prev, [task.id]: !prev[task.id] }))} className="flex items-center gap-1 text-left w-full group">
+                                                {expandedNotes[task.id] ? <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />}
+                                                <span className={`font-medium ${task.completed ? 'line-through' : ''}`}>{task.notes.split('\n')[0]}</span>
+                                              </button>
+                                              {expandedNotes[task.id] && (
+                                                <pre className="whitespace-pre-wrap text-xs text-slate-500 mt-2 ml-5 p-3 bg-slate-50 rounded-lg border border-slate-100 font-sans max-h-64 overflow-y-auto">{task.notes.split('\n').slice(1).join('\n').trim()}</pre>
+                                              )}
                                             </div>
                                           ) : (
                                             <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes}</span>
