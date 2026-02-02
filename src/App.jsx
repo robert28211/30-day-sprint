@@ -288,6 +288,8 @@ export default function App() {
   const [newJobName, setNewJobName] = useState('');
   const [newJobTemplate, setNewJobTemplate] = useState('');
   const [newJobType, setNewJobType] = useState('Job');
+  const [newJobDueDate, setNewJobDueDate] = useState('');
+  const [newJobAssignee, setNewJobAssignee] = useState('');
   const [newJobTaskText, setNewJobTaskText] = useState('');
   const [newJobTaskDueDate, setNewJobTaskDueDate] = useState('');
   const [newJobTaskAssignee, setNewJobTaskAssignee] = useState('');
@@ -505,15 +507,32 @@ export default function App() {
               Completed: false,
               Notes: taskText.trim()
             };
+            if (newJobAssignee.trim()) taskFields['Assigned To'] = newJobAssignee.trim();
+            if (newJobDueDate) taskFields['Due Date'] = newJobDueDate;
             const taskResult = await airtableFetch(TASKS_TABLE, { 
               method: 'POST', 
               body: JSON.stringify({ records: [{ fields: taskFields }] }) 
             });
-            setTasks(prev => [...prev, { id: taskResult.records[0].id, clientId: activeClientId, jobId: newJob.id, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: taskText.trim(), assignedTo: '', dueDate: '' }]);
+            setTasks(prev => [...prev, { id: taskResult.records[0].id, clientId: activeClientId, jobId: newJob.id, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: taskText.trim(), assignedTo: newJobAssignee.trim(), dueDate: newJobDueDate }]);
           }
         }
+      } else {
+        const taskFields = {
+          Client: [activeClientId],
+          Job: [newJob.id],
+          'Task ID': `job-${newJob.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          Completed: false,
+          Notes: newJobName.trim()
+        };
+        if (newJobAssignee.trim()) taskFields['Assigned To'] = newJobAssignee.trim();
+        if (newJobDueDate) taskFields['Due Date'] = newJobDueDate;
+        const taskResult = await airtableFetch(TASKS_TABLE, { 
+          method: 'POST', 
+          body: JSON.stringify({ records: [{ fields: taskFields }] }) 
+        });
+        setTasks(prev => [...prev, { id: taskResult.records[0].id, clientId: activeClientId, jobId: newJob.id, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: newJobName.trim(), assignedTo: newJobAssignee.trim(), dueDate: newJobDueDate }]);
       }
-      setShowNewJobModal(false); setNewJobName(''); setNewJobTemplate(''); setNewJobType('Job'); setActiveJobId(newJob.id);
+      setShowNewJobModal(false); setNewJobName(''); setNewJobTemplate(''); setNewJobType('Job'); setNewJobDueDate(''); setNewJobAssignee(''); setActiveJobId(newJob.id);
     } catch (err) { console.error('Failed:', err); setError('Failed to create job'); } finally { setSaving(false); }
   };
 
@@ -1016,6 +1035,8 @@ export default function App() {
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Name</label><input type="text" value={newJobName} onChange={(e) => setNewJobName(e.target.value)} placeholder="e.g., January Meta Campaign" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" autoFocus /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Type</label><select value={newJobType} onChange={(e) => setNewJobType(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"><option value="Job">Job (One-time)</option><option value="Recurring">Recurring (Monthly)</option><option value="Sprint">Sprint</option></select></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Template (optional)</label><select value={newJobTemplate} onChange={(e) => setNewJobTemplate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"><option value="">No template - start blank</option>{Object.entries(templatesByCategory).map(([cat, temps]) => <optgroup key={cat} label={cat}>{temps.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}</select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To (optional)</label><input type="text" value={newJobAssignee} onChange={(e) => setNewJobAssignee(e.target.value)} placeholder="Who's responsible?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Due Date (optional)</label><input type="date" value={newJobDueDate} onChange={(e) => setNewJobDueDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
               {newJobTemplate && (
                 <div className="bg-slate-50 rounded-lg p-3"><p className="text-xs font-medium text-slate-500 mb-2">Tasks that will be created:</p><ul className="text-sm text-slate-600 space-y-1">{jobTemplates.find(t => t.id === newJobTemplate)?.subTasks.split('\n').filter(s => s.trim()).map((task, i) => <li key={i} className="flex items-center gap-2"><Circle className="w-3 h-3 text-slate-400" />{task.trim()}</li>)}</ul></div>
               )}
