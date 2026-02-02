@@ -998,8 +998,8 @@ export default function App() {
                                           <button onClick={() => deleteJobTask(task.id)} className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                                         </div>
                                         {expandedNotes[task.id] && task.notes?.includes('\n') && (
-                                          <div className="border-t border-slate-100 mx-3 mb-3">
-                                            <pre className="whitespace-pre-wrap text-sm text-slate-600 p-4 bg-slate-50 rounded-b-lg font-sans leading-relaxed">{task.notes.split('\n').slice(1).join('\n').trim()}</pre>
+                                          <div className="border-t border-slate-100 p-4" style={{maxWidth:'100%'}}>
+                                            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 text-sm text-slate-600 leading-relaxed" style={{whiteSpace:'pre-wrap',wordBreak:'break-word',maxHeight:'500px',overflowY:'auto'}}>{task.notes.split('\n').slice(1).join('\n').trim()}</div>
                                           </div>
                                         )}
                                       </div>
