@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User, Briefcase, Calendar, Clock, ClipboardList } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User, Briefcase, Calendar, Clock, ClipboardList, ExternalLink } from 'lucide-react';
 
 const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -922,24 +922,32 @@ export default function App() {
                           const completedCount = jobTasks.filter(t => t.completed).length;
                           const totalCount = jobTasks.length;
                           const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+                          const isExpanded = expandedJobs[job.id];
                           return (
                             <div key={job.id} className="p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-3">
+                                  <button onClick={() => setExpandedJobs({ ...expandedJobs, [job.id]: !isExpanded })} className="text-slate-400 hover:text-slate-600">
+                                    {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                  </button>
                                   <span className="font-medium text-slate-800">{job.name}</span>
                                   <span className={`text-xs px-2 py-0.5 rounded-full ${job.type === 'Recurring' ? 'bg-blue-100 text-blue-700' : job.type === 'Sprint' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>{job.type}</span>
                                 </div>
-                                <span className="text-sm text-slate-500">{completedCount}/{totalCount} tasks</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-slate-500">{completedCount}/{totalCount} tasks</span>
+                                  <button onClick={() => toggleJobComplete(job.id)} className="text-slate-400 hover:text-green-600 transition-colors" title="Mark complete"><CheckCircle2 className="w-4 h-4" /></button>
+                                  <button onClick={() => { setActiveClientId(client.id); setActiveJobId(job.id); setJobViewMode('byClient'); }} className="text-slate-400 hover:text-blue-600 transition-colors" title="Go to job"><ExternalLink className="w-4 h-4" /></button>
+                                </div>
                               </div>
                               <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                 <div className="h-full bg-emerald-500 transition-all rounded-full" style={{ width: `${percent}%` }} />
                               </div>
-                              {jobTasks.filter(t => !t.completed).length > 0 && (
+                              {isExpanded && jobTasks.length > 0 && (
                                 <div className="mt-2 space-y-1">
-                                  {jobTasks.filter(t => !t.completed).map(task => (
-                                    <div key={task.id} className="flex items-center gap-2 text-sm text-slate-600 pl-1">
-                                      <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 hover:text-emerald-500 transition-colors"><Circle className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" /></button>
-                                      <span className="flex-1">{task.notes || task.taskId}</span>
+                                  {jobTasks.map(task => (
+                                    <div key={task.id} className={`flex items-center gap-2 text-sm pl-1 ${task.completed ? 'text-slate-400' : 'text-slate-600'}`}>
+                                      <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 hover:text-emerald-500 transition-colors">{task.completed ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" /> : <Circle className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />}</button>
+                                      <span className={`flex-1 ${task.completed ? 'line-through' : ''}`}>{task.notes || task.taskId}</span>
                                       {task.assignedTo && <span className="text-xs text-slate-400">{task.assignedTo}</span>}
                                       {task.dueDate && <span className="text-xs text-slate-400">{task.dueDate}</span>}
                                     </div>
