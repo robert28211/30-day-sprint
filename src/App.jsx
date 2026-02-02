@@ -977,29 +977,31 @@ export default function App() {
                                 <div className="border-t border-gray-100 p-4">
                                   <div className="space-y-2">
                                     {jobTasks.map(task => (
-                                      <div key={task.id} className={`flex items-start gap-3 p-3 rounded-lg border ${task.completed ? 'bg-slate-50 border-slate-200' : 'bg-white border-gray-200'}`}>
-                                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5">{task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-emerald-500" />}</button>
-                                        <div className="flex-1 min-w-0">
-                                          {task.notes?.includes('\n') ? (
-                                            <div className={`text-sm ${task.completed ? 'text-slate-400' : 'text-slate-700'}`}>
-                                              <button onClick={() => setExpandedNotes(prev => ({ ...prev, [task.id]: !prev[task.id] }))} className="flex items-center gap-1 text-left w-full group">
-                                                {expandedNotes[task.id] ? <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />}
-                                                <span className={`font-medium ${task.completed ? 'line-through' : ''}`}>{task.notes.split('\n')[0]}</span>
+                                      <div key={task.id} className={`rounded-lg border ${task.completed ? 'bg-slate-50 border-slate-200' : 'bg-white border-gray-200'}`}>
+                                        <div className="flex items-start gap-3 p-3">
+                                          <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5">{task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-emerald-500" />}</button>
+                                          <div className="flex-1 min-w-0">
+                                            {task.notes?.includes('\n') ? (
+                                              <button onClick={() => setExpandedNotes(prev => ({ ...prev, [task.id]: !prev[task.id] }))} className="flex items-center gap-1.5 text-left w-full">
+                                                {expandedNotes[task.id] ? <ChevronDown className="w-4 h-4 text-blue-500 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-blue-500 flex-shrink-0" />}
+                                                <span className={`text-sm font-medium ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes.split('\n')[0]}</span>
                                               </button>
-                                              {expandedNotes[task.id] && (
-                                                <pre className="whitespace-pre-wrap text-xs text-slate-500 mt-2 ml-5 p-3 bg-slate-50 rounded-lg border border-slate-100 font-sans max-h-64 overflow-y-auto">{task.notes.split('\n').slice(1).join('\n').trim()}</pre>
-                                              )}
+                                            ) : (
+                                              <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes}</span>
+                                            )}
+                                            <div className="flex items-center gap-4 mt-2">
+                                              <div className="flex items-center gap-1"><User className="w-3 h-3 text-slate-400" /><input type="text" value={task.assignedTo} onChange={(e) => updateTaskAssignee(task.id, e.target.value)} placeholder="Assign..." className="text-xs border-none bg-transparent p-0 w-20 focus:outline-none text-slate-600" /></div>
+                                              <div className="flex items-center gap-1"><Calendar className="w-3 h-3 text-slate-400" /><input type="date" value={task.dueDate} onChange={(e) => updateTaskDueDate(task.id, e.target.value)} className="text-xs border-none bg-transparent p-0 focus:outline-none text-slate-600" /></div>
+                                              {task.completedBy && <span className="text-xs text-slate-400">✓ {task.completedBy}</span>}
                                             </div>
-                                          ) : (
-                                            <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes}</span>
-                                          )}
-                                          <div className="flex items-center gap-4 mt-2">
-                                            <div className="flex items-center gap-1"><User className="w-3 h-3 text-slate-400" /><input type="text" value={task.assignedTo} onChange={(e) => updateTaskAssignee(task.id, e.target.value)} placeholder="Assign..." className="text-xs border-none bg-transparent p-0 w-20 focus:outline-none text-slate-600" /></div>
-                                            <div className="flex items-center gap-1"><Calendar className="w-3 h-3 text-slate-400" /><input type="date" value={task.dueDate} onChange={(e) => updateTaskDueDate(task.id, e.target.value)} className="text-xs border-none bg-transparent p-0 focus:outline-none text-slate-600" /></div>
-                                            {task.completedBy && <span className="text-xs text-slate-400">✓ {task.completedBy}</span>}
                                           </div>
+                                          <button onClick={() => deleteJobTask(task.id)} className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                                         </div>
-                                        <button onClick={() => deleteJobTask(task.id)} className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                        {expandedNotes[task.id] && task.notes?.includes('\n') && (
+                                          <div className="border-t border-slate-100 mx-3 mb-3">
+                                            <pre className="whitespace-pre-wrap text-sm text-slate-600 p-4 bg-slate-50 rounded-b-lg font-sans leading-relaxed">{task.notes.split('\n').slice(1).join('\n').trim()}</pre>
+                                          </div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
