@@ -335,6 +335,7 @@ export default function App() {
       setError('Failed to load data from Airtable.');
     } finally {
       setLoading(false);
+      setSaving(false);
     }
   }, []);
 
@@ -355,7 +356,6 @@ export default function App() {
   const getCompletedBy = (taskId, clientId = null) => getTaskRecord(taskId, clientId)?.completedBy || null;
 
   const toggleSprintItem = async (taskId, clientId = null) => {
-    console.log('toggleSprintItem called:', taskId, 'saving:', saving, 'userName:', userName);
     const targetClientId = clientId || activeClientId;
     if (!targetClientId || !userName) { if (!userName) setShowUserModal(true); return; }
     const existingTask = tasks.find(t => t.clientId === targetClientId && t.taskId === taskId && !t.jobId);
@@ -564,7 +564,6 @@ export default function App() {
   };
 
   const toggleJobTask = async (taskId) => {
-    console.log('toggleJobTask called:', taskId, 'saving:', saving, 'userName:', userName);
     if (!userName) { setShowUserModal(true); return; }
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -804,6 +803,7 @@ export default function App() {
       ) : (
         /* JOB TRACKER */
         <div className="max-w-7xl mx-auto px-4 py-6">
+          <button onClick={() => alert('JOB SIDE CLICK WORKS')} style={{padding:'20px',background:'red',color:'white',fontSize:'20px',cursor:'pointer',zIndex:9999,position:'relative'}}>TEST CLICK</button>
           {jobViewMode === 'byClient' ? (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-3">
@@ -875,17 +875,10 @@ export default function App() {
                                 <div className="border-t border-gray-100 p-4">
                                   <div className="space-y-2">
                                     {jobTasks.map(task => (
-                                      <div key={task.id} className={`flex items-start gap-3 p-3 rounded-lg border ${task.completed ? 'bg-slate-50 border-slate-200' : 'bg-white border-gray-200'}`}>
-                                        <button onClick={() => toggleJobTask(task.id)} disabled={saving} className="flex-shrink-0 mt-0.5">{task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <Circle className="w-5 h-5 text-slate-400 hover:text-emerald-500" />}</button>
-                                        <div className="flex-1 min-w-0">
-                                          <span className={`text-sm ${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.notes}</span>
-                                          <div className="flex items-center gap-4 mt-2">
-                                            <div className="flex items-center gap-1"><User className="w-3 h-3 text-slate-400" /><input type="text" value={task.assignedTo} onChange={(e) => updateTaskAssignee(task.id, e.target.value)} placeholder="Assign..." className="text-xs border-none bg-transparent p-0 w-20 focus:outline-none text-slate-600" /></div>
-                                            <div className="flex items-center gap-1"><Calendar className="w-3 h-3 text-slate-400" /><input type="date" value={task.dueDate} onChange={(e) => updateTaskDueDate(task.id, e.target.value)} className="text-xs border-none bg-transparent p-0 focus:outline-none text-slate-600" /></div>
-                                            {task.completedBy && <span className="text-xs text-slate-400">✓ {task.completedBy}</span>}
-                                          </div>
-                                        </div>
-                                        <button onClick={() => deleteJobTask(task.id)} className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                                      <div key={task.id} style={{display:'flex',alignItems:'center',gap:'12px',padding:'8px',border:'1px solid #ccc',marginBottom:'4px',position:'relative',zIndex:1}}>
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); console.log('TASK CLICK', task.id); toggleJobTask(task.id); }} style={{cursor:'pointer',background:'none',border:'2px solid blue',borderRadius:'50%',width:'28px',height:'28px',flexShrink:0,position:'relative',zIndex:2}}>{task.completed ? '✓' : 'O'}</button>
+                                        <span style={{flex:1}}>{task.notes}</span>
+                                        <span style={{fontSize:'12px',color:'#999'}}>{task.assignedTo || ''}</span>
                                       </div>
                                     ))}
                                   </div>
