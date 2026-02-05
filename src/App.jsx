@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User, Briefcase, Calendar, Clock, ClipboardList, ExternalLink, Mail } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ChevronRight, AlertTriangle, Target, Zap, Shield, TrendingUp, Building2, Settings, Plus, Trash2, RefreshCw, Loader2, Users, MessageSquare, X, User, Briefcase, Calendar, Clock, ClipboardList, ExternalLink, Mail, Pencil } from 'lucide-react';
 
 const AIRTABLE_API_KEY = import.meta.env.VITE_AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -295,6 +295,8 @@ export default function App() {
   const [newJobTaskAssignee, setNewJobTaskAssignee] = useState('');
   const [jobViewMode, setJobViewMode] = useState('byClient');
   const [expandedJobs, setExpandedJobs] = useState({});
+  const [editingTask, setEditingTask] = useState(null);
+  const [editingJob, setEditingJob] = useState(null);
 
   useEffect(() => { localStorage.setItem('engageengine-mode', appMode); }, [appMode]);
 
@@ -688,6 +690,33 @@ export default function App() {
     try { setSaving(true); await airtableFetch(`${TASKS_TABLE}/${taskId}`, { method: 'DELETE' }); setTasks(tasks.filter(t => t.id !== taskId)); } catch (err) { console.error('Failed:', err); setError('Failed to delete'); } finally { setSaving(false); }
   };
 
+  const saveEditTask = async () => {
+    if (!editingTask) return;
+    try {
+      setSaving(true);
+      await updateRecord(TASKS_TABLE, editingTask.id, { 
+        Notes: editingTask.notes, 
+        'Assigned To': editingTask.assignedTo || '', 
+        'Due Date': editingTask.dueDate || null 
+      });
+      setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, notes: editingTask.notes, assignedTo: editingTask.assignedTo, dueDate: editingTask.dueDate } : t));
+      setEditingTask(null);
+    } catch (err) { console.error('Failed:', err); setError('Failed to save task'); } finally { setSaving(false); }
+  };
+
+  const saveEditJob = async () => {
+    if (!editingJob) return;
+    try {
+      setSaving(true);
+      await updateRecord(JOBS_TABLE, editingJob.id, { 
+        Name: editingJob.name, 
+        Type: editingJob.type 
+      });
+      setJobs(jobs.map(j => j.id === editingJob.id ? { ...j, name: editingJob.name, type: editingJob.type } : j));
+      setEditingJob(null);
+    } catch (err) { console.error('Failed:', err); setError('Failed to save job'); } finally { setSaving(false); }
+  };
+
   const deleteJob = async (jobId) => {
     if (!confirm('Delete this job and all tasks?')) return;
     try {
@@ -968,6 +997,7 @@ export default function App() {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full transition-all ${job.status === 'Complete' ? 'bg-green-500' : 'bg-emerald-500'}`} style={{ width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` }} /></div>
+                                    <button onClick={(e) => { e.stopPropagation(); setEditingJob({...job}); }} className="p-1 rounded text-slate-400 hover:text-blue-500 hover:bg-blue-50"><Pencil className="w-5 h-5" /></button>
                                     <button onClick={(e) => { e.stopPropagation(); toggleJobComplete(job.id); }} className={`p-1 rounded ${job.status === 'Complete' ? 'text-green-600 hover:bg-green-100' : 'text-slate-400 hover:bg-slate-100'}`}><CheckCircle2 className="w-5 h-5" /></button>
                                     <button onClick={(e) => { e.stopPropagation(); deleteJob(job.id); }} className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50"><Trash2 className="w-5 h-5" /></button>
                                   </div>
@@ -995,6 +1025,7 @@ export default function App() {
                                               {task.completedBy && <span className="text-xs text-slate-400">✓ {task.completedBy}</span>}
                                             </div>
                                           </div>
+                                          <button onClick={() => setEditingTask({...task})} className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-blue-500"><Pencil className="w-4 h-4" /></button>
                                           <button onClick={() => deleteJobTask(task.id)} className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                                         </div>
                                         {expandedNotes[task.id] && task.notes?.includes('\n') && (
@@ -1191,6 +1222,33 @@ export default function App() {
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Due Date (optional)</label><input type="date" value={newJobTaskDueDate} onChange={(e) => setNewJobTaskDueDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
             </div>
             <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setShowAddJobTaskModal(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={addTaskToJob} disabled={!newJobTaskText.trim() || saving} className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Add Task</button></div>
+          </div>
+        </div>
+      )}
+
+      {editingTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">Edit Task</h2><button onClick={() => setEditingTask(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
+            <div className="p-6 space-y-4">
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Task</label><textarea value={editingTask.notes} onChange={(e) => setEditingTask({...editingTask, notes: e.target.value})} rows={4} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To</label><input type="text" value={editingTask.assignedTo || ''} onChange={(e) => setEditingTask({...editingTask, assignedTo: e.target.value})} placeholder="Who's responsible?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label><input type="date" value={editingTask.dueDate || ''} onChange={(e) => setEditingTask({...editingTask, dueDate: e.target.value})} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+            </div>
+            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setEditingTask(null)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={saveEditTask} disabled={saving} className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save Changes</button></div>
+          </div>
+        </div>
+      )}
+
+      {editingJob && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between"><h2 className="text-xl font-semibold text-slate-800">Edit Job</h2><button onClick={() => setEditingJob(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button></div>
+            <div className="p-6 space-y-4">
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Name</label><input type="text" value={editingJob.name} onChange={(e) => setEditingJob({...editingJob, name: e.target.value})} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" autoFocus /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Type</label><select value={editingJob.type} onChange={(e) => setEditingJob({...editingJob, type: e.target.value})} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="Job">Job (One-time)</option><option value="Recurring">Recurring (Monthly)</option><option value="Sprint">Sprint</option></select></div>
+            </div>
+            <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setEditingJob(null)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={saveEditJob} disabled={!editingJob.name.trim() || saving} className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save Changes</button></div>
           </div>
         </div>
       )}
