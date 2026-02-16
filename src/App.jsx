@@ -290,6 +290,7 @@ export default function App() {
   const [newJobType, setNewJobType] = useState('Job');
   const [newJobDueDate, setNewJobDueDate] = useState('');
   const [newJobAssignee, setNewJobAssignee] = useState('');
+  const [newJobNotes, setNewJobNotes] = useState('');
   const [newJobTaskText, setNewJobTaskText] = useState('');
   const [newJobTaskDueDate, setNewJobTaskDueDate] = useState('');
   const [newJobTaskAssignee, setNewJobTaskAssignee] = useState('');
@@ -328,7 +329,7 @@ export default function App() {
       const jobsData = await airtableFetch(JOBS_TABLE);
       const loadedJobs = jobsData.records.map(r => ({
         id: r.id, name: r.fields.Name || '', clientId: r.fields.Client?.[0] || null, templateId: r.fields.Template?.[0] || null,
-        type: r.fields.Type || 'Job', status: r.fields.Status || 'Active', created: r.fields.Created || ''
+        type: r.fields.Type || 'Job', status: r.fields.Status || 'Active', created: r.fields.Created || '', notes: r.fields.Notes || ''
       }));
       setJobs(loadedJobs);
       const expanded = {}; loadedJobs.forEach(j => { expanded[j.id] = true; }); setExpandedJobs(expanded);
@@ -488,6 +489,9 @@ export default function App() {
         Status: 'Active',
         Created: new Date().toISOString().split('T')[0]
       };
+      if (newJobNotes.trim()) {
+        jobFields.Notes = newJobNotes.trim();
+      }
       if (newJobTemplate) {
         jobFields.Template = [newJobTemplate];
       }
@@ -495,7 +499,7 @@ export default function App() {
         method: 'POST', 
         body: JSON.stringify({ records: [{ fields: jobFields }] }) 
       });
-      const newJob = { id: jobResult.records[0].id, name: jobResult.records[0].fields.Name, clientId: activeClientId, templateId: newJobTemplate || null, type: newJobType, status: 'Active', created: new Date().toISOString().split('T')[0] };
+      const newJob = { id: jobResult.records[0].id, name: jobResult.records[0].fields.Name, clientId: activeClientId, templateId: newJobTemplate || null, type: newJobType, status: 'Active', created: new Date().toISOString().split('T')[0], notes: newJobNotes.trim() };
       setJobs([...jobs, newJob]);
       setExpandedJobs({ ...expandedJobs, [newJob.id]: true });
 
@@ -535,7 +539,7 @@ export default function App() {
         });
         setTasks(prev => [...prev, { id: taskResult.records[0].id, clientId: activeClientId, jobId: newJob.id, taskId: taskResult.records[0].fields['Task ID'], completed: false, completedAt: null, completedBy: null, notes: newJobName.trim(), assignedTo: newJobAssignee.trim(), dueDate: newJobDueDate }]);
       }
-      setShowNewJobModal(false); setNewJobName(''); setNewJobTemplate(''); setNewJobType('Job'); setNewJobDueDate(''); setNewJobAssignee(''); setActiveJobId(newJob.id);
+      setShowNewJobModal(false); setNewJobName(''); setNewJobTemplate(''); setNewJobType('Job'); setNewJobDueDate(''); setNewJobAssignee(''); setNewJobNotes(''); setActiveJobId(newJob.id);
     } catch (err) { console.error('Failed:', err); setError('Failed to create job'); } finally { setSaving(false); }
   };
 
@@ -708,11 +712,10 @@ export default function App() {
     if (!editingJob) return;
     try {
       setSaving(true);
-      await updateRecord(JOBS_TABLE, editingJob.id, { 
-        Name: editingJob.name, 
-        Type: editingJob.type 
-      });
-      setJobs(jobs.map(j => j.id === editingJob.id ? { ...j, name: editingJob.name, type: editingJob.type } : j));
+      const editFields = { Name: editingJob.name, Type: editingJob.type };
+      if (editingJob.notes !== undefined) editFields.Notes = editingJob.notes || '';
+      await updateRecord(JOBS_TABLE, editingJob.id, editFields);
+      setJobs(jobs.map(j => j.id === editingJob.id ? { ...j, name: editingJob.name, type: editingJob.type, notes: editingJob.notes || '' } : j));
       setEditingJob(null);
     } catch (err) { console.error('Failed:', err); setError('Failed to save job'); } finally { setSaving(false); }
   };
@@ -994,6 +997,7 @@ export default function App() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap"><span className={`font-semibold ${job.status === 'Complete' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{job.name}</span><span className={`text-xs px-2 py-0.5 rounded ${jobTypeColors[job.type]?.bg} ${jobTypeColors[job.type]?.text}`}>{job.type}</span>{template && <span className={`text-xs px-2 py-0.5 rounded ${catColor.bg} ${catColor.text}`}>{template.category}</span>}</div>
                                     <div className="text-sm text-slate-500 mt-1">{completedTasks}/{totalTasks} tasks complete</div>
+                                    {job.notes && <div className="text-sm text-slate-400 mt-1 italic truncate max-w-md">{job.notes}</div>}
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full transition-all ${job.status === 'Complete' ? 'bg-green-500' : 'bg-emerald-500'}`} style={{ width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` }} /></div>
@@ -1203,6 +1207,7 @@ export default function App() {
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Template (optional)</label><select value={newJobTemplate} onChange={(e) => setNewJobTemplate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"><option value="">No template - start blank</option>{Object.entries(templatesByCategory).map(([cat, temps]) => <optgroup key={cat} label={cat}>{temps.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}</select></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Assign To (optional)</label><input type="text" value={newJobAssignee} onChange={(e) => setNewJobAssignee(e.target.value)} placeholder="Who's responsible?" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Due Date (optional)</label><input type="date" value={newJobDueDate} onChange={(e) => setNewJobDueDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label><textarea value={newJobNotes} onChange={(e) => setNewJobNotes(e.target.value)} placeholder="Any notes about this job..." rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" /></div>
               {newJobTemplate && (
                 <div className="bg-slate-50 rounded-lg p-3"><p className="text-xs font-medium text-slate-500 mb-2">Tasks that will be created:</p><ul className="text-sm text-slate-600 space-y-1">{jobTemplates.find(t => t.id === newJobTemplate)?.subTasks.split('\n').filter(s => s.trim()).map((task, i) => <li key={i} className="flex items-center gap-2"><Circle className="w-3 h-3 text-slate-400" />{task.trim()}</li>)}</ul></div>
               )}
@@ -1247,6 +1252,7 @@ export default function App() {
             <div className="p-6 space-y-4">
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Name</label><input type="text" value={editingJob.name} onChange={(e) => setEditingJob({...editingJob, name: e.target.value})} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" autoFocus /></div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1">Job Type</label><select value={editingJob.type} onChange={(e) => setEditingJob({...editingJob, type: e.target.value})} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="Job">Job (One-time)</option><option value="Recurring">Recurring (Monthly)</option><option value="Sprint">Sprint</option></select></div>
+              <div><label className="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label><textarea value={editingJob.notes || ''} onChange={(e) => setEditingJob({...editingJob, notes: e.target.value})} placeholder="Any notes about this job..." rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /></div>
             </div>
             <div className="p-6 bg-slate-50 flex justify-end gap-3"><button onClick={() => setEditingJob(null)} className="px-4 py-2 text-slate-600 hover:text-slate-800">Cancel</button><button onClick={saveEditJob} disabled={!editingJob.name.trim() || saving} className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg px-6 py-2 font-medium inline-flex items-center gap-2">{saving && <Loader2 className="w-4 h-4 animate-spin" />}Save Changes</button></div>
           </div>
