@@ -87,6 +87,8 @@ const ROUTES = [
   { method: 'POST', re: /^\/api\/intake\/chat$/, handler: handleIntakeChat },
   { method: 'POST', re: /^\/api\/intake\/([^/]+)\/confirm$/, handler: (r, e, m) => handleIntakeConfirm(r, e, m[1]) },
   { method: 'POST', re: /^\/api\/intake\/([^/]+)\/dismiss$/, handler: (r, e, m) => handleIntakeDismiss(r, e, m[1]) },
+  // All Work
+  { method: 'GET',  re: /^\/api\/allwork$/, handler: handleAllWork },
 ];
 
 // ── API handlers ──────────────────────────────────────────────────────────────
@@ -97,7 +99,7 @@ async function handleLogin(request, env) {
     return json({ error: 'Incorrect password' }, 401);
   }
   const token = await makeToken(env.APP_PASSWORD);
-  const cookie = `session=${token}; HttpOnly; SameSite=Strict; Max-Age=604800; Path=/`;
+  const cookie = `session=${token}; HttpOnly; SameSite=Lax; Max-Age=604800; Path=/`;
   return json({ ok: true }, 200, { 'Set-Cookie': cookie });
 }
 
@@ -147,6 +149,33 @@ async function handleDashboard(request, env) {
     intake_pending = ip?.cnt || 0;
   } catch { /* table not yet migrated */ }
   return json({ clients: clients.results, stats, team: team.results, briefing, intake_pending });
+}
+
+async function handleAllWork(request, env) {
+  const jobs = await env.DB.prepare(`
+    SELECT j.id, j.name, j.status, j.created_at,
+      c.id as client_id, c.name as client_name,
+      COUNT(DISTINCT CASE WHEN t.status = 'Not Started' THEN t.id END) as open_tasks,
+      COUNT(DISTINCT CASE WHEN t.status = 'Complete' THEN t.id END) as done_tasks,
+      COUNT(DISTINCT t.id) as total_tasks
+    FROM sprint_jobs j
+    JOIN sprint_clients c ON c.id = j.client_id
+    LEFT JOIN sprint_tasks t ON t.job_id = j.id
+    WHERE c.archived = 0 AND j.status = 'Active'
+    GROUP BY j.id
+    ORDER BY c.name, j.name
+  `).all();
+  const tasks = await env.DB.prepare(`
+    SELECT t.id, t.name, t.status, t.due_date, t.assigned_to, t.notes,
+      j.id as job_id, j.name as job_name,
+      c.id as client_id, c.name as client_name
+    FROM sprint_tasks t
+    JOIN sprint_jobs j ON j.id = t.job_id
+    JOIN sprint_clients c ON c.id = t.client_id
+    WHERE t.status = 'Not Started' AND c.archived = 0
+    ORDER BY t.due_date ASC, c.name, j.name, t.name
+  `).all();
+  return json({ jobs: jobs.results, tasks: tasks.results });
 }
 
 async function handleClientsList(request, env) {
@@ -634,6 +663,45 @@ async function handleIntakeList(request, env) {
   }
 }
 
+async function extractDocxText(bytes) {
+  // DOCX is a ZIP file — parse local file headers and decompress word/document.xml
+  const view = new DataView(bytes);
+  let offset = 0;
+  while (offset < bytes.byteLength - 30) {
+    if (view.getUint32(offset, true) !== 0x04034b50) break;
+    const compression = view.getUint16(offset + 8, true);
+    const compressedSize = view.getUint32(offset + 18, true);
+    const filenameLen = view.getUint16(offset + 26, true);
+    const extraLen = view.getUint16(offset + 28, true);
+    const filename = new TextDecoder().decode(new Uint8Array(bytes, offset + 30, filenameLen));
+    const dataOffset = offset + 30 + filenameLen + extraLen;
+    if (filename === 'word/document.xml') {
+      let data = new Uint8Array(bytes, dataOffset, compressedSize);
+      if (compression === 8) {
+        const ds = new DecompressionStream('deflate-raw');
+        const writer = ds.writable.getWriter();
+        const reader = ds.readable.getReader();
+        writer.write(data);
+        writer.close();
+        const chunks = [];
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+        const out = new Uint8Array(chunks.reduce((a, b) => a + b.length, 0));
+        let pos = 0;
+        for (const chunk of chunks) { out.set(chunk, pos); pos += chunk.length; }
+        data = out;
+      }
+      const xml = new TextDecoder().decode(data);
+      return xml.replace(/<w:t[^>]*>/g, '').replace(/<\/w:t>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 10000);
+    }
+    offset = dataOffset + compressedSize;
+  }
+  return '';
+}
+
 async function handleIntakeUpload(request, env) {
   let fileBytes, filename, mimeType;
   try {
@@ -650,8 +718,15 @@ async function handleIntakeUpload(request, env) {
     return json({ error: 'File too large (max 10MB)' }, 413);
   }
 
+  const ext = filename.toLowerCase().split('.').pop();
+  const supported = ['pdf', 'txt', 'doc', 'docx'];
+  if (!supported.includes(ext)) {
+    return json({ error: 'Unsupported file type. Please upload a PDF, DOCX, DOC, or TXT file.' }, 400);
+  }
+
   let extractText;
-  const isPdf = mimeType === 'application/pdf' || filename.toLowerCase().endsWith('.pdf');
+  const isPdf = ext === 'pdf' || mimeType === 'application/pdf';
+  const isDocx = ext === 'docx' || ext === 'doc';
   if (isPdf) {
     const b64 = btoa(String.fromCharCode(...new Uint8Array(fileBytes)));
     try {
@@ -661,6 +736,18 @@ async function handleIntakeUpload(request, env) {
           { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
           { type: 'text', text: 'Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}. Be thorough — capture every deliverable, phase, and task mentioned.' },
         ],
+      }], 'claude-sonnet-4-6');
+    } catch (err) {
+      return json({ error: `Extraction failed: ${err.message}` }, 500);
+    }
+  } else if (isDocx) {
+    let rawText = '';
+    try { rawText = await extractDocxText(fileBytes); } catch { /* fall through to empty */ }
+    if (!rawText) return json({ error: 'Could not read DOCX file. Try saving as PDF or TXT.' }, 422);
+    try {
+      extractText = await callClaude(env, [{
+        role: 'user',
+        content: `Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}.\n\n${rawText}`,
       }], 'claude-sonnet-4-6');
     } catch (err) {
       return json({ error: `Extraction failed: ${err.message}` }, 500);
@@ -1210,6 +1297,36 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
   .intake-chat-panel{height:50vh}
   .intake-item-actions{flex-direction:column}
 }
+/* ── All Work view ── */
+.allwork-subtabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:20px;width:fit-content}
+.allwork-subtab{padding:5px 18px;border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text-dim);transition:all 0.15s}
+.allwork-subtab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.allwork-table{width:100%;border-collapse:collapse;font-size:13px}
+.allwork-table th{text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim);border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap}
+.allwork-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.allwork-table tr:last-child td{border-bottom:none}
+.allwork-table tr:hover td{background:var(--surface)}
+.allwork-client-link{color:var(--accent);cursor:pointer;font-weight:600;text-decoration:none}
+.allwork-client-link:hover{text-decoration:underline}
+.allwork-progress{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.allwork-bar{height:4px;border-radius:2px;background:var(--surface2);flex:1;min-width:40px;overflow:hidden}
+.allwork-bar-fill{height:100%;border-radius:2px;background:var(--green);transition:width 0.3s}
+.allwork-progress-text{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--text-dim)}
+.allwork-due{font-family:"JetBrains Mono",monospace;font-size:12px}
+.allwork-due.overdue{color:var(--red)}
+.allwork-due.soon{color:var(--amber)}
+.allwork-due.ok{color:var(--text-dim)}
+.allwork-assignee{font-size:12px;color:var(--text-dim)}
+.allwork-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600}
+.allwork-badge.active{background:var(--green-bg);color:var(--green)}
+.allwork-count-bar{display:flex;align-items:center;padding:16px 0 20px;gap:20px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.allwork-count{font-size:28px;font-weight:700;font-family:"JetBrains Mono",monospace;color:var(--accent)}
+.allwork-count-label{font-size:12px;color:var(--text-dim);margin-top:2px}
+.allwork-count-item{text-align:center}
+.allwork-empty{color:var(--text-dim);padding:40px 0;text-align:center;font-size:14px}
+@media(max-width:768px){
+  .allwork-table th:nth-child(n+4),.allwork-table td:nth-child(n+4){display:none}
+}
 </style>
 </head>
 <body>
@@ -1240,6 +1357,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
     <div class="mode-tabs">
       <button class="mode-tab active" id="modeJobBtn" data-action="mode-jobs">Jobs</button>
       <button class="mode-tab" id="modeSprintBtn" data-action="mode-sprint">30-Day Sprint</button>
+      <button class="mode-tab" id="modeAllWorkBtn" data-action="mode-allwork">All Work</button>
     </div>
   </div>
   <div class="header-right">
@@ -1289,6 +1407,11 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 <div id="sprintMode" class="hidden">
   <div class="sprint-client-bar" id="sprintClientBar"></div>
   <div id="sprintContent"><div class="loading">Select a client to view their sprint checklist.</div></div>
+</div>
+
+<!-- All Work mode -->
+<div id="allWorkMode" class="hidden">
+  <div id="allworkContent"><div class="loading">Loading...</div></div>
 </div>
 
 </div><!-- /container -->
@@ -1362,6 +1485,9 @@ document.addEventListener('click', function(e) {
   var val = el.getAttribute('data-val') || '';
   if (act === 'mode-jobs') { switchMode('jobs'); }
   else if (act === 'mode-sprint') { switchMode('sprint'); }
+  else if (act === 'mode-allwork') { switchMode('allwork'); }
+  else if (act === 'allwork-tab') { switchAllWorkTab(val); }
+  else if (act === 'allwork-goto-client') { switchMode('jobs'); loadClient(id); }
   else if (act === 'nav-back') { showDashboard(); }
   else if (act === 'load-client') { loadClient(id); }
   else if (act === 'load-team') { loadTeam(val); }
@@ -1406,16 +1532,107 @@ function switchMode(mode) {
   currentMode = mode;
   document.getElementById('modeJobBtn').classList.toggle('active', mode === 'jobs');
   document.getElementById('modeSprintBtn').classList.toggle('active', mode === 'sprint');
+  document.getElementById('modeAllWorkBtn').classList.toggle('active', mode === 'allwork');
   document.getElementById('jobsMode').classList.toggle('hidden', mode !== 'jobs');
   document.getElementById('sprintMode').classList.toggle('hidden', mode !== 'sprint');
+  document.getElementById('allWorkMode').classList.toggle('hidden', mode !== 'allwork');
   document.getElementById('navBack').style.display = 'none';
   if (mode === 'jobs') {
     document.getElementById('headerStats').style.display = '';
     if (dashboardData) renderDashboard(); else loadDashboard();
-  } else {
+  } else if (mode === 'sprint') {
     document.getElementById('headerStats').style.display = 'none';
     renderSprintClientBar();
+  } else if (mode === 'allwork') {
+    document.getElementById('headerStats').style.display = 'none';
+    loadAllWork();
   }
+}
+
+// ── All Work ───────────────────────────────────────────────────────────────
+
+var allWorkData = null;
+var allWorkTab = 'jobs';
+
+async function loadAllWork() {
+  document.getElementById('allworkContent').innerHTML = '<div class="loading">Loading...</div>';
+  var res = await fetch(API + '/api/allwork');
+  if (res.status === 401) { showLoginScreen(); return; }
+  allWorkData = await res.json();
+  renderAllWork();
+}
+
+function switchAllWorkTab(tab) {
+  allWorkTab = tab;
+  renderAllWork();
+}
+
+function renderAllWork() {
+  var d = allWorkData;
+  if (!d) return;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var soon = new Date(today); soon.setDate(today.getDate() + 3);
+
+  var openTasks = d.tasks.length;
+  var totalJobs = d.jobs.length;
+
+  var html = '<div class="allwork-count-bar">';
+  html += '<div class="allwork-count-item"><div class="allwork-count">' + totalJobs + '</div><div class="allwork-count-label">Active Jobs</div></div>';
+  html += '<div class="allwork-count-item"><div class="allwork-count">' + openTasks + '</div><div class="allwork-count-label">Open Tasks</div></div>';
+  html += '</div>';
+
+  html += '<div class="allwork-subtabs">';
+  html += '<button class="allwork-subtab' + (allWorkTab === 'jobs' ? ' active' : '') + '" data-action="allwork-tab" data-val="jobs">Jobs (' + totalJobs + ')</button>';
+  html += '<button class="allwork-subtab' + (allWorkTab === 'tasks' ? ' active' : '') + '" data-action="allwork-tab" data-val="tasks">Open Tasks (' + openTasks + ')</button>';
+  html += '</div>';
+
+  if (allWorkTab === 'jobs') {
+    if (!d.jobs.length) {
+      html += '<div class="allwork-empty">No active jobs across any client.</div>';
+    } else {
+      html += '<table class="allwork-table"><thead><tr>';
+      html += '<th>Client</th><th>Job</th><th>Progress</th><th>Open Tasks</th>';
+      html += '</tr></thead><tbody>';
+      for (var i = 0; i < d.jobs.length; i++) {
+        var j = d.jobs[i];
+        var pct = j.total_tasks > 0 ? Math.round((j.done_tasks / j.total_tasks) * 100) : 0;
+        html += '<tr>';
+        html += '<td><a class="allwork-client-link" data-action="allwork-goto-client" data-id="' + esc(j.client_id) + '">' + esc(j.client_name) + '</a></td>';
+        html += '<td>' + esc(j.name) + '</td>';
+        html += '<td><div class="allwork-progress"><div class="allwork-bar"><div class="allwork-bar-fill" style="width:' + pct + '%"></div></div><span class="allwork-progress-text">' + pct + '%</span></div></td>';
+        html += '<td><span class="allwork-progress-text">' + j.open_tasks + ' / ' + j.total_tasks + '</span></td>';
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+    }
+  } else {
+    if (!d.tasks.length) {
+      html += '<div class="allwork-empty">No open tasks — all caught up!</div>';
+    } else {
+      html += '<table class="allwork-table"><thead><tr>';
+      html += '<th>Client</th><th>Job</th><th>Task</th><th>Assignee</th><th>Due</th>';
+      html += '</tr></thead><tbody>';
+      for (var k = 0; k < d.tasks.length; k++) {
+        var t = d.tasks[k];
+        var dueClass = 'ok', dueLabel = t.due_date ? formatDate(t.due_date) : '—';
+        if (t.due_date) {
+          var due = new Date(t.due_date + 'T00:00:00');
+          if (due < today) { dueClass = 'overdue'; dueLabel = '⚠ ' + formatDate(t.due_date); }
+          else if (due <= soon) { dueClass = 'soon'; }
+        }
+        html += '<tr>';
+        html += '<td><a class="allwork-client-link" data-action="allwork-goto-client" data-id="' + esc(t.client_id) + '">' + esc(t.client_name) + '</a></td>';
+        html += '<td>' + esc(t.job_name) + '</td>';
+        html += '<td>' + esc(t.name) + '</td>';
+        html += '<td><span class="allwork-assignee">' + esc(t.assigned_to || '—') + '</span></td>';
+        html += '<td><span class="allwork-due ' + dueClass + '">' + esc(dueLabel) + '</span></td>';
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+    }
+  }
+
+  document.getElementById('allworkContent').innerHTML = html;
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
