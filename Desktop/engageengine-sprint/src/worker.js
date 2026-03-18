@@ -166,14 +166,14 @@ async function handleAllWork(request, env) {
     ORDER BY c.name, j.name
   `).all();
   const tasks = await env.DB.prepare(`
-    SELECT t.id, t.name, t.status, t.due_date, t.assigned_to, t.notes,
+    SELECT t.id, t.notes as name, t.status, t.due_date, t.assigned_to,
       j.id as job_id, j.name as job_name,
       c.id as client_id, c.name as client_name
     FROM sprint_tasks t
     JOIN sprint_jobs j ON j.id = t.job_id
     JOIN sprint_clients c ON c.id = t.client_id
     WHERE t.status = 'Not Started' AND c.archived = 0
-    ORDER BY t.due_date ASC, c.name, j.name, t.name
+    ORDER BY t.due_date ASC, c.name, j.name, t.notes
   `).all();
   return json({ jobs: jobs.results, tasks: tasks.results });
 }
