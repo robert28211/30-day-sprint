@@ -76,7 +76,7 @@ export const GAP_IMPACT = {
     // BrightLocal 2026: 68% of consumers require 4.0+ (up from 55% in 2025).
     ctrImpact: [0.30, 0.55],
     basis: 'BrightLocal (2026): 68% of consumers require 4.0+ stars before considering a business. Uberall: each 0.1-star increase drives ~25% more conversions. Businesses below 4.0 lose an estimated 30–55% of potential contacts.',
-    floor: [300, 900],
+    floor: [100, 300],
   },
 
   few_reviews: {
@@ -86,7 +86,7 @@ export const GAP_IMPACT = {
     // Localo (2M profiles): top-3 local pack businesses average 200+ reviews.
     ctrImpact: [0.15, 0.35],
     basis: 'Womply (n=200k businesses): above-average review count = 54% more revenue; exceeding the median = 82% more revenue. BrightLocal: 47% of consumers won\'t use a business with fewer than 20 reviews. Top-3 local pack averages 200+ reviews (Localo).',
-    floor: [200, 650],
+    floor: [60, 200],
   },
 
   no_photos: {
@@ -94,7 +94,7 @@ export const GAP_IMPACT = {
     // Google official: photos = 42% more direction requests, 35% more website clicks.
     ctrImpact: [0.35, 0.52],
     basis: 'Google: businesses with photos receive 42% more direction requests and 35% more website clicks vs. profiles with no photos. BrightLocal: 100+ photos correlates with 520% more phone calls vs. median.',
-    floor: [250, 750],
+    floor: [80, 250],
   },
 
   no_hours: {
@@ -103,7 +103,7 @@ export const GAP_IMPACT = {
     // 73% of consumers lose trust when info is missing/incorrect (BrightLocal).
     ctrImpact: [0.12, 0.22],
     basis: 'Missing hours removes the listing from "Open Now" filter searches. BrightLocal: 73% of consumers lose trust in a business with missing or incorrect information.',
-    floor: [100, 380],
+    floor: [35, 120],
   },
 
   no_website: {
@@ -112,7 +112,7 @@ export const GAP_IMPACT = {
     // #1 consumer action, ahead of directions (34%) and calls (17%).
     ctrImpact: [0.32, 0.52],
     basis: 'Birdeye (State of GBP 2025): website clicks = 48% of all GBP interactions — the single largest consumer action. Missing a website eliminates nearly half of all potential conversions from your profile.',
-    floor: [250, 750],
+    floor: [80, 250],
   },
 
   no_phone: {
@@ -120,14 +120,14 @@ export const GAP_IMPACT = {
     // Birdeye: calls = 17% of GBP interactions. High-intent mobile buyers.
     ctrImpact: [0.15, 0.28],
     basis: 'Phone calls represent 17% of all GBP interactions (Birdeye). Mobile searchers are high-intent and expect immediate click-to-call — a missing phone number eliminates your highest-converting channel.',
-    floor: [100, 400],
+    floor: [35, 130],
   },
 
   closed_listing: {
     label: 'Listing marked as closed',
     ctrImpact: [0.80, 1.00],
     basis: 'Permanently or temporarily closed listings are excluded from active local search results and capture near-zero organic traffic.',
-    floor: [500, 1500],
+    floor: [150, 500],
   },
 
   // ── Medium severity ────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ export const GAP_IMPACT = {
     // Localo: top-3 positions average 250+ photos. Even reaching 30 is a competitive advantage.
     ctrImpact: [0.20, 0.42],
     basis: 'BrightLocal (45k businesses): 100+ photos correlates with 520% more phone calls and 1,065% more website clicks vs. median (11 photos). Top-3 local pack positions average 250+ images (Localo, 2M profiles).',
-    floor: [100, 420],
+    floor: [30, 140],
   },
 
   no_description: {
@@ -147,13 +147,13 @@ export const GAP_IMPACT = {
     // Localo: 75% of top-3 businesses have descriptions; only 40% at positions 11–20.
     ctrImpact: [0.06, 0.12],
     basis: 'Google: complete profiles receive 7x more clicks and consumers are 70% more likely to visit. Localo (2M profiles): 75% of top-3 businesses have complete descriptions vs. under 40% at positions 11–20.',
-    floor: [60, 230],
+    floor: [20, 75],
   },
 
   no_category: {
     label: 'Primary category not set',
     ctrImpact: [0.10, 0.22],
     basis: 'Without a primary category a profile is excluded from category-filtered searches and loses the relevance signals Google uses to rank listings in the local pack.',
-    floor: [100, 330],
+    floor: [35, 110],
   },
 };

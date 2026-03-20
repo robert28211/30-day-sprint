@@ -40,7 +40,10 @@ export function estimateRevenue(gapId, category, scaleFactor = 1.0) {
   }
 
   const cat = CATEGORIES[category] || CATEGORIES['default'];
-  const conversionRate = 0.05;
+  // Full search-to-job chain: search → local pack CTR (~15%) → profile action (~25%)
+  // → lead (~20%) → booked job (~30%) ≈ 0.3% of search impressions become revenue.
+  // Using 0.003 keeps estimates conservative and credible for a business owner.
+  const conversionRate = 0.003;
 
   const searchesLow = cat.monthlySearches[0];
   const searchesHigh = cat.monthlySearches[1];
