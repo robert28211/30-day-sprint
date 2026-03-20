@@ -36,9 +36,9 @@ export function scorePhotos(count) {
 }
 
 function scoreLabel(score) {
-  if (score >= 85) return 'Excellent';
-  if (score >= 70) return 'Good';
-  if (score >= 50) return 'Needs Work';
+  if (score >= 95) return 'Excellent';   // near-perfect profile, minimal gaps
+  if (score >= 80) return 'Good';
+  if (score >= 60) return 'Needs Work';
   return 'Critical';
 }
 
@@ -48,9 +48,9 @@ function scoreLabel(score) {
 
 const GAP_DEFS = [
   { id: 'low_rating',   check: f => f.rating != null && f.rating < 4.0,  label: 'Rating below 4.0 stars',           severity: 'high',   fix: 'Actively request reviews from satisfied customers to raise your rating above 4.0.' },
-  { id: 'few_reviews',  check: f => f.review_count < 25,                  label: 'Fewer than 25 reviews',            severity: 'high',   fix: 'Send a review request to recent customers via text or email. Target: 50+ reviews.' },
+  { id: 'few_reviews',  check: f => f.review_count < 25,                  scaleAt: f => 1 - (f.review_count / 50),  label: 'Fewer than 25 reviews',            severity: 'high',   fix: 'Send a review request to recent customers via text or email. Target: 50+ reviews.' },
   { id: 'no_photos',    check: f => f.photo_count < 3,                    label: 'No photos on profile',             severity: 'high',   fix: 'Add at least 10 photos: exterior, interior, work samples, and team.' },
-  { id: 'few_photos',   check: f => f.photo_count >= 3 && f.photo_count < 20, label: `Only ${'{photo_count}'} photos`, severity: 'medium', fix: 'Add photos until you reach 20+. Include before/after work shots and team photos.' },
+  { id: 'few_photos',   check: f => f.photo_count >= 3 && f.photo_count < 20, scaleAt: f => 1 - (f.photo_count / 20), label: `Only ${'{photo_count}'} photos`, severity: 'medium', fix: 'Add photos until you reach 20+. Include before/after work shots and team photos.' },
   { id: 'no_hours',     check: f => !f.has_hours,                         label: 'Business hours not set',           severity: 'high',   fix: 'Add your hours in Google Business Profile. Include holiday hours.' },
   { id: 'no_website',   check: f => !f.has_website,                       label: 'No website linked',                severity: 'high',   fix: 'Add your website URL to your Google Business Profile.' },
   { id: 'no_phone',     check: f => !f.has_phone,                         label: 'No phone number listed',           severity: 'high',   fix: 'Add a local phone number. Customers are 7x more likely to call than fill out a form.' },
@@ -97,7 +97,10 @@ export async function runAudit(placeId, env) {
   const gaps = GAP_DEFS
     .filter(def => def.check(fields))
     .map(def => {
-      const revenue = estimateRevenue(def.id, category);
+      // Scale revenue by how far below the threshold (gradient gaps only)
+      // e.g. 10 photos vs threshold of 20 → scaleFactor 0.5 → 50% of full impact
+      const scaleFactor = def.scaleAt ? Math.max(0.05, def.scaleAt(fields)) : 1.0;
+      const revenue = estimateRevenue(def.id, category, scaleFactor);
       // Resolve dynamic label tokens
       const resolvedLabel = def.label
         .replace('{photo_count}', fields.photo_count)

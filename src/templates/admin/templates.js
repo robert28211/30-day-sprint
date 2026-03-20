@@ -132,8 +132,9 @@ export function renderDashboard({ clients, lastScan, alerts, unresolvedCount, ne
       <td>${scoreBadge(c.last_score, c.last_score_label)}</td>
       <td>${deltaHtml(c.last_delta)}</td>
       <td style="color:var(--muted);font-size:0.8rem">${relativeDate(c.last_audit_date)}</td>
-      <td>
-        ${c.place_id ? `<a href="/report/client/${c.id}?key=REPORT_SECRET" class="btn btn-ghost" style="font-size:0.75rem">Report</a>` : '<span style="color:var(--red);font-size:0.75rem">No Place ID</span>'}
+      <td style="white-space:nowrap">
+        ${c.place_id && c.last_audit_date ? `<a href="/report/client/${c.id}?key=REPORT_SECRET" class="btn btn-primary" style="font-size:0.75rem" target="_blank">Client Report</a>` : ''}
+        ${c.place_id ? ` <a href="/report/prospect/${c.place_id}?key=REPORT_SECRET" class="btn btn-ghost" style="font-size:0.75rem" target="_blank">Prospect</a>` : '<span style="color:var(--red);font-size:0.75rem">No Place ID</span>'}
       </td>
     </tr>
   `).join('');
@@ -330,8 +331,11 @@ export function renderClientDetail({ client, audits, events }) {
 
     <h2>Actions</h2>
     <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+      ${latestAudit ? `
+        <a href="/report/client/${latestAudit.id}?key=REPORT_SECRET" class="btn btn-primary" target="_blank">Client Report</a>
+      ` : ''}
       ${client.place_id ? `
-        <a href="/report/prospect/${client.place_id}?key=REPORT_SECRET" class="btn btn-primary" target="_blank">Prospect Report</a>
+        <a href="/report/prospect/${client.place_id}?key=REPORT_SECRET" class="btn btn-ghost" target="_blank">Prospect View</a>
         <button class="btn btn-secondary" onclick="runClientScan(${client.id})">Run Audit Now</button>
       ` : ''}
       <a href="/admin/dashboard?key=ADMIN_KEY_PLACEHOLDER" class="btn btn-ghost">← Dashboard</a>

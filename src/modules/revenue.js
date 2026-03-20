@@ -23,18 +23,20 @@ export function detectCategory(types = []) {
  * Estimate monthly lost revenue for a single gap.
  *
  * Formula:
- *   monthly_searches_avg = (low + high) / 2
- *   monthly_lost = monthly_searches × CTR_impact × conversion_rate × avg_job_value
+ *   monthly_lost = searches × CTR_impact × conversion_rate × avg_job_value × scaleFactor
  *   where conversion_rate = 0.05 (5% baseline for local service leads)
  *
  * @param {string} gapId - gap ID from GAP_IMPACT (e.g. "few_photos")
  * @param {string} category - benchmark category from detectCategory()
+ * @param {number} [scaleFactor=1.0] - for gradient gaps, fraction of max impact to apply.
+ *   Caller computes: 1 - (currentValue / threshold). E.g. 10 photos / threshold 20 = 0.5.
+ *   Binary gaps (no_hours, no_website…) always pass 1.0.
  * @returns {{ low: number, high: number, basis: string, confidence: string }}
  */
-export function estimateRevenue(gapId, category) {
+export function estimateRevenue(gapId, category, scaleFactor = 1.0) {
   const impact = GAP_IMPACT[gapId];
   if (!impact) {
-    return { low: 50, high: 200, basis: 'Estimated based on local service industry averages', confidence: 'estimated' };
+    return { low: Math.round(50 * scaleFactor), high: Math.round(200 * scaleFactor), basis: 'Estimated based on local service industry averages', confidence: 'estimated' };
   }
 
   const cat = CATEGORIES[category] || CATEGORIES['default'];
@@ -43,12 +45,12 @@ export function estimateRevenue(gapId, category) {
   const searchesLow = cat.monthlySearches[0];
   const searchesHigh = cat.monthlySearches[1];
 
-  const revLow = Math.round(searchesLow * impact.ctrImpact[0] * conversionRate * cat.avgJobValue);
-  const revHigh = Math.round(searchesHigh * impact.ctrImpact[1] * conversionRate * cat.avgJobValue);
+  const revLow = Math.round(searchesLow * impact.ctrImpact[0] * conversionRate * cat.avgJobValue * scaleFactor);
+  const revHigh = Math.round(searchesHigh * impact.ctrImpact[1] * conversionRate * cat.avgJobValue * scaleFactor);
 
-  // Apply floor: never show $0
-  const finalLow = Math.max(revLow, impact.floor[0]);
-  const finalHigh = Math.max(revHigh, impact.floor[1]);
+  // Scale the floor proportionally so it never artificially inflates low-severity gaps
+  const finalLow = Math.max(revLow, Math.round(impact.floor[0] * scaleFactor));
+  const finalHigh = Math.max(revHigh, Math.round(impact.floor[1] * scaleFactor));
 
   return {
     low: finalLow,
