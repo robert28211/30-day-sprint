@@ -1,0 +1,14 @@
+node_modules/
+.wrangler/
+.secrets.local
+*.local
+.env
+.env.*
+dist/
+.claude/
+ralph/
+loop.sh
+PROMPT_build.md
+PROMPT_plan.md
+AGENTS.md
+IMPLEMENTATION_PLAN.md

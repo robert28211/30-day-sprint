@@ -1,0 +1,31 @@
+name = "gbp-intelligence"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [
+  { pattern = "gbp.engageengine.cc/*", zone_name = "engageengine.cc" }
+]
+
+[triggers]
+crons = ["0 10 * * 6"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gbp-intelligence-db"
+database_id = "8b4ba042-8c52-4e80-988e-306c2828b2c8"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "485d90b18e5e4711a09a741a0ce8319c"
+
+[vars]
+EMAIL_FROM = "reports@engageengine.com"
+ROBBIE_EMAIL = "robertlbutt@gmail.com"
+CALENDAR_URL = "https://calendly.com/engageengine"
+
+# Secrets (set via: wrangler secret put SECRET_NAME)
+# GOOGLE_PLACES_API_KEY
+# REPORT_SECRET
+# ADMIN_KEY
+# EMAIL_API_KEY

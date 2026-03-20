@@ -1,0 +1,21 @@
+{
+  "name": "gbp-intelligence",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute gbp-intelligence-db --file=migrations/001-init.sql",
+    "db:seed": "wrangler d1 execute gbp-intelligence-db --file=scripts/seed.sql",
+    "db:migrate:local": "wrangler d1 execute gbp-intelligence-db --local --file=migrations/001-init.sql",
+    "db:seed:local": "wrangler d1 execute gbp-intelligence-db --local --file=scripts/seed.sql",
+    "tail": "wrangler tail",
+    "test:scheduled": "wrangler dev --test-scheduled",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0",
+    "wrangler": "^3.0.0"
+  }
+}
