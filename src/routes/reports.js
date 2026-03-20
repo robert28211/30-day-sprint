@@ -1,9 +1,10 @@
 /**
  * Report routes — auth via ?key={REPORT_SECRET}
  *
- * GET /report/client/:auditId          → client-flavored HTML
- * GET /report/prospect/:placeId        → prospect-flavored HTML (live audit)
- * GET /report/compare/:id1/:id2/:id3?  → side-by-side comparison
+ * GET /report/client/:auditId           → client-flavored HTML
+ * GET /report/client/:auditId/checklist → printable improvement checklist
+ * GET /report/prospect/:placeId         → prospect-flavored HTML (live audit)
+ * GET /report/compare/:id1/:id2/:id3?   → side-by-side comparison
  *
  * Client report data flow:
  *
@@ -30,7 +31,7 @@
 
 import { runAudit } from '../modules/audit.js';
 import { scanCompetitors } from '../modules/competitors.js';
-import { renderClientReport, renderProspectReport, renderComparisonReport } from '../modules/reportRenderer.js';
+import { renderClientReport, renderProspectReport, renderComparisonReport, renderChecklist } from '../modules/reportRenderer.js';
 
 function authCheck(req, env) {
   const url = new URL(req.url);
@@ -114,6 +115,54 @@ export async function handleClientReport(req, env, auditId) {
     clientName: audit.client_name,
     competitors,
     auditHistory,
+  });
+  return htmlResponse(html);
+}
+
+// ---------------------------------------------------------------------------
+// Client Checklist
+// ---------------------------------------------------------------------------
+
+export async function handleClientChecklist(req, env, auditId) {
+  if (!authCheck(req, env)) return errorHtml('Access denied. Invalid report key.', 403);
+
+  const audit = await env.DB.prepare(`
+    SELECT a.*, c.name as client_name
+    FROM audits a
+    LEFT JOIN clients c ON c.id = a.client_id
+    WHERE a.id = ?
+  `).bind(auditId).first();
+
+  if (!audit) return errorHtml('Checklist not found.', 404);
+
+  const auditResult = {
+    place_id: audit.place_id,
+    business_name: audit.client_name || audit.place_id,
+    address: audit.address,
+    score: audit.score,
+    score_label: audit.score_label,
+    gaps: JSON.parse(audit.gaps_json || '[]'),
+    fields: JSON.parse(audit.fields_json || '{}'),
+    audit_date: audit.audit_date,
+  };
+
+  // Load competitor data for competitive gap injection
+  let competitorScan = null;
+  if (audit.competitor_scan) {
+    try { competitorScan = JSON.parse(audit.competitor_scan); } catch { /* fall through */ }
+  }
+  if (!competitorScan && audit.place_id) {
+    try {
+      competitorScan = await scanCompetitors(audit.place_id, [], env, auditResult);
+    } catch (err) {
+      console.error('[report/checklist] competitor scan failed:', err.message);
+    }
+  }
+
+  const html = renderChecklist({
+    audit: auditResult,
+    clientName: audit.client_name,
+    competitorScan,
   });
   return htmlResponse(html);
 }

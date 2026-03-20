@@ -4,7 +4,7 @@
  */
 
 import { formatRevenue } from './revenue.js';
-import { scoreRating, scoreReviews, scorePhotos } from './audit.js';
+import { scoreRating, scoreReviews, scorePhotos, computeCompetitiveAdjustment } from './audit.js';
 
 // ============================================================
 // Shared CSS
@@ -288,22 +288,48 @@ function headerHtml(clientName = null) {
     </div>`;
 }
 
-function scoreHtml(audit) {
-  const color = scoreBarColor(audit.score_label);
-  const cls = scoreCssClass(audit.score_label);
+/**
+ * @param {object} audit
+ * @param {{ adjustment: number, adjustedScore: number }|null} competitiveAdj
+ */
+function scoreHtml(audit, competitiveAdj = null) {
+  const displayScore = competitiveAdj ? competitiveAdj.adjustedScore : audit.score;
+  const displayLabel = scoreLabelFromScore(displayScore);
+  const color = scoreBarColor(displayLabel);
+  const cls = scoreCssClass(displayLabel);
+
+  const adjBadge = (competitiveAdj && competitiveAdj.adjustment < 0)
+    ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem">
+         Profile: ${audit.score} &nbsp;|&nbsp; Market: <span style="color:var(--red);font-weight:700">${competitiveAdj.adjustment}</span>
+       </div>`
+    : '';
+
   return `
     <div class="score-section">
       <div class="score-circle">
-        <div class="score-big ${cls}">${audit.score}</div>
+        <div class="score-big ${cls}">${displayScore}</div>
         <div style="font-size:0.7rem;color:var(--muted);margin-top:0.1rem">out of 100</div>
+        ${adjBadge}
       </div>
       <div class="score-bar-wrap">
-        <div class="score-tag" style="color:${color};margin-bottom:0.4rem">DEMAND SCORE: ${audit.score_label.toUpperCase()}</div>
+        <div class="score-tag" style="color:${color};margin-bottom:0.4rem">MARKET SCORE: ${displayLabel.toUpperCase()}</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.4rem">
+          ${competitiveAdj && competitiveAdj.adjustment < 0
+            ? `Profile completeness: ${audit.score}/100 · Competitive position penalty: ${competitiveAdj.adjustment} pts`
+            : `Profile completeness score — no competitor data to adjust`}
+        </div>
         <div class="score-bar-track">
-          <div class="score-bar-fill" style="width:${audit.score}%;background:${color}"></div>
+          <div class="score-bar-fill" style="width:${displayScore}%;background:${color}"></div>
         </div>
       </div>
     </div>`;
+}
+
+function scoreLabelFromScore(score) {
+  if (score >= 90) return 'Excellent';
+  if (score >= 70) return 'Good';
+  if (score >= 50) return 'Needs Work';
+  return 'Critical';
 }
 
 function gapsTableHtml(gaps) {
@@ -332,8 +358,15 @@ function gapsTableHtml(gaps) {
 }
 
 function checklistHtml(gaps) {
+  // Show all gaps (profile + competitive), mark competitive ones
   return `<ul class="checklist">
-    ${gaps.slice(0, 5).map(g => `<li>${g.fix}</li>`).join('')}
+    ${gaps.map(g => {
+      const prefix = g.competitive ? '<span style="color:var(--red);font-weight:700;font-size:0.75rem;margin-right:0.3rem">⚔ COMPETITIVE</span> ' : '';
+      const badge = g.severity === 'high'
+        ? '<span style="background:#fee2e2;color:#991b1b;font-size:0.65rem;font-weight:700;padding:1px 5px;margin-right:0.4rem;text-transform:uppercase">High</span>'
+        : '<span style="background:#fef9c3;color:#854d0e;font-size:0.65rem;font-weight:700;padding:1px 5px;margin-right:0.4rem;text-transform:uppercase">Med</span>';
+      return `<li>${badge}${prefix}${g.fix}</li>`;
+    }).join('')}
   </ul>`;
 }
 
@@ -499,10 +532,10 @@ export function scoreProjectionForTest(audit, topN = 3) {
 
   for (const gap of resolvedGaps) {
     switch (gap.id) {
-      case 'few_reviews':      projected.review_count = 50;   break;
-      case 'low_rating':       projected.rating = 4.0;        break;
-      case 'no_photos':        projected.photo_count = 20;    break;
-      case 'few_photos':       projected.photo_count = 20;    break;
+      case 'few_reviews':      projected.review_count = 100;  break;
+      case 'low_rating':       projected.rating = 4.3;        break;
+      case 'no_photos':        projected.photo_count = 50;    break;
+      case 'few_photos':       projected.photo_count = 50;    break;
       case 'no_hours':         projected.has_hours = true;    break;
       case 'no_website':       projected.has_website = true;  break;
       case 'no_phone':         projected.has_phone = true;    break;
@@ -566,7 +599,11 @@ function revenueCalculatorHtml(gaps, calendarUrl) {
 
 export function renderClientReport({ audit, clientName, competitors, auditHistory }) {
   const working = workingItems(audit.fields);
-  const leak = totalRevenueLeak(audit.gaps);
+
+  // Compute competitive adjustment — merges competitive gaps into the gap list
+  const compAdj = computeCompetitiveAdjustment(audit.score, competitors);
+  const allGaps = [...audit.gaps, ...compAdj.competitive_gaps];
+  const leak = totalRevenueLeak(allGaps);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -584,7 +621,7 @@ export function renderClientReport({ audit, clientName, competitors, auditHistor
   <h1>${audit.business_name}</h1>
   <div style="color:var(--muted);font-size:0.85rem;margin-bottom:0.5rem">${audit.address || ''}</div>
 
-  ${scoreHtml(audit)}
+  ${scoreHtml(audit, compAdj.adjustment !== 0 ? compAdj : null)}
 
   ${scoreTrendHtml(auditHistory)}
   ${reviewVelocityHtml(auditHistory)}
@@ -603,16 +640,17 @@ export function renderClientReport({ audit, clientName, competitors, auditHistor
     ${working.map(w => `<li>${w}</li>`).join('')}
   </ul>` : ''}
 
-  ${audit.gaps.length ? `
+  ${allGaps.length ? `
   <h2>Revenue Opportunity Calculator</h2>
   <div style="color:var(--muted);font-size:0.8rem;margin-bottom:0.75rem">
     Estimated combined monthly impact: <strong style="color:var(--accent)">${formatRevenue(leak.low, leak.high)}</strong> — check/uncheck gaps to build your plan.
   </div>
-  ${revenueCalculatorHtml(audit.gaps, null)}` : ''}
+  ${revenueCalculatorHtml(allGaps, null)}` : ''}
 
-  ${audit.gaps.length ? `
-  <h2>Action Checklist</h2>
-  ${checklistHtml(audit.gaps)}` : ''}
+  ${allGaps.length ? `
+  <h2>Action Plan</h2>
+  <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem">Sorted by priority. Items marked ⚔ are competitive gaps vs. your local market.</div>
+  ${checklistHtml(allGaps)}` : ''}
 
   <div class="footer">
     <span>Prepared by EngageEngine · engageengine.com</span>
@@ -764,6 +802,124 @@ export function renderComparisonReport(subject, competitors) {
   <div class="footer">
     <span>EngageEngine · engageengine.com</span>
     <span>Data via Google Places API · ${new Date().toLocaleDateString()}</span>
+  </div>
+</body>
+</html>`;
+}
+
+// ============================================================
+// Standalone Checklist Report
+// ============================================================
+
+/**
+ * Renders a printable, prioritized improvement checklist for a client.
+ * Groups gaps: High priority → Medium → Competitive gaps.
+ * Each item includes the issue, revenue impact, and specific action.
+ *
+ * @param {object} audit - AuditResult
+ * @param {string} clientName
+ * @param {object|null} competitorScan - optional, adds competitive gaps
+ */
+export function renderChecklist({ audit, clientName, competitorScan = null }) {
+  const compAdj = computeCompetitiveAdjustment(audit.score, competitorScan);
+  const allGaps = [...audit.gaps, ...compAdj.competitive_gaps];
+
+  const highGaps   = allGaps.filter(g => g.severity === 'high');
+  const mediumGaps = allGaps.filter(g => g.severity === 'medium');
+
+  const totalLow  = audit.gaps.reduce((s, g) => s + (g.revenue_impact?.low  || 0), 0);
+  const totalHigh = audit.gaps.reduce((s, g) => s + (g.revenue_impact?.high || 0), 0);
+
+  function item(g, n) {
+    const revDisplay = g.revenue_impact?.display
+      ? `<span style="font-weight:700;color:var(--accent)">${g.revenue_impact.display}</span>`
+      : g.competitive
+        ? `<span style="font-size:0.75rem;color:var(--muted)">Competitive gap</span>`
+        : '';
+    return `
+    <div style="display:flex;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid var(--border);align-items:flex-start;page-break-inside:avoid">
+      <div style="min-width:24px;height:24px;border:2px solid var(--brand);border-radius:3px;flex-shrink:0;margin-top:2px"></div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+          <div style="font-weight:700;font-size:0.9rem">${n}. ${g.label}</div>
+          ${revDisplay}
+        </div>
+        <div style="font-size:0.82rem;color:var(--text);margin-top:0.3rem;line-height:1.5">${g.fix}</div>
+        ${g.revenue_impact?.basis ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:0.2rem;font-style:italic">${g.revenue_impact.basis}</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  let counter = 1;
+  const highItems   = highGaps.map(g   => item(g, counter++)).join('');
+  const mediumItems = mediumGaps.map(g => item(g, counter++)).join('');
+
+  const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GBP Improvement Checklist — ${clientName || audit.business_name}</title>
+  ${GOOGLE_FONTS}
+  <style>
+    ${SHARED_CSS}
+    @media print {
+      .no-print { display: none !important; }
+      body { padding: 1.5cm; }
+    }
+  </style>
+</head>
+<body>
+  ${headerHtml(clientName || audit.business_name)}
+
+  <h1 style="margin-bottom:0.25rem">${clientName || audit.business_name}</h1>
+  <div style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">${audit.address || ''} · Checklist generated ${date}</div>
+
+  <!-- Score + revenue summary -->
+  <div style="display:flex;gap:1rem;margin:1rem 0 1.5rem;flex-wrap:wrap">
+    <div class="stat-card" style="flex:1;min-width:120px">
+      <div class="stat-val ${audit.score >= 90 ? 'good' : audit.score >= 70 ? '' : audit.score >= 50 ? 'warn' : 'bad'}">${compAdj.adjustment !== 0 ? compAdj.adjustedScore : audit.score}</div>
+      <div class="stat-lbl">Market Score</div>
+      ${compAdj.adjustment !== 0 ? `<div class="stat-sub">Profile: ${audit.score} · Market adj: ${compAdj.adjustment}</div>` : ''}
+    </div>
+    <div class="stat-card" style="flex:1;min-width:120px">
+      <div class="stat-val warn">${allGaps.length}</div>
+      <div class="stat-lbl">Open Items</div>
+      <div class="stat-sub">${highGaps.length} high · ${mediumGaps.length} medium</div>
+    </div>
+    ${totalLow > 0 ? `
+    <div class="stat-card" style="flex:1;min-width:160px;border-top-color:var(--accent)">
+      <div class="stat-val" style="color:var(--accent);font-size:1.1rem">$${totalLow.toLocaleString()}–$${totalHigh.toLocaleString()}/mo</div>
+      <div class="stat-lbl">Monthly Revenue at Risk</div>
+      <div class="stat-sub">Estimated from profile gaps</div>
+    </div>` : ''}
+  </div>
+
+  <div class="no-print" style="margin-bottom:1.5rem">
+    <button onclick="window.print()" style="background:var(--brand);color:white;border:none;padding:0.6rem 1.5rem;font-size:0.9rem;font-weight:700;cursor:pointer;letter-spacing:0.05em">🖨 Print / Save as PDF</button>
+  </div>
+
+  ${highGaps.length ? `
+  <h2 style="color:var(--red)">Priority 1 — Fix These First</h2>
+  <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem">These gaps have the highest revenue and ranking impact. Fix before anything else.</div>
+  ${highItems}` : ''}
+
+  ${mediumGaps.length ? `
+  <h2 style="margin-top:1.5rem">Priority 2 — Important</h2>
+  <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.75rem">Complete after Priority 1. Each item meaningfully improves your profile completeness and ranking signals.</div>
+  ${mediumItems}` : ''}
+
+  ${!allGaps.length ? `<p style="color:var(--green);font-weight:600;font-size:1rem">✓ No open gaps — this profile is in excellent shape.</p>` : ''}
+
+  <div style="margin-top:2rem;padding:1rem;background:var(--bg);border:1px solid var(--border);font-size:0.8rem;color:var(--muted)">
+    <strong style="color:var(--text)">About these estimates:</strong> Revenue impact ranges are derived from published GBP research (BrightLocal, Womply, Uberall, Google) and represent estimated monthly revenue at risk from each gap. Actual results vary by market, competition level, and business type. Competitive gaps are calculated relative to nearby businesses in the same category.
+  </div>
+
+  <div class="footer">
+    <span>Prepared by EngageEngine · engageengine.com</span>
+    <span>${date}</span>
   </div>
 </body>
 </html>`;

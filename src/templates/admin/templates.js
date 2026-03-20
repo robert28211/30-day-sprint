@@ -133,7 +133,8 @@ export function renderDashboard({ clients, lastScan, alerts, unresolvedCount, ne
       <td>${deltaHtml(c.last_delta)}</td>
       <td style="color:var(--muted);font-size:0.8rem">${relativeDate(c.last_audit_date)}</td>
       <td style="white-space:nowrap">
-        ${c.place_id && c.last_audit_date ? `<a href="/report/client/${c.id}?key=REPORT_SECRET" class="btn btn-primary" style="font-size:0.75rem" target="_blank">Client Report</a>` : ''}
+        ${c.last_audit_id ? `<a href="/report/client/${c.last_audit_id}?key=REPORT_SECRET" class="btn btn-primary" style="font-size:0.75rem" target="_blank">Report</a>` : ''}
+        ${c.last_audit_id ? ` <a href="/report/client/${c.last_audit_id}/checklist?key=REPORT_SECRET" class="btn btn-secondary" style="font-size:0.75rem" target="_blank">Checklist</a>` : ''}
         ${c.place_id ? ` <a href="/report/prospect/${c.place_id}?key=REPORT_SECRET" class="btn btn-ghost" style="font-size:0.75rem" target="_blank">Prospect</a>` : '<span style="color:var(--red);font-size:0.75rem">No Place ID</span>'}
       </td>
     </tr>
@@ -333,6 +334,7 @@ export function renderClientDetail({ client, audits, events }) {
     <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
       ${latestAudit ? `
         <a href="/report/client/${latestAudit.id}?key=REPORT_SECRET" class="btn btn-primary" target="_blank">Client Report</a>
+        <a href="/report/client/${latestAudit.id}/checklist?key=REPORT_SECRET" class="btn btn-secondary" target="_blank">📋 Improvement Checklist</a>
       ` : ''}
       ${client.place_id ? `
         <a href="/report/prospect/${client.place_id}?key=REPORT_SECRET" class="btn btn-ghost" target="_blank">Prospect View</a>

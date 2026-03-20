@@ -45,10 +45,10 @@ export async function handleDashboard(req, env) {
   const unauth = requireAuth(req, env);
   if (unauth) return unauth;
 
-  // Load all clients with latest audit score
+  // Load all clients with latest audit score + audit ID (needed for report/checklist links)
   const clients = await env.DB.prepare(`
     SELECT c.*,
-      a.score as last_score, a.score_label as last_score_label,
+      a.id as last_audit_id, a.score as last_score, a.score_label as last_score_label,
       a.score_delta as last_delta, a.audit_date as last_audit_date
     FROM clients c
     LEFT JOIN audits a ON a.id = (

@@ -16,6 +16,7 @@ import {
 
 import {
   handleClientReport,
+  handleClientChecklist,
   handleProspectReport,
   handleComparisonReport,
 } from './routes/reports.js';
@@ -71,6 +72,11 @@ export default {
       }
 
       // ── Report routes ─────────────────────────────────────────────────
+      const clientChecklistMatch = path.match(/^\/report\/client\/(\d+)\/checklist$/);
+      if (method === 'GET' && clientChecklistMatch) {
+        return handleClientChecklist(request, env, parseInt(clientChecklistMatch[1]));
+      }
+
       const clientReportMatch = path.match(/^\/report\/client\/(\d+)$/);
       if (method === 'GET' && clientReportMatch) {
         return handleClientReport(request, env, parseInt(clientReportMatch[1]));
