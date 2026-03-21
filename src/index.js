@@ -12,6 +12,7 @@ import {
   handleGbpScorePage,
   handleGbpScoreApi,
   handleLeadCapture,
+  handleCompetitorTeaser,
 } from './routes/public.js';
 
 import {
@@ -67,6 +68,10 @@ export default {
       if (method === 'GET' && path === '/api/gbp-score') {
         return handleGbpScoreApi(request, env);
       }
+      if (method === 'GET' && path === '/api/competitor-teaser') {
+        return handleCompetitorTeaser(request, env);
+      }
+
       if (method === 'POST' && path === '/api/leads') {
         return handleLeadCapture(request, env);
       }

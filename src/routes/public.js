@@ -1,13 +1,15 @@
 /**
  * Public routes — no auth required.
  *
- * GET  /gbp-score             → landing page HTML
- * GET  /api/gbp-score?q=...   → partial audit (no revenue $)
- * POST /api/leads             → lead capture + full report delivery
+ * GET  /gbp-score                        → landing page HTML
+ * GET  /api/gbp-score?q=...             → partial audit (no revenue $)
+ * GET  /api/competitor-teaser?place_id= → competitor review count vs subject (KV-cached 24h)
+ * POST /api/leads                        → lead capture + full report delivery
  */
 
 import { findPlaceByText, getPlaceDetails } from '../modules/places.js';
 import { runAudit } from '../modules/audit.js';
+import { scanCompetitors } from '../modules/competitors.js';
 import { sendLeadReport, sendRobbieAlert } from '../modules/email.js';
 import { gbpScoreLandingHtml } from '../templates/gbp-score-landing.js';
 
@@ -153,6 +155,65 @@ export async function handleLeadCapture(req, env) {
     .bind(email, place_id).run().catch(() => {});
 
   return json({ success: true, message: 'Your full report is on its way. Expect it within 5 minutes.' });
+}
+
+// ---------------------------------------------------------------------------
+// Competitor Teaser (async FOMO section on landing page)
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /api/competitor-teaser?place_id=ChIJ...
+ * Returns the top competitor's review count vs. the subject for the FOMO teaser.
+ * KV-cached 24h per place_id to avoid hammering Places API on every page view.
+ */
+export async function handleCompetitorTeaser(req, env) {
+  const url = new URL(req.url);
+  const placeId = url.searchParams.get('place_id');
+  if (!placeId) return jsonError('place_id required', 400);
+
+  const cacheKey = `competitor-teaser:${placeId}`;
+  const cached = await env.CACHE.get(cacheKey);
+  if (cached) return json(JSON.parse(cached));
+
+  // Run subject audit + competitor scan in parallel
+  let auditResult, competitorScan;
+  try {
+    [auditResult, competitorScan] = await Promise.all([
+      runAudit(placeId, env),
+      scanCompetitors(placeId, [], env),
+    ]);
+  } catch (err) {
+    console.error('[competitor-teaser] failed:', err.message);
+    return jsonError('Could not load competitor data', 503);
+  }
+
+  if (!competitorScan?.competitors?.length) {
+    return json({ available: false });
+  }
+
+  const subject = competitorScan.subject;
+  const leader = competitorScan.competitors.reduce((best, c) =>
+    (c.fields.review_count || 0) > (best.fields.review_count || 0) ? c : best
+  , competitorScan.competitors[0]);
+
+  const subjectReviews = subject?.fields?.review_count ?? auditResult?.fields?.review_count ?? 0;
+  const leaderReviews  = leader.fields.review_count || 0;
+  const reviewRank     = competitorScan.matrix?.review_count?.subject_rank ?? null;
+  const total          = competitorScan.matrix?.review_count?.total ?? (competitorScan.competitors.length + 1);
+
+  const result = {
+    available: true,
+    subject_reviews: subjectReviews,
+    leader_name: leader.business_name,
+    leader_reviews: leaderReviews,
+    rank: reviewRank,
+    total,
+    ratio: leaderReviews > 0 ? Math.round((leaderReviews / Math.max(subjectReviews, 1)) * 10) / 10 : null,
+  };
+
+  // Cache 24h
+  await env.CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 86400 });
+  return json(result);
 }
 
 // ---------------------------------------------------------------------------

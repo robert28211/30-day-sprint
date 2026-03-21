@@ -154,12 +154,28 @@ const SHARED_CSS = `
   .calc-total-label { font-size: 0.8rem; }
   .calc-total-amount { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 900; color: var(--accent); }
 
+  /* Priority hero — #1 action this week */
+  .priority-hero { background: var(--brand); color: white; padding: 1.25rem 1.5rem; margin: 1rem 0 1.5rem; border-left: 5px solid var(--accent); }
+  .priority-hero-tag { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.4rem; }
+  .priority-hero-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 900; color: white; margin-bottom: 0.25rem; }
+  .priority-hero-impact { font-size: 0.8rem; color: #C5D3E3; margin-bottom: 0.5rem; }
+  .priority-hero-action { font-size: 0.875rem; color: #e2eaf4; margin-bottom: 0.75rem; line-height: 1.5; }
+  .priority-hero-links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .priority-hero-links a { display: inline-block; padding: 0.45rem 1rem; font-size: 0.8rem; font-weight: 700; text-decoration: none; border-radius: 3px; }
+  .priority-hero-links a.primary { background: var(--accent); color: var(--brand); }
+  .priority-hero-links a.secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.4); }
+
+  /* Action links on gap items */
+  .gap-action { display: inline-block; margin-top: 0.35rem; font-size: 0.75rem; font-weight: 700; color: var(--brand); text-decoration: none; background: var(--bg); border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 3px; white-space: nowrap; }
+  .gap-action:hover { background: var(--brand); color: white; }
+
   @media print {
     body { padding: 0; max-width: 100%; }
     .no-print { display: none !important; }
     .gaps-table, .competitor-table { page-break-inside: avoid; }
     h2 { page-break-after: avoid; }
-    .revenue-box, .cta-box, .projection-box { page-break-inside: avoid; }
+    .revenue-box, .cta-box, .projection-box, .priority-hero { page-break-inside: avoid; }
+    .gap-action { display: none; }
     @page { margin: 1.5cm; size: A4; }
   }
 `;
@@ -357,7 +373,67 @@ function gapsTableHtml(gaps) {
     </table>`;
 }
 
-function checklistHtml(gaps) {
+/**
+ * Returns the most actionable URL for a given gap type.
+ * Review-related gaps: shareable Google review write link (give to customers).
+ * All other gaps: Google Business Profile dashboard.
+ * @param {string} gapId
+ * @param {string|null} placeId
+ */
+function gbpActionUrl(gapId, placeId) {
+  if ((gapId === 'few_reviews' || gapId === 'low_rating') && placeId) {
+    return `https://search.google.com/local/writereview?placeid=${placeId}`;
+  }
+  return 'https://business.google.com/';
+}
+
+function gbpActionLabel(gapId) {
+  const labels = {
+    few_reviews:    'Get Review Link →',
+    low_rating:     'Get Review Link →',
+    no_photos:      'Add Photos in GBP →',
+    few_photos:     'Add Photos in GBP →',
+    no_hours:       'Set Hours in GBP →',
+    no_website:     'Add Website in GBP →',
+    no_phone:       'Add Phone in GBP →',
+    closed_listing: 'Reopen Listing →',
+    no_description: 'Add Description →',
+    no_category:    'Set Category →',
+  };
+  return labels[gapId] || 'Open GBP Dashboard →';
+}
+
+/**
+ * "#1 Priority This Week" hero box — most impactful gap with direct action link.
+ * @param {Array} gaps - sorted by severity/revenue, first = highest priority
+ * @param {string|null} placeId
+ */
+function priorityHeroHtml(gaps, placeId) {
+  if (!gaps || gaps.length === 0) return '';
+  const top = gaps[0];
+  if (top.competitive) return ''; // Skip if top gap is competitive (no direct action link)
+
+  const actionUrl = gbpActionUrl(top.id, placeId);
+  const actionLabel = gbpActionLabel(top.id);
+  const isReviewGap = top.id === 'few_reviews' || top.id === 'low_rating';
+  const revText = top.revenue_impact?.display
+    ? `Estimated impact: <strong>${top.revenue_impact.display}/mo</strong>`
+    : '';
+
+  return `
+  <div class="priority-hero no-print">
+    <div class="priority-hero-tag">★ Your #1 Priority This Week</div>
+    <div class="priority-hero-title">${top.label}</div>
+    ${revText ? `<div class="priority-hero-impact">${revText}</div>` : ''}
+    <div class="priority-hero-action">${top.fix}</div>
+    <div class="priority-hero-links">
+      <a href="${actionUrl}" target="_blank" class="primary">${actionLabel}</a>
+      ${isReviewGap ? `<a href="https://business.google.com/" target="_blank" class="secondary">Open GBP Dashboard →</a>` : ''}
+    </div>
+  </div>`;
+}
+
+function checklistHtml(gaps, placeId = null) {
   // Show all gaps (profile + competitive), mark competitive ones
   return `<ul class="checklist">
     ${gaps.map(g => {
@@ -365,7 +441,10 @@ function checklistHtml(gaps) {
       const badge = g.severity === 'high'
         ? '<span style="background:#fee2e2;color:#991b1b;font-size:0.65rem;font-weight:700;padding:1px 5px;margin-right:0.4rem;text-transform:uppercase">High</span>'
         : '<span style="background:#fef9c3;color:#854d0e;font-size:0.65rem;font-weight:700;padding:1px 5px;margin-right:0.4rem;text-transform:uppercase">Med</span>';
-      return `<li>${badge}${prefix}${g.fix}</li>`;
+      const actionLink = !g.competitive && placeId
+        ? `<br><a href="${gbpActionUrl(g.id, placeId)}" target="_blank" class="gap-action no-print">${gbpActionLabel(g.id)}</a>`
+        : '';
+      return `<li>${badge}${prefix}${g.fix}${actionLink}</li>`;
     }).join('')}
   </ul>`;
 }
@@ -626,6 +705,8 @@ export function renderClientReport({ audit, clientName, competitors, auditHistor
   ${scoreTrendHtml(auditHistory)}
   ${reviewVelocityHtml(auditHistory)}
 
+  ${priorityHeroHtml(allGaps, audit.place_id)}
+
   ${scoreProjectionHtml(audit)}
 
   <h2>Competitive Position</h2>
@@ -650,7 +731,7 @@ export function renderClientReport({ audit, clientName, competitors, auditHistor
   ${allGaps.length ? `
   <h2>Action Plan</h2>
   <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.5rem">Sorted by priority. Items marked ⚔ are competitive gaps vs. your local market.</div>
-  ${checklistHtml(allGaps)}` : ''}
+  ${checklistHtml(allGaps, audit.place_id)}` : ''}
 
   <div class="footer">
     <span>Prepared by EngageEngine · engageengine.com</span>
@@ -690,6 +771,8 @@ export function renderProspectReport({ audit, competitors, calendarUrl = 'https:
     Your profile is capturing an estimated <strong>${audit.score}%</strong> of the demand available to your business.
   </div>
 
+  ${priorityHeroHtml(audit.gaps, audit.place_id)}
+
   ${scoreProjectionHtml(audit)}
 
   <h2>Competitive Position</h2>
@@ -709,9 +792,14 @@ export function renderProspectReport({ audit, competitors, calendarUrl = 'https:
   ${revenueCalculatorHtml(top3, calendarUrl)}
 
   ${top3.length ? `
-  <h2>What EngageEngine Would Do in 30 Days</h2>
+  <h2>Your 30-Day Action Plan</h2>
   <ul class="checklist">
-    ${top3.map(g => `<li>${g.fix}</li>`).join('')}
+    ${top3.map((g, i) => {
+      const actionLink = !g.competitive && audit.place_id
+        ? ` <a href="${gbpActionUrl(g.id, audit.place_id)}" target="_blank" style="font-size:0.75rem;font-weight:700;color:var(--brand);text-decoration:none;background:var(--bg);border:1px solid var(--border);padding:0.15rem 0.5rem;border-radius:3px;margin-left:0.4rem">${gbpActionLabel(g.id)}</a>`
+        : '';
+      return `<li><strong>${i + 1}.</strong> ${g.fix}${actionLink}</li>`;
+    }).join('')}
   </ul>` : ''}
 
   <div class="cta-box">
@@ -722,7 +810,7 @@ export function renderProspectReport({ audit, competitors, calendarUrl = 'https:
 
   <div class="footer">
     <span>EngageEngine · engageengine.com</span>
-    <span>Revenue estimates based on LocaliQ/WordStream 2024 benchmarks</span>
+    <span>Revenue estimates based on BrightLocal, Womply, Uberall &amp; Google research</span>
   </div>
 </body>
 </html>`;
@@ -830,12 +918,17 @@ export function renderChecklist({ audit, clientName, competitorScan = null }) {
   const totalLow  = audit.gaps.reduce((s, g) => s + (g.revenue_impact?.low  || 0), 0);
   const totalHigh = audit.gaps.reduce((s, g) => s + (g.revenue_impact?.high || 0), 0);
 
+  const placeId = audit.place_id || null;
+
   function item(g, n) {
     const revDisplay = g.revenue_impact?.display
       ? `<span style="font-weight:700;color:var(--accent)">${g.revenue_impact.display}</span>`
       : g.competitive
         ? `<span style="font-size:0.75rem;color:var(--muted)">Competitive gap</span>`
         : '';
+    const actionLink = !g.competitive && placeId
+      ? `<a href="${gbpActionUrl(g.id, placeId)}" target="_blank" style="display:inline-block;margin-top:0.4rem;font-size:0.75rem;font-weight:700;color:var(--brand);text-decoration:none;background:var(--bg);border:1px solid var(--border);padding:0.2rem 0.6rem;border-radius:3px">${gbpActionLabel(g.id)}</a>`
+      : '';
     return `
     <div style="display:flex;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid var(--border);align-items:flex-start;page-break-inside:avoid">
       <div style="min-width:24px;height:24px;border:2px solid var(--brand);border-radius:3px;flex-shrink:0;margin-top:2px"></div>
@@ -846,6 +939,7 @@ export function renderChecklist({ audit, clientName, competitorScan = null }) {
         </div>
         <div style="font-size:0.82rem;color:var(--text);margin-top:0.3rem;line-height:1.5">${g.fix}</div>
         ${g.revenue_impact?.basis ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:0.2rem;font-style:italic">${g.revenue_impact.basis}</div>` : ''}
+        ${actionLink}
       </div>
     </div>`;
   }

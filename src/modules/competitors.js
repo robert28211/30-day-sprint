@@ -7,6 +7,14 @@ import { runAudit } from './audit.js';
 import { findNearbyCompetitors } from './places.js';
 import { sendCompetitorAlert } from './email.js';
 
+// Types that are too generic to use as a competitor search filter.
+// If the subject's first type is one of these, walk the array until we find a
+// specific type so we don't accidentally search for "any establishment nearby".
+const GENERIC_TYPES = new Set([
+  'point_of_interest', 'establishment', 'premise', 'store',
+  'food', 'health', 'finance', 'government', 'lodging',
+]);
+
 // ---------------------------------------------------------------------------
 // Gap Matrix
 // ---------------------------------------------------------------------------
@@ -27,7 +35,9 @@ export async function scanCompetitors(subjectPlaceId, competitorPlaceIds = [], e
 
   // Auto-discover if no competitors provided
   if (!competitorPlaceIds.length) {
-    const primaryType = subject.raw_types?.[0];
+    // Skip generic types so we don't search for "any establishment nearby"
+    const rawTypes = subject.raw_types || [];
+    const primaryType = rawTypes.find(t => !GENERIC_TYPES.has(t)) || rawTypes[0];
     if (primaryType && subject.lat && subject.lng) {
       const nearby = await findNearbyCompetitors(primaryType, subject.lat, subject.lng, subjectPlaceId, 3, env);
       competitorPlaceIds = nearby.map(n => n.place_id);
@@ -39,9 +49,22 @@ export async function scanCompetitors(subjectPlaceId, competitorPlaceIds = [], e
     competitorPlaceIds.map(id => runAudit(id, env))
   );
 
+  // Post-filter: remove competitors that don't share a specific type with the subject.
+  // This is a second safety net — if the nearby search returned a wrong-category
+  // business (e.g. Walgreens for a plumber), we drop it here.
+  const subjectSpecificTypes = new Set(
+    (subject.raw_types || []).filter(t => !GENERIC_TYPES.has(t))
+  );
+
   const competitors = competitorAudits
     .filter(r => r.status === 'fulfilled')
-    .map(r => r.value);
+    .map(r => r.value)
+    .filter(c => {
+      // If we have no specific type info about the subject, keep all competitors
+      if (subjectSpecificTypes.size === 0) return true;
+      // Keep only competitors that share at least one specific type with the subject
+      return (c.raw_types || []).some(t => subjectSpecificTypes.has(t));
+    });
 
   // Build gap matrix
   const matrix = buildMatrix(subject, competitors);

@@ -228,6 +228,13 @@ export function gbpScoreLandingHtml() {
       <div id="gaps-list"></div>
     </div>
 
+    <!-- Competitor teaser — loaded async after score reveal -->
+    <div id="competitor-teaser" style="display:none;background:#0D1828;color:white;padding:1rem 1.25rem;margin:1rem 0;border-radius:4px;border-left:4px solid #C9A84C">
+      <div style="font-size:0.6rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#C9A84C;margin-bottom:0.3rem">⚔ Competitor Alert</div>
+      <div id="teaser-headline" style="font-size:1rem;font-weight:700;line-height:1.4;margin-bottom:0.4rem"></div>
+      <div id="teaser-sub" style="font-size:0.8rem;color:#C5D3E3">Your full competitive analysis is in the report below →</div>
+    </div>
+
     <div class="urgency">⚠️ Every day without fixing this is revenue left on the table.</div>
 
     <div class="capture-card" id="capture-card">
@@ -301,12 +308,40 @@ export function gbpScoreLandingHtml() {
       <div class="gap-item">
         <span class="gap-badge \${g.severity}">\${g.severity.toUpperCase()}</span>
         <span class="gap-label">\${g.label}</span>
-        <span class="gap-money">$ hidden</span>
+        <span class="gap-money">$ in free report</span>
       </div>
     \`).join('');
 
     document.getElementById('results').style.display = 'block';
     document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Async: load competitor teaser (non-blocking — shows if data available)
+    if (data.place_id) loadCompetitorTeaser(data.place_id);
+  }
+
+  async function loadCompetitorTeaser(placeId) {
+    try {
+      const res = await fetch('/api/competitor-teaser?place_id=' + encodeURIComponent(placeId));
+      if (!res.ok) return;
+      const d = await res.json();
+      if (!d.available || !d.leader_reviews) return;
+
+      const teaser = document.getElementById('competitor-teaser');
+      const headline = document.getElementById('teaser-headline');
+      const sub = document.getElementById('teaser-sub');
+
+      if (d.leader_reviews > d.subject_reviews) {
+        const ratio = d.ratio && d.ratio > 1 ? \`\${d.ratio}x more reviews\` : \`\${d.leader_reviews} reviews vs your \${d.subject_reviews}\`;
+        const rankText = d.rank ? \`You're #\${d.rank} of \${d.total} in your area. \` : '';
+        headline.textContent = \`\${d.leader_name} has \${ratio}.\`;
+        sub.textContent = \`\${rankText}Your full competitive breakdown is in the free report.\`;
+      } else {
+        headline.textContent = \`You lead your area with \${d.subject_reviews} reviews — don't lose that edge.\`;
+        sub.textContent = 'Keep the advantage. See your full competitive report below →';
+      }
+
+      teaser.style.display = 'block';
+    } catch { /* silently skip if competitor data unavailable */ }
   }
 
   async function submitLead() {

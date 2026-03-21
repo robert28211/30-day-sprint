@@ -16,14 +16,18 @@ import { totalRevenueLeak, scoreProjectionForTest } from '../src/modules/reportR
 // ---------------------------------------------------------------------------
 
 describe('scoreRating', () => {
-  it('returns 15 for rating >= 4.0', () => {
-    expect(scoreRating(4.0)).toBe(15);
+  it('returns 15 for rating >= 4.3', () => {
+    expect(scoreRating(4.3)).toBe(15);
     expect(scoreRating(4.5)).toBe(15);
     expect(scoreRating(5.0)).toBe(15);
   });
-  it('returns 8 for rating 3.5–3.9', () => {
-    expect(scoreRating(3.5)).toBe(8);
-    expect(scoreRating(3.9)).toBe(8);
+  it('returns 11 for rating 4.0–4.29', () => {
+    expect(scoreRating(4.0)).toBe(11);
+    expect(scoreRating(4.2)).toBe(11);
+  });
+  it('returns 6 for rating 3.5–3.99', () => {
+    expect(scoreRating(3.5)).toBe(6);
+    expect(scoreRating(3.9)).toBe(6);
   });
   it('returns 0 for rating below 3.5', () => {
     expect(scoreRating(3.4)).toBe(0);
@@ -36,20 +40,24 @@ describe('scoreRating', () => {
 });
 
 describe('scoreReviews', () => {
-  it('returns 15 for >= 50 reviews', () => {
-    expect(scoreReviews(50)).toBe(15);
+  it('returns 15 for >= 100 reviews', () => {
+    expect(scoreReviews(100)).toBe(15);
     expect(scoreReviews(500)).toBe(15);
   });
-  it('returns 10 for 25–49 reviews', () => {
-    expect(scoreReviews(25)).toBe(10);
-    expect(scoreReviews(49)).toBe(10);
+  it('returns 11 for 50–99 reviews', () => {
+    expect(scoreReviews(50)).toBe(11);
+    expect(scoreReviews(99)).toBe(11);
   });
-  it('returns 5 for 10–24 reviews', () => {
-    expect(scoreReviews(10)).toBe(5);
-    expect(scoreReviews(24)).toBe(5);
+  it('returns 7 for 20–49 reviews', () => {
+    expect(scoreReviews(20)).toBe(7);
+    expect(scoreReviews(49)).toBe(7);
   });
-  it('returns 0 for fewer than 10 reviews', () => {
-    expect(scoreReviews(9)).toBe(0);
+  it('returns 3 for 5–19 reviews', () => {
+    expect(scoreReviews(5)).toBe(3);
+    expect(scoreReviews(19)).toBe(3);
+  });
+  it('returns 0 for fewer than 5 reviews', () => {
+    expect(scoreReviews(4)).toBe(0);
     expect(scoreReviews(0)).toBe(0);
   });
   it('returns 0 for null', () => {
@@ -58,20 +66,20 @@ describe('scoreReviews', () => {
 });
 
 describe('scorePhotos', () => {
-  it('returns 15 for >= 20 photos', () => {
-    expect(scorePhotos(20)).toBe(15);
+  it('returns 15 for >= 50 photos', () => {
+    expect(scorePhotos(50)).toBe(15);
     expect(scorePhotos(100)).toBe(15);
   });
-  it('returns 10 for 10–19 photos', () => {
-    expect(scorePhotos(10)).toBe(10);
-    expect(scorePhotos(19)).toBe(10);
+  it('returns 10 for 20–49 photos', () => {
+    expect(scorePhotos(20)).toBe(10);
+    expect(scorePhotos(49)).toBe(10);
   });
-  it('returns 5 for 3–9 photos', () => {
-    expect(scorePhotos(3)).toBe(5);
-    expect(scorePhotos(9)).toBe(5);
+  it('returns 5 for 5–19 photos', () => {
+    expect(scorePhotos(5)).toBe(5);
+    expect(scorePhotos(19)).toBe(5);
   });
-  it('returns 0 for < 3 photos', () => {
-    expect(scorePhotos(2)).toBe(0);
+  it('returns 0 for < 5 photos', () => {
+    expect(scorePhotos(4)).toBe(0);
     expect(scorePhotos(0)).toBe(0);
   });
   it('returns 0 for null', () => {
