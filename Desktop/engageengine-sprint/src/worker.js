@@ -69,6 +69,7 @@ const ROUTES = [
   { method: 'POST', re: /^\/api\/jobs$/, handler: handleJobCreate },
   { method: 'POST', re: /^\/api\/jobs\/([^/]+)\/complete$/, handler: (r, e, m) => handleJobStatus(r, e, m[1], 'Complete') },
   { method: 'POST', re: /^\/api\/jobs\/([^/]+)\/reopen$/,   handler: (r, e, m) => handleJobStatus(r, e, m[1], 'Active') },
+  { method: 'PUT',  re: /^\/api\/jobs\/([^/]+)$/,           handler: (r, e, m) => handleJobUpdate(r, e, m[1]) },
   { method: 'POST', re: /^\/api\/tasks$/, handler: handleTaskCreate },
   { method: 'PUT',  re: /^\/api\/tasks\/([^/]+)$/, handler: (r, e, m) => handleTaskUpdate(r, e, m[1]) },
   { method: 'DELETE', re: /^\/api\/tasks\/([^/]+)$/, handler: (r, e, m) => handleTaskDelete(r, e, m[1]) },
@@ -81,12 +82,16 @@ const ROUTES = [
   { method: 'GET',  re: /^\/api\/gmail\/auth$/, handler: handleGmailAuth },
   { method: 'GET',  re: /^\/api\/gmail\/callback$/, handler: handleGmailCallback, public: true },
   { method: 'GET',  re: /^\/api\/gmail\/status$/, handler: handleGmailStatus },
+  { method: 'POST', re: /^\/api\/gmail\/poll$/, handler: handleGmailPollNow },
   // AI Intake
   { method: 'GET',  re: /^\/api\/intake$/, handler: handleIntakeList },
   { method: 'POST', re: /^\/api\/intake\/upload$/, handler: handleIntakeUpload },
   { method: 'POST', re: /^\/api\/intake\/chat$/, handler: handleIntakeChat },
   { method: 'POST', re: /^\/api\/intake\/([^/]+)\/confirm$/, handler: (r, e, m) => handleIntakeConfirm(r, e, m[1]) },
   { method: 'POST', re: /^\/api\/intake\/([^/]+)\/dismiss$/, handler: (r, e, m) => handleIntakeDismiss(r, e, m[1]) },
+  { method: 'POST', re: /^\/api\/intake\/([^/]+)\/save-as-note$/, handler: (r, e, m) => handleIntakeSaveAsNote(r, e, m[1]) },
+  { method: 'POST', re: /^\/api\/intake\/bulk-dismiss$/, handler: handleIntakeBulkDismiss },
+  { method: 'POST', re: /^\/api\/assistant$/, handler: handleAssistant },
   // All Work
   { method: 'GET',  re: /^\/api\/allwork$/, handler: handleAllWork },
 ];
@@ -109,8 +114,10 @@ async function handleDashboard(request, env) {
       COUNT(DISTINCT j.id) as active_jobs,
       COUNT(DISTINCT CASE WHEN t.status = 'Not Started' THEN t.id END) as open_tasks,
       COUNT(DISTINCT CASE WHEN t.status = 'Complete' THEN t.id END) as done_tasks,
-      COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date < date('now') THEN t.id END) as overdue_tasks,
-      COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date BETWEEN date('now') AND date('now','+3 days') THEN t.id END) as soon_tasks
+      COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date < date('now') THEN t.id END) +
+        COUNT(DISTINCT CASE WHEN j.status='Active' AND j.due_date != '' AND j.due_date < date('now') THEN j.id END) as overdue_tasks,
+      COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date BETWEEN date('now') AND date('now','+3 days') THEN t.id END) +
+        COUNT(DISTINCT CASE WHEN j.status='Active' AND j.due_date != '' AND j.due_date BETWEEN date('now') AND date('now','+3 days') THEN j.id END) as soon_tasks
     FROM sprint_clients c
     LEFT JOIN sprint_jobs j ON j.client_id = c.id AND j.status = 'Active'
     LEFT JOIN sprint_tasks t ON t.client_id = c.id
@@ -136,10 +143,14 @@ async function handleDashboard(request, env) {
   // Morning briefing counts
   const briefing = await env.DB.prepare(`
     SELECT
-      COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date < date('now') THEN t.id END) as overdue,
-      COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date = date('now') THEN t.id END) as due_today
+      COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date < date('now') THEN t.id END) +
+        COUNT(DISTINCT CASE WHEN j.status='Active' AND j.due_date != '' AND j.due_date < date('now') THEN j.id END) as overdue,
+      COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date = date('now') THEN t.id END) +
+        COUNT(DISTINCT CASE WHEN j.status='Active' AND j.due_date != '' AND j.due_date = date('now') THEN j.id END) as due_today
     FROM sprint_tasks t
-    JOIN sprint_clients c ON c.id = t.client_id WHERE c.archived = 0
+    JOIN sprint_clients c ON c.id = t.client_id
+    LEFT JOIN sprint_jobs j ON j.client_id = c.id
+    WHERE c.archived = 0
   `).first();
   let intake_pending = 0;
   try {
@@ -153,7 +164,7 @@ async function handleDashboard(request, env) {
 
 async function handleAllWork(request, env) {
   const jobs = await env.DB.prepare(`
-    SELECT j.id, j.name, j.status, j.created_at,
+    SELECT j.id, j.name, j.status, j.created_at, j.assigned_to, j.due_date,
       c.id as client_id, c.name as client_name,
       COUNT(DISTINCT CASE WHEN t.status = 'Not Started' THEN t.id END) as open_tasks,
       COUNT(DISTINCT CASE WHEN t.status = 'Complete' THEN t.id END) as done_tasks,
@@ -309,8 +320,8 @@ async function handleJobCreate(request, env) {
   const body = await request.json().catch(() => ({}));
   const jobId = genId('job');
   const stmts = [
-    env.DB.prepare(`INSERT INTO sprint_jobs (id, client_id, name, status, created_at, updated_at) VALUES (?, ?, ?, 'Active', date('now'), date('now'))`)
-      .bind(jobId, body.client_id, body.name)
+    env.DB.prepare(`INSERT INTO sprint_jobs (id, client_id, name, status, assigned_to, due_date, created_at, updated_at) VALUES (?, ?, ?, 'Active', ?, ?, date('now'), date('now'))`)
+      .bind(jobId, body.client_id, body.name, body.assigned_to || '', body.due_date || '')
   ];
   if (body.template_id) {
     const tmpl = await env.DB.prepare(`SELECT * FROM sprint_templates WHERE id=?`).bind(body.template_id).first();
@@ -331,6 +342,22 @@ async function handleJobCreate(request, env) {
 
 async function handleJobStatus(request, env, jobId, status) {
   await env.DB.prepare(`UPDATE sprint_jobs SET status=?, updated_at=date('now') WHERE id=?`).bind(status, jobId).run();
+  return json({ success: true });
+}
+
+async function handleJobUpdate(request, env, jobId) {
+  const body = await request.json().catch(() => ({}));
+  const name = (body.name || '').trim();
+  // Only update name if a non-empty value was provided; otherwise preserve existing
+  if (name) {
+    await env.DB.prepare(
+      `UPDATE sprint_jobs SET name=?, assigned_to=?, due_date=?, updated_at=date('now') WHERE id=?`
+    ).bind(name, body.assigned_to || '', body.due_date || '', jobId).run();
+  } else {
+    await env.DB.prepare(
+      `UPDATE sprint_jobs SET assigned_to=?, due_date=?, updated_at=date('now') WHERE id=?`
+    ).bind(body.assigned_to || '', body.due_date || '', jobId).run();
+  }
   return json({ success: true });
 }
 
@@ -415,8 +442,10 @@ async function handleSprintActivate(request, env) {
 
 // ── AI intake helpers ──────────────────────────────────────────────────────────
 
-async function callClaude(env, messages, model = 'claude-sonnet-4-6') {
+async function callClaude(env, messages, model = 'claude-sonnet-4-6', system = null) {
   if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
+  const body = { model, max_tokens: 2048, messages };
+  if (system) body.system = system;
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -424,7 +453,7 @@ async function callClaude(env, messages, model = 'claude-sonnet-4-6') {
       'x-api-key': env.ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01',
     },
-    body: JSON.stringify({ model, max_tokens: 2048, messages }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.text();
@@ -544,11 +573,22 @@ async function handleGmailStatus(request, env) {
   }
 }
 
+async function handleGmailPollNow(request, env) {
+  try {
+    const result = await runGmailPoll(env, true);
+    if (result.error) return json({ ok: false, error: result.error, debug: result.debug });
+    return json({ ok: true, processed: result.processed || 0, debug: result.debug });
+  } catch (err) {
+    return json({ ok: false, error: err.message }, 500);
+  }
+}
+
 // ── Gmail cron poll ────────────────────────────────────────────────────────────
 
 const GMAIL_BATCH_LIMIT = 20;
 
-async function runGmailPoll(env) {
+async function runGmailPoll(env, debug = false) {
+  const dbg = [];
   const token = await getValidGmailToken(env);
   if (!token) return { processed: 0, error: 'Gmail not connected or token refresh failed' };
 
@@ -556,18 +596,30 @@ async function runGmailPoll(env) {
     'SELECT last_checked FROM sprint_gmail_tokens WHERE id=?'
   ).bind('main').first();
   const since = row?.last_checked;
+  dbg.push(`last_checked: ${since || 'none'}`);
 
-  let q = 'is:unread in:inbox';
-  if (since) q += ` after:${Math.floor(new Date(since).getTime() / 1000)}`;
+  // No is:unread — sent copies are auto-marked read by Gmail. Dedup via after: timestamp.
+  let q = '-in:spam -in:trash -in:drafts';
+  if (since) {
+    q += ` after:${Math.floor(new Date(since).getTime() / 1000)}`;
+  } else {
+    // First run: only look back 24 hours to avoid flooding intake
+    q += ` after:${Math.floor((Date.now() - 86400000) / 1000)}`;
+  }
+  dbg.push(`query: ${q}`);
 
   const listRes = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${GMAIL_BATCH_LIMIT}&q=${encodeURIComponent(q)}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
-  if (!listRes.ok) return { processed: 0, error: `Gmail list error: ${listRes.status}` };
+  if (!listRes.ok) {
+    const errBody = await listRes.text();
+    return { processed: 0, error: `Gmail list error: ${listRes.status}`, debug: dbg.concat([`list response: ${errBody.slice(0,200)}`]) };
+  }
 
   const listData = await listRes.json();
   const messages = listData.messages || [];
+  dbg.push(`messages found: ${messages.length}`);
 
   const clientsRes = await env.DB.prepare(
     'SELECT id, name FROM sprint_clients WHERE archived=0'
@@ -580,12 +632,13 @@ async function runGmailPoll(env) {
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!msgRes.ok) continue;
+    if (!msgRes.ok) { dbg.push(`msg fetch failed: ${msgRes.status}`); continue; }
     const msgData = await msgRes.json();
 
     const headers = msgData.payload?.headers || [];
     const subject = headers.find(h => h.name === 'Subject')?.value || '(no subject)';
     const fromHeader = headers.find(h => h.name === 'From')?.value || '';
+    dbg.push(`msg: "${subject}" from: ${fromHeader.slice(0,40)}`);
 
     let body = '';
     const extractBody = (part) => {
@@ -597,7 +650,7 @@ async function runGmailPoll(env) {
       if (part.parts) part.parts.forEach(extractBody);
     };
     extractBody(msgData.payload || {});
-    if (!body.trim()) continue;
+    if (!body.trim()) { dbg.push(`  → skipped: no text body`); continue; }
 
     const rawText = `Subject: ${subject}\nFrom: ${fromHeader}\n\n${body.slice(0, 3000)}`;
 
@@ -609,7 +662,8 @@ async function runGmailPoll(env) {
         content: `Is this email a client work request, project inquiry, or action item that needs project tracking? Reply with only "yes" or "no".\n\n${rawText}`,
       }], 'claude-haiku-4-5-20251001');
       isWorkRequest = classText.trim().toLowerCase().startsWith('yes');
-    } catch { continue; }
+      dbg.push(`  → classified: ${isWorkRequest ? 'YES' : 'no'}`);
+    } catch (e) { dbg.push(`  → classify error: ${e.message}`); continue; }
 
     if (!isWorkRequest) continue;
 
@@ -647,7 +701,7 @@ async function runGmailPoll(env) {
     'UPDATE sprint_gmail_tokens SET last_checked=?, cron_last_run=?, cron_last_error=NULL WHERE id=?'
   ).bind(now, now, 'main').run();
 
-  return { processed };
+  return { processed, debug: dbg };
 }
 
 // ── Intake API handlers ────────────────────────────────────────────────────────
@@ -925,6 +979,123 @@ async function handleIntakeDismiss(request, env, intakeId) {
   return json({ success: true });
 }
 
+async function handleIntakeBulkDismiss(request, env) {
+  const { ids } = await request.json().catch(() => ({}));
+  if (!Array.isArray(ids) || !ids.length) return json({ error: 'ids required' }, 400);
+  const stmts = ids.map(id =>
+    env.DB.prepare(`UPDATE sprint_intake SET status='dismissed' WHERE id=?`).bind(id)
+  );
+  await env.DB.batch(stmts);
+  return json({ success: true, dismissed: ids.length });
+}
+
+async function handleAssistant(request, env) {
+  const { message } = await request.json().catch(() => ({}));
+  if (!message || !message.trim()) return json({ error: 'No message' }, 400);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+
+  // Load context: all clients + all jobs (active and complete)
+  const clients = await env.DB.prepare(
+    `SELECT id, name FROM sprint_clients WHERE archived=0 ORDER BY name`
+  ).all().then(r => r.results || []);
+  const allJobs = await env.DB.prepare(
+    `SELECT id, client_id, name, status FROM sprint_jobs ORDER BY status='Active' DESC, name`
+  ).all().then(r => r.results || []);
+
+  const clientList = clients.map(c => {
+    const cjobs = allJobs.filter(j => j.client_id === c.id)
+      .map(j => `    - "${j.name}" (id:${j.id}, status:${j.status})`).join('\n');
+    return `- "${c.name}" (id:${c.id})${cjobs ? '\n  Jobs:\n' + cjobs : ' [no jobs]'}`;
+  }).join('\n');
+
+  const systemPrompt = `You are a project tracker assistant. Today is ${today}.
+
+Clients and their jobs:
+${clientList}
+
+Respond with JSON only (no markdown):
+{
+  "action": "create_job" | "create_task" | "none",
+  "client_id": "<matched client id or null>",
+  "job_id": "<matched job id or null — for create_task, prefer Active jobs>",
+  "job_name": "<for create_job: the job name. For create_task with no matching job: a short new job name to create first>",
+  "task_text": "<full task description for create_task>",
+  "due_date": "<YYYY-MM-DD or null — compute from relative terms like 'tomorrow' using today=${today}>",
+  "auto_create_job": <true if create_task needs a new job first, false otherwise>,
+  "response": "<concise confirmation under 10 words>"
+}
+
+Rules:
+- Fuzzy match client names ("Sheppard's" = "Sheppards Glass", "Robbie" or "Robbie To-Do" = "Robbie To-Do")
+- For create_task: find the best matching job. If client has no matching job, set auto_create_job=true and provide job_name
+- If client has no active jobs and no clear job is specified, set job_name to something sensible (e.g. "Tasks" or infer from the task)
+- Parse due dates: "tomorrow"=${tomorrow}, "next week"=add 7 days, etc.
+- Keep response short and confident`;
+
+  const aiText = await callClaude(env, [{ role: 'user', content: message }], 'claude-haiku-4-5-20251001', systemPrompt);
+  let parsed;
+  try {
+    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : aiText);
+  } catch {
+    return json({ response: aiText.slice(0, 200), action: 'none' });
+  }
+
+  const { action, client_id, job_name, task_text, due_date, auto_create_job, response: aiResponse } = parsed;
+  let { job_id } = parsed;
+
+  if (action === 'create_job' && client_id && job_name) {
+    const jid = crypto.randomUUID();
+    await env.DB.prepare(
+      `INSERT INTO sprint_jobs (id, client_id, name, status, created_at, updated_at) VALUES (?, ?, ?, 'Active', datetime('now'), datetime('now'))`
+    ).bind(jid, client_id, job_name).run();
+    return json({ response: aiResponse || `Created job "${job_name}"`, action: 'job_created', refresh: true });
+  }
+
+  if (action === 'create_task' && client_id && task_text) {
+    // Auto-create a job if needed
+    if (auto_create_job && job_name) {
+      const jid = crypto.randomUUID();
+      await env.DB.prepare(
+        `INSERT INTO sprint_jobs (id, client_id, name, status, created_at, updated_at) VALUES (?, ?, ?, 'Active', datetime('now'), datetime('now'))`
+      ).bind(jid, client_id, job_name).run();
+      job_id = jid;
+    }
+    if (!job_id) return json({ response: 'Which job should I add that to?', action: 'none' });
+    const targetJob = allJobs.find(j => j.id === job_id);
+    const tid = crypto.randomUUID();
+    const dueBind = due_date || null;
+    await env.DB.prepare(
+      `INSERT INTO sprint_tasks (id, job_id, client_id, notes, status, due_date, created_at, updated_at) VALUES (?, ?, ?, ?, 'Open', ?, datetime('now'), datetime('now'))`
+    ).bind(tid, job_id, client_id, task_text, dueBind).run();
+    const dueStr = due_date ? ` (due ${due_date})` : '';
+    return json({ response: aiResponse || `Added task to ${targetJob ? targetJob.name : 'job'}${dueStr}`, action: 'task_created', refresh: true });
+  }
+
+  return json({ response: aiResponse || "Done.", action: 'none' });
+}
+
+async function handleIntakeSaveAsNote(request, env, intakeId) {
+  const body = await request.json().catch(() => ({}));
+  const { job_id } = body;
+  if (!job_id) return json({ error: 'job_id required' }, 400);
+  const item = await env.DB.prepare('SELECT * FROM sprint_intake WHERE id=?').bind(intakeId).first();
+  if (!item) return json({ error: 'Not found' }, 404);
+  const job = await env.DB.prepare('SELECT notes FROM sprint_jobs WHERE id=?').bind(job_id).first();
+  if (!job) return json({ error: 'Job not found' }, 404);
+  const timestamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const noteText = `[${timestamp}] ${item.subject || 'Email note'}\n${(item.raw_text || '').slice(0, 2000)}`.trim();
+  const existing = job.notes || '';
+  const newNotes = existing ? existing + '\n\n---\n\n' + noteText : noteText;
+  await env.DB.batch([
+    env.DB.prepare('UPDATE sprint_jobs SET notes=?, updated_at=datetime("now") WHERE id=?').bind(newNotes, job_id),
+    env.DB.prepare('UPDATE sprint_intake SET status="dismissed" WHERE id=?').bind(intakeId)
+  ]);
+  return json({ success: true });
+}
+
 // ── Main fetch handler ────────────────────────────────────────────────────────
 
 export default {
@@ -1001,14 +1172,14 @@ function getHTML(authed) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EngageEngine Sprint Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3a;--text:#e8e8f0;--text-dim:#8888a0;--accent:#4f8cff;--accent-glow:rgba(79,140,255,0.15);--green:#34d399;--green-bg:rgba(52,211,153,0.1);--amber:#fbbf24;--amber-bg:rgba(251,191,36,0.1);--red:#f87171;--red-bg:rgba(248,113,113,0.1);--snackbar-bg:#1e1e2e}
+:root{--bg:#F5F3EE;--surface:#FFFFFF;--surface2:#EDEAE3;--border:#E2DED5;--text:#1C1917;--text-dim:#78716C;--text-muted:#A8A29E;--accent:#CF6344;--accent-glow:rgba(207,99,68,0.08);--green:#16A34A;--green-bg:rgba(22,163,74,0.08);--amber:#D97706;--amber-bg:rgba(217,119,6,0.08);--red:#DC2626;--red-bg:rgba(220,38,38,0.08);--snackbar-bg:#292524}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
 /* ── Login ── */
 .login-bg{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
-.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px 36px;width:360px;max-width:90vw}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px 36px;width:360px;max-width:90vw;box-shadow:0 4px 24px rgba(28,25,23,0.10)}
 .login-card h1{font-size:22px;font-weight:700;margin-bottom:6px}.login-card h1 span{color:var(--accent)}
 .login-card .sub{font-size:13px;color:var(--text-dim);margin-bottom:28px}
 .login-field{margin-bottom:16px}
@@ -1019,7 +1190,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .login-btn:hover{opacity:0.9}
 .login-error{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
 /* ── App layout ── */
-.header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100}
+.header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(245,243,238,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:100}
 .header-left{display:flex;align-items:center;gap:16px}
 .header h1{font-size:17px;font-weight:700;letter-spacing:-0.5px}.header h1 span{color:var(--accent)}
 .mode-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px}
@@ -1038,7 +1209,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .briefing-dismiss:hover{color:var(--text)}
 /* ── Stats ── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:0 1px 3px rgba(28,25,23,0.06)}
 .stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px}
 .stat-card .value{font-size:28px;font-weight:700;font-family:"JetBrains Mono",monospace}
 .stat-card .value.green{color:var(--green)}.stat-card .value.amber{color:var(--amber)}.stat-card .value.accent{color:var(--accent)}
@@ -1049,7 +1220,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .gear-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px;padding:2px 6px;border-radius:4px;transition:all 0.15s}
 .gear-btn:hover{color:var(--accent);background:var(--accent-glow)}
 .team-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
-.team-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:12px}
+.team-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(28,25,23,0.06)}
 .team-card:hover{border-color:var(--accent);background:var(--accent-glow)}
 .team-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent-glow);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--accent)}
 .team-name{font-weight:600;font-size:14px}.team-tasks{font-size:12px;color:var(--text-dim);font-family:"JetBrains Mono",monospace}
@@ -1077,7 +1248,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .add-client-form .cancel-btn{background:none;border:1px solid var(--border);color:var(--text-dim)}
 .add-client-error{color:var(--red);font-size:12px;margin-top:6px}
 .client-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;margin-bottom:32px}
-.client-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:space-between}
+.client-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(28,25,23,0.06)}
 .client-card:hover{border-color:var(--accent);background:var(--accent-glow)}
 .client-card.health-red{border-left:3px solid var(--red)}
 .client-card.health-amber{border-left:3px solid var(--amber)}
@@ -1152,8 +1323,25 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .template-pill{background:none;border:1px solid var(--border);color:var(--text-dim);padding:4px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;transition:all 0.15s}
 .template-pill:hover,.template-pill.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
 .template-hint{font-size:12px;color:var(--text-dim);margin-bottom:6px}
+/* ── Assistant bar ── */
+.assistant-bar{position:fixed;bottom:0;left:0;right:0;z-index:150;padding:10px 24px 14px;background:rgba(245,243,238,0.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border)}
+.assistant-input-row{display:flex;align-items:center;gap:10px;max-width:860px;margin:0 auto}
+.assistant-icon{font-size:16px;color:var(--accent);flex-shrink:0;line-height:1;padding-bottom:1px}
+.assistant-input{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-family:"DM Sans",sans-serif;font-size:14px;outline:none;transition:border-color 0.15s;box-shadow:0 1px 4px rgba(28,25,23,0.07)}
+.assistant-input:focus{border-color:var(--accent)}
+.assistant-input::placeholder{color:var(--text-muted)}
+.assistant-send{background:var(--accent);color:#fff;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity 0.15s}
+.assistant-send:hover{opacity:0.85}
+.assistant-send:disabled{opacity:0.4;cursor:default}
+.assistant-response{max-width:860px;margin:0 auto 8px;font-size:13px;color:var(--text-dim);min-height:0;transition:all 0.2s;overflow:hidden}
+.assistant-response:empty{display:none}
+.assistant-response.thinking{color:var(--text-muted);font-style:italic}
+.assistant-response.success{color:var(--green);font-weight:500}
+.assistant-response.error{color:var(--red)}
+/* push page content above assistant bar */
+body{padding-bottom:80px}
 /* ── Snackbar ── */
-.snackbar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--snackbar-bg);border:1px solid var(--border);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:14px;z-index:200;font-size:14px;opacity:0;transition:opacity 0.25s;pointer-events:none;width:280px}
+.snackbar{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--snackbar-bg);border:1px solid var(--border);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:14px;z-index:200;font-size:14px;opacity:0;transition:opacity 0.25s;pointer-events:none;width:280px}
 .snackbar.show{opacity:1;pointer-events:auto}
 .snackbar-undo{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-weight:600;padding:0;flex-shrink:0}
 /* ── Sprint ── */
@@ -1220,7 +1408,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .intake-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .intake-badge{background:var(--amber-bg);color:var(--amber);font-size:11px;padding:2px 8px;border-radius:10px;font-family:"JetBrains Mono",monospace;margin-left:8px;font-weight:700}
 .intake-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.intake-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color 0.15s}
+.intake-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color 0.15s;box-shadow:0 1px 3px rgba(28,25,23,0.06)}
 .intake-item:hover{border-color:var(--accent)}
 .intake-item-icon{font-size:18px;flex-shrink:0;width:28px;text-align:center}
 .intake-item-body{flex:1;min-width:0}
@@ -1234,12 +1422,36 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .intake-review-btn:hover{background:var(--accent);color:#fff}
 .intake-dismiss-btn{background:none;border:1px solid var(--border);color:var(--text-dim);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;transition:all 0.15s}
 .intake-dismiss-btn:hover{border-color:var(--red);color:var(--red)}
+.intake-note-btn{background:none;border:1px solid var(--border);color:var(--text-dim);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;font-weight:600;transition:all 0.15s}
+.intake-note-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
+.intake-item-check{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.intake-bulk-bar{display:none;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:var(--amber-bg);border:1px solid var(--amber);border-radius:8px}
+.intake-bulk-bar.show{display:flex}
+.intake-bulk-count{font-size:13px;font-weight:600;color:var(--amber);flex:1}
+.intake-bulk-delete-btn{background:var(--red);color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;font-weight:600;transition:opacity 0.15s}
+.intake-bulk-delete-btn:hover{opacity:0.85}
+.intake-select-all-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);cursor:pointer;user-select:none}
+/* ── Note modal ── */
+.note-modal-overlay{position:fixed;inset:0;background:rgba(28,25,23,0.5);z-index:200;display:flex;align-items:center;justify-content:center}
+.note-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px;width:480px;max-width:92vw;box-shadow:0 8px 32px rgba(28,25,23,0.12)}
+.note-modal h3{font-size:16px;font-weight:700;margin-bottom:4px;color:var(--text)}
+.note-modal .sub{font-size:13px;color:var(--text-dim);margin-bottom:18px}
+.note-modal label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:5px;margin-top:12px}
+.note-modal select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;outline:none;margin-bottom:4px}
+.note-modal select:focus{border-color:var(--accent)}
+.note-preview{background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-dim);max-height:80px;overflow:hidden;line-height:1.5;margin-top:4px;white-space:pre-wrap;border:1px solid var(--border)}
+.note-modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.note-modal-actions button{padding:8px 18px;border-radius:8px;cursor:pointer;font-family:"DM Sans",sans-serif;font-weight:600;font-size:13px;transition:all 0.15s}
+.note-modal-actions .save-btn{background:var(--accent);color:#fff;border:none}
+.note-modal-actions .save-btn:hover{opacity:0.88}
+.note-modal-actions .cancel-btn{background:none;border:1px solid var(--border);color:var(--text-dim)}
+.note-modal-actions .cancel-btn:hover{border-color:var(--text-dim);color:var(--text)}
 .intake-upload-row{display:flex;align-items:center;gap:10px;margin-top:6px}
 .intake-upload-btn{background:none;border:1px dashed var(--border);color:var(--text-dim);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:"DM Sans",sans-serif;transition:all 0.15s}
 .intake-upload-btn:hover{border-color:var(--accent);color:var(--accent)}
 /* ── Intake confirm modal ── */
 .intake-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;display:flex;align-items:center;justify-content:center}
-.intake-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px;width:460px;max-width:92vw}
+.intake-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px;width:460px;max-width:92vw;box-shadow:0 8px 32px rgba(28,25,23,0.12)}
 .intake-modal h3{font-size:17px;font-weight:700;margin-bottom:6px}
 .intake-modal .sub{font-size:13px;color:var(--text-dim);margin-bottom:16px}
 .intake-job-preview{background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;max-height:150px;overflow-y:auto;line-height:1.5}
@@ -1254,14 +1466,17 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .intake-modal-actions .confirm-btn:hover{opacity:0.9}
 .intake-modal-actions .cancel-btn{background:none;border:1px solid var(--border);color:var(--text-dim)}
 /* ── Gmail settings ── */
-.gmail-settings{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:8px}
-.gmail-settings-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:10px}
+.gmail-settings{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:8px}
+.gmail-settings-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600}
 .gmail-status-row{display:flex;align-items:center;gap:10px}
 .gmail-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;transition:background 0.2s}
 .gmail-dot.connected{background:var(--green)}
 .gmail-status-text{font-size:13px;flex:1}
 .gmail-connect-btn{background:none;border:1px solid var(--accent);color:var(--accent);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;transition:all 0.15s;flex-shrink:0}
 .gmail-connect-btn:hover{background:var(--accent);color:#fff}
+.gmail-checknow-btn{background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;transition:all 0.15s;flex-shrink:0}
+.gmail-checknow-btn:hover{background:var(--surface2);color:var(--text)}
+.gmail-checknow-btn:disabled{opacity:0.5;cursor:default}
 .gmail-last-checked{font-size:11px;color:var(--text-dim);font-family:"JetBrains Mono",monospace;margin-top:6px}
 .gmail-error-msg{font-size:11px;color:var(--red);margin-top:4px}
 /* ── Intake proposal split-panel page ── */
@@ -1317,6 +1532,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .allwork-due.soon{color:var(--amber)}
 .allwork-due.ok{color:var(--text-dim)}
 .allwork-assignee{font-size:12px;color:var(--text-dim)}
+.allwork-editable-cell{cursor:pointer}
+.allwork-editable-cell:hover{background:var(--surface2)!important}
 .allwork-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600}
 .allwork-badge.active{background:var(--green-bg);color:var(--green)}
 .allwork-count-bar{display:flex;align-items:center;padding:16px 0 20px;gap:20px;border-bottom:1px solid var(--border);margin-bottom:20px}
@@ -1420,6 +1637,18 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 <!-- Hidden file input for proposal upload -->
 <input type="file" id="proposalFileInput" accept=".pdf,.txt,.doc,.docx" style="display:none" onchange="handleProposalFile(this.files[0])">
 
+<!-- Assistant bar -->
+<div class="assistant-bar" id="assistantBar">
+  <div class="assistant-response" id="assistantResponse"></div>
+  <div class="assistant-input-row">
+    <div class="assistant-icon">✦</div>
+    <input type="text" id="assistantInput" class="assistant-input" placeholder="Create a job, add a task, ask anything…" autocomplete="off">
+    <button class="assistant-send" id="assistantSend" data-action="assistant-send">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L14 8M14 8L9 3M14 8L9 13" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
 <!-- Snackbar -->
 <div class="snackbar" id="snackbar" role="status" aria-live="polite">
   <span id="snackbarMsg">Task deleted</span>
@@ -1488,6 +1717,10 @@ document.addEventListener('click', function(e) {
   else if (act === 'mode-allwork') { switchMode('allwork'); }
   else if (act === 'allwork-tab') { switchAllWorkTab(val); }
   else if (act === 'allwork-goto-client') { switchMode('jobs'); loadClient(id); }
+  else if (act === 'allwork-job-complete') { completeAllWorkJob(id); }
+  else if (act === 'allwork-job-edit') { openAllWorkJobEdit(el); }
+  else if (act === 'allwork-job-save') { saveAllWorkJobEdit(id); }
+  else if (act === 'allwork-job-cancel') { renderAllWork(); }
   else if (act === 'nav-back') { showDashboard(); }
   else if (act === 'load-client') { loadClient(id); }
   else if (act === 'load-team') { loadTeam(val); }
@@ -1499,6 +1732,9 @@ document.addEventListener('click', function(e) {
   else if (act === 'task-delete') { deleteTask(id, val); }
   else if (act === 'job-complete') { completeJob(id, currentClientId); }
   else if (act === 'job-reopen') { reopenJob(id, currentClientId); }
+  else if (act === 'job-edit') { openJobEdit(id); }
+  else if (act === 'job-save') { saveJobEdit(id); }
+  else if (act === 'job-cancel-edit') { cancelJobEdit(id); }
   else if (act === 'toggle-add-job') { toggleAddJob(id); }
   else if (act === 'create-job') { createJob(id); }
   else if (act === 'toggle-add-task') { toggleAddTask(id); }
@@ -1516,6 +1752,10 @@ document.addEventListener('click', function(e) {
   else if (act === 'dismiss-briefing') { document.getElementById('briefingBanner').innerHTML = ''; }
   else if (act === 'select-template') { selectTemplate(id, val, el.getAttribute('data-name') || '', parseInt(el.getAttribute('data-count') || '0')); }
   else if (act === 'intake-confirm') { showIntakeConfirmModal(id); }
+  else if (act === 'intake-save-note') { showIntakeNoteModal(id); }
+  else if (act === 'assistant-send') { sendAssistantMessage(); }
+  else if (act === 'note-modal-cancel') { closeNoteModal(); }
+  else if (act === 'note-modal-save') { saveIntakeNote(id); }
   else if (act === 'intake-dismiss') { dismissIntakeItem(id); }
   else if (act === 'intake-review') { loadIntakeDetail(id); }
   else if (act === 'intake-modal-cancel') { closeIntakeModal(); }
@@ -1524,6 +1764,13 @@ document.addEventListener('click', function(e) {
   else if (act === 'intake-chat-send') { sendIntakeChat(); }
   else if (act === 'intake-add-to-client') { confirmIntakeProposal(id); }
   else if (act === 'upload-proposal') { document.getElementById('proposalFileInput').click(); }
+});
+
+document.addEventListener('change', function(e) {
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  var act = el.getAttribute('data-action');
+  if (act === 'note-client-change') { loadNoteJobSelect(el.value); }
 });
 
 // ── Mode switching ─────────────────────────────────────────────────────────
@@ -1559,6 +1806,10 @@ async function loadAllWork() {
   var res = await fetch(API + '/api/allwork');
   if (res.status === 401) { showLoginScreen(); return; }
   allWorkData = await res.json();
+  if (!teamMembers.length) {
+    var tr = await fetch(API + '/api/team');
+    if (tr.ok) teamMembers = await tr.json();
+  }
   renderAllWork();
 }
 
@@ -1591,16 +1842,25 @@ function renderAllWork() {
       html += '<div class="allwork-empty">No active jobs across any client.</div>';
     } else {
       html += '<table class="allwork-table"><thead><tr>';
-      html += '<th>Client</th><th>Job</th><th>Progress</th><th>Open Tasks</th>';
+      html += '<th>Client</th><th>Job</th><th>Open/Total</th><th>Assigned</th><th>Due</th><th></th>';
       html += '</tr></thead><tbody>';
       for (var i = 0; i < d.jobs.length; i++) {
         var j = d.jobs[i];
-        var pct = j.total_tasks > 0 ? Math.round((j.done_tasks / j.total_tasks) * 100) : 0;
-        html += '<tr>';
+        var jDueClass = 'ok', jDueLabel = j.due_date ? formatDate(j.due_date) : '—';
+        if (j.due_date) {
+          var jDue = new Date(j.due_date + 'T00:00:00');
+          if (jDue < today) { jDueClass = 'overdue'; jDueLabel = '⚠ ' + formatDate(j.due_date); }
+          else if (jDue <= soon) { jDueClass = 'soon'; }
+        }
+        html += '<tr id="allwork-job-row-' + j.id + '">';
         html += '<td><a class="allwork-client-link" data-action="allwork-goto-client" data-id="' + esc(j.client_id) + '">' + esc(j.client_name) + '</a></td>';
         html += '<td>' + esc(j.name) + '</td>';
-        html += '<td><div class="allwork-progress"><div class="allwork-bar"><div class="allwork-bar-fill" style="width:' + pct + '%"></div></div><span class="allwork-progress-text">' + pct + '%</span></div></td>';
         html += '<td><span class="allwork-progress-text">' + j.open_tasks + ' / ' + j.total_tasks + '</span></td>';
+        html += '<td id="allwork-job-assign-' + j.id + '" class="allwork-editable-cell" data-action="allwork-job-edit" data-id="' + j.id + '" title="Click to edit"><span class="allwork-assignee">' + esc(j.assigned_to || '—') + '</span></td>';
+        html += '<td id="allwork-job-due-' + j.id + '" class="allwork-editable-cell" data-action="allwork-job-edit" data-id="' + j.id + '" title="Click to edit"><span class="allwork-due ' + jDueClass + '">' + esc(jDueLabel) + '</span></td>';
+        html += '<td id="allwork-job-btns-' + j.id + '" style="white-space:nowrap">';
+        html += '<button class="job-complete-btn" data-action="allwork-job-complete" data-id="' + j.id + '" style="font-size:11px;padding:3px 8px">Complete</button>';
+        html += '</td>';
         html += '</tr>';
       }
       html += '</tbody></table>';
@@ -1633,6 +1893,42 @@ function renderAllWork() {
   }
 
   document.getElementById('allworkContent').innerHTML = html;
+}
+
+function openAllWorkJobEdit(el) {
+  var jobId = el.getAttribute('data-id');
+  var assignCell = document.getElementById('allwork-job-assign-' + jobId);
+  if (!assignCell) return;
+  // Already in edit mode — don't re-open
+  if (assignCell.querySelector('select')) return;
+  var jobData = allWorkData ? (allWorkData.jobs || []).find(function(j) { return j.id === jobId; }) : null;
+  var currentAssign = jobData ? (jobData.assigned_to || '') : '';
+  var currentDue = jobData ? (jobData.due_date || '') : '';
+  var dueCell = document.getElementById('allwork-job-due-' + jobId);
+  var btnsCell = document.getElementById('allwork-job-btns-' + jobId);
+  var inputStyle = 'font-size:12px;padding:3px 6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:4px';
+  assignCell.innerHTML = '<select id="awJobAssign-' + jobId + '" style="' + inputStyle + '"><option value="">Unassigned</option>' + teamOptionsSelected(currentAssign) + '</select>';
+  dueCell.innerHTML = '<input type="date" id="awJobDue-' + jobId + '" value="' + currentDue + '" style="' + inputStyle + '">';
+  btnsCell.innerHTML = '<button class="save-btn" data-action="allwork-job-save" data-id="' + jobId + '" style="font-size:11px;padding:3px 8px">Save</button> <button class="cancel-edit-btn" data-action="allwork-job-cancel" style="font-size:11px;padding:3px 8px">Cancel</button>';
+}
+
+async function saveAllWorkJobEdit(jobId) {
+  var assign = document.getElementById('awJobAssign-' + jobId);
+  var due = document.getElementById('awJobDue-' + jobId);
+  var jobData = allWorkData ? (allWorkData.jobs || []).find(function(j) { return j.id === jobId; }) : null;
+  var name = jobData ? (jobData.name || '') : '';
+  var res = await fetch(API + '/api/jobs/' + jobId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name, assigned_to: assign ? assign.value : '', due_date: due ? due.value : '' })
+  });
+  if (!res.ok) { alert('Save failed — please try again'); return; }
+  await loadAllWork();
+}
+
+async function completeAllWorkJob(jobId) {
+  await fetch(API + '/api/jobs/' + jobId + '/complete', { method: 'POST' });
+  loadAllWork();
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
@@ -1702,8 +1998,8 @@ function renderDashboard() {
   var inactive = clients.filter(function(c) { return c.active_jobs === 0 && c.open_tasks === 0 });
   var grid = '';
   for (var i = 0; i < active.length; i++) grid += clientCard(active[i]);
-  if (inactive.length) grid += '<div class="section-title" style="grid-column:1/-1;margin-top:16px">No Active Work</div>';
-  for (var i = 0; i < inactive.length; i++) grid += clientCard(inactive[i]);
+  if (inactive.length) grid += '<div style="grid-column:1/-1;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">No Active Work</span><span style="flex:1;height:1px;background:var(--border)"></span></div>';
+  for (var i = 0; i < inactive.length; i++) grid += clientCard(inactive[i], true);
   document.getElementById('clientGrid').innerHTML = grid;
   // Show dashboard, hide detail
   document.getElementById('dashboard').classList.remove('hidden');
@@ -1718,12 +2014,13 @@ function statCard(label, value, color) {
   return '<div class="stat-card"><div class="label">' + label + '</div><div class="value ' + color + '">' + value + '</div></div>';
 }
 
-function clientCard(c) {
+function clientCard(c, inactive) {
   var health = '';
   if (c.overdue_tasks > 0) health = ' health-red';
   else if (c.soon_tasks > 0) health = ' health-amber';
   else if (c.active_jobs > 0) health = ' health-green';
-  return '<div class="client-card' + health + '" data-action="load-client" data-id="' + c.id + '"><div class="client-name">' + esc(c.name) + '</div><div class="client-meta"><span class="jobs">' + c.active_jobs + ' jobs</span><span class="open">' + c.open_tasks + ' open</span><span class="done">' + c.done_tasks + ' done</span></div></div>';
+  var inactiveStyle = inactive ? ' style="background:var(--surface2);box-shadow:none;opacity:0.75"' : '';
+  return '<div class="client-card' + health + '"' + inactiveStyle + ' data-action="load-client" data-id="' + c.id + '"><div class="client-name">' + esc(c.name) + '</div><div class="client-meta"><span class="jobs">' + c.active_jobs + ' jobs</span><span class="open">' + c.open_tasks + ' open</span><span class="done">' + c.done_tasks + ' done</span></div></div>';
 }
 
 // ── Client detail ──────────────────────────────────────────────────────────
@@ -1792,13 +2089,19 @@ function renderClientDetail(data) {
 
 function renderJobSection(job, tasks, clientId, today, collapsed) {
   var isActive = job.status === 'Active';
+  var dueClass = '';
+  if (isActive && job.due_date) { dueClass = job.due_date < today ? 'overdue' : (daysDiff(today, job.due_date) <= 3 ? 'soon' : ''); }
   var btnHtml = isActive
     ? '<button class="job-complete-btn" data-action="job-complete" data-id="' + job.id + '">Complete</button>'
     : '<button class="job-complete-btn reopen" data-action="job-reopen" data-id="' + job.id + '">Reopen</button>';
-  var html = '<div class="job-section"><div class="job-header' + (collapsed ? ' collapsed' : '') + '">';
+  var html = '<div class="job-section" id="job-row-' + job.id + '"><div class="job-header' + (collapsed ? ' collapsed' : '') + '">';
   html += '<div class="job-title" data-action="toggle-tasks">' + esc(job.name) + ' <span style="color:var(--text-dim);font-weight:400;font-size:12px">' + job.open_tasks + '/' + job.total_tasks + '</span></div>';
-  html += '<div class="job-actions">' + btnHtml + '<span class="job-badge ' + (isActive ? 'active' : 'complete') + '">' + job.status + '</span></div>';
-  html += '</div>';
+  html += '<div class="job-actions">';
+  if (job.assigned_to) html += '<span class="task-assignee">' + esc(job.assigned_to) + '</span>';
+  if (job.due_date) html += '<span class="task-due ' + dueClass + '">' + formatDate(job.due_date) + '</span>';
+  if (isActive) html += '<button class="task-edit-btn" data-action="job-edit" data-id="' + job.id + '" title="Edit job">&#9998;</button>';
+  html += btnHtml + '<span class="job-badge ' + (isActive ? 'active' : 'complete') + '">' + job.status + '</span>';
+  html += '</div></div>';
   html += '<div class="task-list' + (collapsed ? ' hidden' : '') + '">';
   for (var i = 0; i < tasks.length; i++) {
     html += renderTaskItem(tasks[i], today);
@@ -1835,9 +2138,11 @@ function renderAddJobForm(clientId) {
   html += '<div id="addJobForm-' + clientId + '" class="inline-form" style="flex-direction:column;align-items:stretch">';
   html += '<div id="templatePills-' + clientId + '" class="template-pills" style="display:none"></div>';
   html += '<div id="templateHint-' + clientId + '" class="template-hint" style="display:none"></div>';
-  html += '<div style="display:flex;gap:8px;align-items:center">';
-  html += '<input type="text" id="newJobName-' + clientId + '" placeholder="Job name..." style="flex:1">';
+  html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+  html += '<input type="text" id="newJobName-' + clientId + '" placeholder="Job name..." style="flex:1;min-width:160px">';
   html += '<input type="hidden" id="newJobTemplate-' + clientId + '" value="">';
+  html += '<select id="newJobAssign-' + clientId + '"><option value="">Assign...</option>' + teamOptions() + '</select>';
+  html += '<input type="date" id="newJobDue-' + clientId + '" style="width:140px">';
   html += '<button data-action="create-job" data-id="' + clientId + '">Add</button></div>';
   html += '</div>';
   return html;
@@ -1947,6 +2252,64 @@ function cancelTaskEdit(taskId) {
   var taskRow = document.getElementById('task-row-' + taskId);
   if (editRow) editRow.remove();
   if (taskRow) taskRow.classList.remove('hidden');
+}
+
+// ── Job inline edit ────────────────────────────────────────────────────────
+
+function openJobEdit(jobId) {
+  var row = document.getElementById('job-row-' + jobId);
+  if (!row) return;
+  var header = row.querySelector('.job-header');
+  if (!header) return;
+  var titleEl = row.querySelector('.job-title');
+  var assignEl = row.querySelector('.task-assignee');
+  var dueEl = row.querySelector('.task-due');
+  // Get job name (first text node of title, strip the task count span)
+  var currentName = titleEl ? (titleEl.firstChild ? titleEl.firstChild.textContent.trim() : '') : '';
+  var currentAssign = assignEl ? assignEl.textContent : '';
+  var currentDue = '';
+  if (dueEl) {
+    var parts = dueEl.textContent.split('/');
+    if (parts.length === 2) {
+      var yr = new Date().getFullYear();
+      currentDue = yr + '-' + parts[0].padStart(2,'0') + '-' + parts[1].padStart(2,'0');
+    }
+  }
+  var editHtml = '<div class="task-edit-row" id="job-edit-' + jobId + '">';
+  editHtml += '<input class="task-edit-notes" type="text" id="editJobName-' + jobId + '" value="' + esc(currentName) + '" placeholder="Job name...">';
+  editHtml += '<select id="editJobAssign-' + jobId + '"><option value="">Unassigned</option>' + teamOptionsSelected(currentAssign) + '</select>';
+  editHtml += '<input type="date" id="editJobDue-' + jobId + '" value="' + currentDue + '">';
+  editHtml += '<button class="save-btn" data-action="job-save" data-id="' + jobId + '">Save</button>';
+  editHtml += '<button class="cancel-edit-btn" data-action="job-cancel-edit" data-id="' + jobId + '">Cancel</button>';
+  editHtml += '</div>';
+  header.insertAdjacentHTML('afterend', editHtml);
+  header.classList.add('hidden');
+  var inp = document.getElementById('editJobName-' + jobId);
+  if (inp) { inp.focus(); inp.select(); }
+  if (inp) inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); saveJobEdit(jobId); }
+    if (e.key === 'Escape') { cancelJobEdit(jobId); }
+  });
+}
+
+async function saveJobEdit(jobId) {
+  var name = document.getElementById('editJobName-' + jobId);
+  var assign = document.getElementById('editJobAssign-' + jobId);
+  var due = document.getElementById('editJobDue-' + jobId);
+  if (!name || !name.value.trim()) return;
+  await fetch(API + '/api/jobs/' + jobId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name.value.trim(), assigned_to: assign ? assign.value : '', due_date: due ? due.value : '' })
+  });
+  if (currentClientId) loadClient(currentClientId);
+}
+
+function cancelJobEdit(jobId) {
+  var editRow = document.getElementById('job-edit-' + jobId);
+  var row = document.getElementById('job-row-' + jobId);
+  if (editRow) editRow.remove();
+  if (row) { var header = row.querySelector('.job-header'); if (header) header.classList.remove('hidden'); }
 }
 
 // ── Task delete + undo ────────────────────────────────────────────────────
@@ -2213,9 +2576,13 @@ function toggleAddJob(clientId) {
 async function createJob(clientId) {
   var inp = document.getElementById('newJobName-' + clientId);
   var tmpl = document.getElementById('newJobTemplate-' + clientId);
+  var assign = document.getElementById('newJobAssign-' + clientId);
+  var due = document.getElementById('newJobDue-' + clientId);
   if (!inp || !inp.value.trim()) return;
   var body = { client_id: clientId, name: inp.value.trim() };
   if (tmpl && tmpl.value) body.template_id = tmpl.value;
+  if (assign && assign.value) body.assigned_to = assign.value;
+  if (due && due.value) body.due_date = due.value;
   await fetch(API + '/api/jobs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -2243,6 +2610,56 @@ async function createTask(jobId, clientId) {
   });
   loadClient(clientId);
 }
+
+// ── Assistant bar ─────────────────────────────────────────────────────────
+
+var assistantResponseTimer = null;
+
+async function sendAssistantMessage() {
+  var input = document.getElementById('assistantInput');
+  var resp = document.getElementById('assistantResponse');
+  var btn = document.getElementById('assistantSend');
+  var msg = (input.value || '').trim();
+  if (!msg) return;
+  input.value = '';
+  input.disabled = true;
+  btn.disabled = true;
+  resp.className = 'assistant-response thinking';
+  resp.textContent = 'Thinking…';
+  clearTimeout(assistantResponseTimer);
+  try {
+    var r = await fetch(API + '/api/assistant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg })
+    });
+    var d = await r.json();
+    resp.className = 'assistant-response ' + (r.ok && d.response && !d.error ? 'success' : 'error');
+    resp.textContent = d.response || d.error || 'Something went wrong';
+    if (d.refresh) {
+      loadDashboard();
+    }
+    assistantResponseTimer = setTimeout(function() {
+      resp.className = 'assistant-response';
+      resp.textContent = '';
+    }, 6000);
+  } catch(e) {
+    resp.className = 'assistant-response error';
+    resp.textContent = 'Request failed — try again';
+  }
+  input.disabled = false;
+  btn.disabled = false;
+  input.focus();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var input = document.getElementById('assistantInput');
+  if (input) {
+    input.addEventListener('keydown', function(e) {
+      if (e.keyCode === 13 && !e.shiftKey) { e.preventDefault(); sendAssistantMessage(); }
+    });
+  }
+});
 
 // ── Dashboard navigation ──────────────────────────────────────────────────
 
@@ -2276,6 +2693,7 @@ async function loadIntakeSection() {
     '<div class="gmail-dot" id="gmailDot"></div>' +
     '<div class="gmail-status-text" id="gmailStatusText">Checking...</div>' +
     '<button class="gmail-connect-btn" data-action="gmail-connect" id="gmailConnectBtn">Connect</button>' +
+    '<button class="gmail-checknow-btn" id="gmailCheckNowBtn" style="display:none" onclick="gmailCheckNow()">Check now</button>' +
     '</div>' +
     '<div class="gmail-last-checked" id="gmailLastChecked"></div>' +
     '<div class="gmail-error-msg" id="gmailErrorMsg"></div>' +
@@ -2283,10 +2701,12 @@ async function loadIntakeSection() {
 
   sec.innerHTML = '<div class="intake-section-header">' +
     '<div class="section-title" style="margin-bottom:0">Intake <span class="intake-badge" id="intakeBadge">0</span></div>' +
-    '<div class="intake-upload-row">' +
+    '<div style="display:flex;align-items:center;gap:10px;">' +
+    '<label class="intake-select-all-wrap"><input type="checkbox" id="intakeSelectAll" class="intake-item-check" onchange="intakeToggleSelectAll(this.checked)"> Select all</label>' +
     '<button class="intake-upload-btn" data-action="upload-proposal">&#128196; Upload Proposal</button>' +
     '</div>' +
     '</div>' +
+    '<div class="intake-bulk-bar" id="intakeBulkBar"><span class="intake-bulk-count" id="intakeBulkCount">0 selected</span><button class="intake-bulk-delete-btn" onclick="intakeBulkDelete()">&#128465; Delete Selected</button></div>' +
     '<div class="intake-list" id="intakeList"></div>' +
     gmailHtml;
 
@@ -2311,8 +2731,10 @@ async function loadIntakeSection() {
       var jobCount = (extracted.jobs || []).length;
       var actionsHtml = item.source === 'proposal'
         ? '<button class="intake-review-btn" data-action="intake-review" data-id="' + item.id + '">Review &amp; Refine</button>'
-        : '<button class="intake-confirm-btn" data-action="intake-confirm" data-id="' + item.id + '">&#10003; Add</button>';
+        : '<button class="intake-confirm-btn" data-action="intake-confirm" data-id="' + item.id + '">&#10003; Add</button>' +
+          '<button class="intake-note-btn" data-action="intake-save-note" data-id="' + item.id + '">&#128196; Note</button>';
       return '<div class="intake-item" id="intake-' + item.id + '">' +
+        '<input type="checkbox" class="intake-item-check intake-cb" data-id="' + item.id + '" onchange="intakeCheckChange()">' +
         '<div class="intake-item-icon">' + icon + '</div>' +
         '<div class="intake-item-body">' +
         '<div class="intake-item-subject">' + esc(item.subject || 'Untitled') + '</div>' +
@@ -2342,6 +2764,8 @@ async function loadIntakeSection() {
       dot.classList.add('connected');
       statusText.textContent = 'Gmail connected';
       connectBtn.textContent = 'Reconnect';
+      var checkNowBtn = document.getElementById('gmailCheckNowBtn');
+      if (checkNowBtn) checkNowBtn.style.display = '';
       if (gdata.last_checked) {
         lastChecked.textContent = 'Last checked: ' + new Date(gdata.last_checked).toLocaleString();
       }
@@ -2352,6 +2776,29 @@ async function loadIntakeSection() {
       statusText.textContent = "Gmail not connected \u2014 emails won\u2019t be captured";
     }
   }
+}
+
+async function gmailCheckNow() {
+  var btn = document.getElementById('gmailCheckNowBtn');
+  var lastChecked = document.getElementById('gmailLastChecked');
+  var errorMsg = document.getElementById('gmailErrorMsg');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Checking\u2026';
+  errorMsg.textContent = '';
+  try {
+    var r = await fetch(API + '/api/gmail/poll', { method: 'POST' });
+    var d = await r.json();
+    if (d.ok) {
+      lastChecked.textContent = 'Last checked: ' + new Date().toLocaleString() + (d.processed ? ' (' + d.processed + ' new)' : ' (0 new)');
+    } else {
+      errorMsg.textContent = 'Error: ' + (d.error || 'unknown');
+    }
+  } catch (e) {
+    errorMsg.textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Check now';
 }
 
 function showIntakeConfirmModal(intakeId) {
@@ -2457,10 +2904,117 @@ async function confirmIntakeFromModal() {
   }
 }
 
+function showIntakeNoteModal(intakeId) {
+  // Find the intake item from DOM data
+  var itemEl = document.getElementById('intake-' + intakeId);
+  if (!itemEl) return;
+  var subject = (itemEl.querySelector('.intake-item-subject') || {}).textContent || 'Email note';
+
+  // Build client options
+  var clientOpts = '<option value="">— Select client —</option>';
+  if (dashboardData && dashboardData.clients) {
+    clientOpts += (dashboardData.clients || []).map(function(c) {
+      return '<option value="' + c.id + '">' + esc(c.name) + '</option>';
+    }).join('');
+  }
+
+  var html = '<div class="note-modal-overlay" id="noteModalOverlay">' +
+    '<div class="note-modal">' +
+    '<h3>Save as job note</h3>' +
+    '<p class="sub">Attach this email to an existing job as a note.</p>' +
+    '<div class="note-preview">' + esc(subject) + '</div>' +
+    '<label>Client</label>' +
+    '<select id="noteClientSelect" data-action="note-client-change">' + clientOpts + '</select>' +
+    '<label>Job</label>' +
+    '<select id="noteJobSelect"><option value="">— Select client first —</option></select>' +
+    '<div class="note-modal-actions">' +
+    '<button class="cancel-btn" data-action="note-modal-cancel">Cancel</button>' +
+    '<button class="save-btn" data-action="note-modal-save" data-id="' + intakeId + '">Save note</button>' +
+    '</div></div></div>';
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function loadNoteJobSelect(clientId) {
+  var sel = document.getElementById('noteJobSelect');
+  if (!sel) return;
+  if (!clientId) { sel.innerHTML = '<option value="">— Select client first —</option>'; return; }
+  sel.innerHTML = '<option value="">Loading...</option>';
+  try {
+    var r = await fetch(API + '/api/clients/' + clientId);
+    var d = await r.json();
+    var jobs = (d.jobs || []).filter(function(j) { return j.status === 'Active'; });
+    if (!jobs.length) { sel.innerHTML = '<option value="">No active jobs</option>'; return; }
+    sel.innerHTML = '<option value="">— Select job —</option>' +
+      jobs.map(function(j) { return '<option value="' + j.id + '">' + esc(j.name) + '</option>'; }).join('');
+  } catch(e) { sel.innerHTML = '<option value="">Error loading jobs</option>'; }
+}
+
+function closeNoteModal() {
+  var overlay = document.getElementById('noteModalOverlay');
+  if (overlay) overlay.remove();
+}
+
+async function saveIntakeNote(intakeId) {
+  var jobSel = document.getElementById('noteJobSelect');
+  if (!jobSel || !jobSel.value) { jobSel && jobSel.focus(); return; }
+  var jobId = jobSel.value;
+  var saveBtn = document.querySelector('#noteModalOverlay .save-btn');
+  if (saveBtn) { saveBtn.textContent = 'Saving...'; saveBtn.disabled = true; }
+  var res = await fetch(API + '/api/intake/' + intakeId + '/save-as-note', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ job_id: jobId })
+  });
+  if (res.ok) {
+    closeNoteModal();
+    var itemEl = document.getElementById('intake-' + intakeId);
+    if (itemEl) { itemEl.style.transition = 'opacity 0.3s'; itemEl.style.opacity = '0'; setTimeout(function() { itemEl.remove(); var b = document.getElementById('intakeBadge'); if (b) b.textContent = Math.max(0, parseInt(b.textContent||'0')-1); }, 300); }
+    showSnackbar('Note saved to job');
+  } else {
+    if (saveBtn) { saveBtn.textContent = 'Save note'; saveBtn.disabled = false; }
+    showSnackbar('Failed to save note');
+  }
+}
+
 async function dismissIntakeItem(intakeId) {
   var itemEl = document.getElementById('intake-' + intakeId);
   if (itemEl) itemEl.style.opacity = '0.4';
   await fetch(API + '/api/intake/' + intakeId + '/dismiss', { method: 'POST' });
+  loadIntakeSection();
+}
+
+function intakeCheckChange() {
+  var cbs = document.querySelectorAll('.intake-cb');
+  var checked = document.querySelectorAll('.intake-cb:checked');
+  var bar = document.getElementById('intakeBulkBar');
+  var count = document.getElementById('intakeBulkCount');
+  var selectAll = document.getElementById('intakeSelectAll');
+  if (bar) {
+    if (checked.length > 0) { bar.classList.add('show'); } else { bar.classList.remove('show'); }
+  }
+  if (count) count.textContent = checked.length + ' selected';
+  if (selectAll) selectAll.indeterminate = checked.length > 0 && checked.length < cbs.length;
+  if (selectAll && checked.length === cbs.length && cbs.length > 0) selectAll.checked = true;
+  if (selectAll && checked.length === 0) selectAll.checked = false;
+}
+
+function intakeToggleSelectAll(checked) {
+  document.querySelectorAll('.intake-cb').forEach(function(cb) { cb.checked = checked; });
+  intakeCheckChange();
+}
+
+async function intakeBulkDelete() {
+  var checked = document.querySelectorAll('.intake-cb:checked');
+  if (!checked.length) return;
+  var ids = Array.from(checked).map(function(cb) { return cb.getAttribute('data-id'); });
+  var bar = document.getElementById('intakeBulkBar');
+  if (bar) bar.innerHTML = '<span class="intake-bulk-count">Deleting ' + ids.length + '...</span>';
+  await fetch(API + '/api/intake/bulk-dismiss', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: ids })
+  });
   loadIntakeSection();
 }
 
