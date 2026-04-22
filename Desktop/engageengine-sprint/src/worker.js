@@ -1667,9 +1667,8 @@ async function refresh() {
     var res = await fetch('/api/fp-refresh', {method:'POST'});
     var j = await res.json();
     if (!res.ok) throw new Error(j.error||'Refresh failed');
-    data = j.data;
+    await load();
     status.textContent = 'Updated just now';
-    renderDashboard();
   } catch(e) {
     status.textContent = 'Error \u2014 see below';
     document.getElementById('app').innerHTML = '<div class="empty-state"><h2 style="color:#DC2626">Refresh failed</h2><p style="margin-top:8px">'+h(e.message)+'</p><p style="margin-top:12px;font-size:12px;color:var(--muted)">Try again in a moment. If this keeps happening, contact your account manager.</p></div>';
