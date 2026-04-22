@@ -94,6 +94,12 @@ const ROUTES = [
   { method: 'POST', re: /^\/api\/assistant$/, handler: handleAssistant },
   // All Work
   { method: 'GET',  re: /^\/api\/allwork$/, handler: handleAllWork },
+  // Client Ad Portal — public (token-authenticated)
+  { method: 'GET',    re: /^\/api\/portal\/([a-zA-Z0-9-]+)\/data$/,  handler: (r,e,m) => handlePortalData(r,e,m[1]),    public: true },
+  { method: 'GET',    re: /^\/api\/clients\/([^/]+)\/portal-token$/,  handler: (r,e,m) => handlePortalTokenGet(r,e,m[1]) },
+  { method: 'POST',   re: /^\/api\/clients\/([^/]+)\/portal-token$/,  handler: (r,e,m) => handlePortalTokenCreate(r,e,m[1]) },
+  { method: 'DELETE', re: /^\/api\/clients\/([^/]+)\/portal-token$/,  handler: (r,e,m) => handlePortalTokenRevoke(r,e,m[1]) },
+  { method: 'POST',   re: /^\/api\/internal\/push-ad-data$/,          handler: handlePushAdData,                          public: true },
 ];
 
 // ── API handlers ──────────────────────────────────────────────────────────────
@@ -1098,6 +1104,282 @@ async function handleIntakeSaveAsNote(request, env, intakeId) {
 
 // ── Main fetch handler ────────────────────────────────────────────────────────
 
+// ── Floor Pro Client Portal ───────────────────────────────────────────────────
+
+async function floorProAuth(request, env) {
+  const token = getCookie(request, 'fp_session');
+  if (!token || !env.FLOOR_PRO_PASSWORD) return false;
+  try { return await isValidToken(env.FLOOR_PRO_PASSWORD, token); }
+  catch { return false; }
+}
+
+async function handleFloorProDomain(request, env, path) {
+  try {
+    if (path === '/api/fp-login' && request.method === 'POST') {
+      const body = await request.json().catch(() => ({}));
+      if (!env.FLOOR_PRO_PASSWORD || body.password !== env.FLOOR_PRO_PASSWORD) {
+        return json({ error: 'Incorrect password' }, 401);
+      }
+      const token = await makeToken(env.FLOOR_PRO_PASSWORD);
+      const cookie = `fp_session=${token}; HttpOnly; SameSite=Lax; Max-Age=604800; Path=/`;
+      return json({ ok: true }, 200, { 'Set-Cookie': cookie });
+    }
+
+    if (path === '/api/fp-refresh' && request.method === 'POST') {
+      if (!await floorProAuth(request, env)) return json({ error: 'Unauthorized' }, 401);
+      return handleFloorProRefresh(env);
+    }
+
+    if (path === '/api/fp-data' && request.method === 'GET') {
+      if (!await floorProAuth(request, env)) return json({ error: 'Unauthorized' }, 401);
+      return handleFloorProData(env);
+    }
+
+    // HTML
+    const authed = await floorProAuth(request, env);
+    return new Response(getFloorProHTML(authed), {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500, headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function getGadsAccessToken(env) {
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: env.GADS_CLIENT_ID,
+      client_secret: env.GADS_CLIENT_SECRET,
+      refresh_token: env.GADS_REFRESH_TOKEN,
+      grant_type: 'refresh_token',
+    }),
+  });
+  const d = await resp.json();
+  if (!d.access_token) throw new Error(`Token exchange failed: ${d.error_description || d.error}`);
+  return d.access_token;
+}
+
+async function runGAQL(accessToken, env, query) {
+  const custId = '8999197888';
+  const resp = await fetch(
+    `https://googleads.googleapis.com/v19/customers/${custId}/googleAds:search`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'developer-token': env.GADS_DEVELOPER_TOKEN,
+        'login-customer-id': '7536541386',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    }
+  );
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`GAQL failed (${resp.status}): ${err.slice(0, 300)}`);
+  }
+  const data = await resp.json();
+  return data.results || [];
+}
+
+function stripSpend(rows) {
+  const bad = ['cost', 'spend', 'cpc', 'cpm', 'budget', 'revenue', 'value'];
+  function clean(obj) {
+    const out = {};
+    for (const [k, v] of Object.entries(obj || {})) {
+      if (bad.some(b => k.toLowerCase().includes(b))) continue;
+      out[k] = (v && typeof v === 'object' && !Array.isArray(v)) ? clean(v) : v;
+    }
+    return out;
+  }
+  return rows.map(clean);
+}
+
+async function handleFloorProRefresh(env) {
+  const token = await getGadsAccessToken(env);
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  const yesterday = fmt(new Date(today - 86400000));
+  const sevenAgo  = fmt(new Date(today - 7 * 86400000));
+  const thirtyAgo = fmt(new Date(today - 30 * 86400000));
+
+  const queries = {
+    summary: `SELECT metrics.impressions, metrics.clicks, metrics.ctr,
+        metrics.search_impression_share, metrics.conversions
+      FROM customer
+      WHERE segments.date BETWEEN '${sevenAgo}' AND '${yesterday}'`,
+    campaigns: `SELECT campaign.name, campaign.status, metrics.impressions,
+        metrics.clicks, metrics.ctr, metrics.search_impression_share, metrics.conversions
+      FROM campaign
+      WHERE segments.date BETWEEN '${thirtyAgo}' AND '${yesterday}'
+        AND campaign.status != 'REMOVED'
+      ORDER BY metrics.impressions DESC`,
+    ad_groups: `SELECT campaign.name, ad_group.name, ad_group.status,
+        metrics.impressions, metrics.clicks, metrics.ctr
+      FROM ad_group
+      WHERE segments.date BETWEEN '${thirtyAgo}' AND '${yesterday}'
+        AND ad_group.status != 'REMOVED'
+      ORDER BY metrics.impressions DESC LIMIT 100`,
+    keywords: `SELECT campaign.name, ad_group.name, ad_group_criterion.keyword.text,
+        ad_group_criterion.keyword.match_type, ad_group_criterion.status,
+        metrics.impressions, metrics.clicks, metrics.ctr
+      FROM keyword_view
+      WHERE segments.date BETWEEN '${thirtyAgo}' AND '${yesterday}'
+        AND ad_group_criterion.status != 'REMOVED'
+      ORDER BY metrics.impressions DESC LIMIT 200`,
+    negatives: `SELECT campaign.name, ad_group.name, ad_group_criterion.keyword.text,
+        ad_group_criterion.keyword.match_type
+      FROM ad_group_criterion
+      WHERE ad_group_criterion.type = 'KEYWORD'
+        AND ad_group_criterion.negative = true
+      ORDER BY campaign.name LIMIT 500`,
+  };
+
+  const results = {};
+  for (const [key, q] of Object.entries(queries)) {
+    const rows = await runGAQL(token, env, q);
+    results[key] = key === 'negatives' ? rows : stripSpend(rows);
+  }
+
+  // Cache each dataset in D1
+  const clientId = 'recWK4ZeH88QQkqhl';
+  for (const [dataType, payload] of Object.entries(results)) {
+    await env.DB.prepare(`
+      INSERT INTO client_ad_cache (id, client_id, data_type, payload_json, date_range, fetched_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(client_id, data_type) DO UPDATE SET
+        id=excluded.id, payload_json=excluded.payload_json,
+        date_range=excluded.date_range, fetched_at=excluded.fetched_at
+    `).bind(genId('cac'), clientId, dataType, JSON.stringify(payload), yesterday).run();
+  }
+
+  return json({ ok: true, data: results, as_of: yesterday });
+}
+
+async function handleFloorProData(env) {
+  const clientId = 'recWK4ZeH88QQkqhl';
+  const rows = await env.DB.prepare(
+    'SELECT data_type, payload_json, date_range, fetched_at FROM client_ad_cache WHERE client_id=?'
+  ).bind(clientId).all();
+
+  if (!rows.results.length) return json({ ok: true, data: null });
+
+  const data = {};
+  for (const r of rows.results) {
+    data[r.data_type] = { payload: JSON.parse(r.payload_json), date_range: r.date_range, fetched_at: r.fetched_at };
+  }
+  return json({ ok: true, data });
+}
+
+// ── Client Ad Portal handlers ─────────────────────────────────────────────────
+
+async function handlePushAdData(request, env) {
+  const secret = request.headers.get('X-Internal-Secret');
+  if (!secret || secret !== env.INTERNAL_PUSH_SECRET) {
+    return json({ error: 'Forbidden' }, 403);
+  }
+  const body = await request.json().catch(() => null);
+  if (!body || !body.client_id || !body.data_type || !Array.isArray(body.payload)) {
+    return json({ error: 'Missing fields: client_id, data_type, payload required' }, 400);
+  }
+  const client = await env.DB.prepare('SELECT id FROM sprint_clients WHERE id=?').bind(body.client_id).first();
+  if (!client) return json({ error: 'Client not found' }, 404);
+
+  const id = genId('cac');
+  await env.DB.prepare(`
+    INSERT INTO client_ad_cache (id, client_id, data_type, payload_json, date_range, fetched_at)
+    VALUES (?, ?, ?, ?, ?, datetime('now'))
+    ON CONFLICT(client_id, data_type) DO UPDATE SET
+      id=excluded.id,
+      payload_json=excluded.payload_json,
+      date_range=excluded.date_range,
+      fetched_at=excluded.fetched_at
+  `).bind(id, body.client_id, body.data_type, JSON.stringify(body.payload), body.date_range || '').run();
+
+  return json({ success: true, rows: body.payload.length });
+}
+
+async function handlePortal(request, env, token) {
+  if (!token || token.length < 8) {
+    return new Response(getPortalNotFoundHTML(), { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  }
+  const row = await env.DB.prepare(
+    `SELECT cpt.token, sc.name as client_name
+     FROM client_portal_tokens cpt
+     JOIN sprint_clients sc ON sc.id = cpt.client_id
+     WHERE cpt.token=? AND cpt.revoked=0`
+  ).bind(token).first();
+  if (!row) {
+    return new Response(getPortalNotFoundHTML(), { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  }
+  return new Response(getPortalHTML(token, row.client_name), {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  });
+}
+
+async function handlePortalData(request, env, token) {
+  const row = await env.DB.prepare(
+    'SELECT client_id FROM client_portal_tokens WHERE token=? AND revoked=0'
+  ).bind(token).first();
+  if (!row) return json({ error: 'Invalid token' }, 403);
+
+  const cache = await env.DB.prepare(
+    'SELECT data_type, payload_json, date_range, fetched_at FROM client_ad_cache WHERE client_id=?'
+  ).bind(row.client_id).all();
+
+  const data = {};
+  for (const r of cache.results) {
+    data[r.data_type] = {
+      payload: JSON.parse(r.payload_json),
+      date_range: r.date_range,
+      fetched_at: r.fetched_at,
+    };
+  }
+  return json({ ok: true, data });
+}
+
+async function handlePortalTokenGet(request, env, clientId) {
+  const token = await env.DB.prepare(
+    'SELECT * FROM client_portal_tokens WHERE client_id=? AND revoked=0 ORDER BY created_at DESC LIMIT 1'
+  ).bind(clientId).first();
+  return json({ token: token || null });
+}
+
+async function handlePortalTokenCreate(request, env, clientId) {
+  const client = await env.DB.prepare('SELECT * FROM sprint_clients WHERE id=?').bind(clientId).first();
+  if (!client) return json({ error: 'Client not found' }, 404);
+
+  await env.DB.prepare(
+    'UPDATE client_portal_tokens SET revoked=1 WHERE client_id=? AND revoked=0'
+  ).bind(clientId).run();
+
+  // UUID v4 via Web Crypto
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+  const token = `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+
+  const id = genId('cpt');
+  await env.DB.prepare(
+    `INSERT INTO client_portal_tokens (id, client_id, token, label, created_at) VALUES (?, ?, ?, ?, datetime('now'))`
+  ).bind(id, clientId, token, client.name).run();
+
+  return json({ success: true, token, url: `/portal/${token}` });
+}
+
+async function handlePortalTokenRevoke(request, env, clientId) {
+  await env.DB.prepare(
+    'UPDATE client_portal_tokens SET revoked=1 WHERE client_id=? AND revoked=0'
+  ).bind(clientId).run();
+  return json({ success: true });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
@@ -1126,9 +1408,15 @@ export default {
 
     const url = new URL(request.url);
     const path = url.pathname;
+    const host = request.headers.get('host') || '';
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204 });
+    }
+
+    // Floor Pro client portal — separate domain, separate auth
+    if (host === 'floorpro.engageengine.ai') {
+      return handleFloorProDomain(request, env, path);
     }
 
     try {
@@ -1148,6 +1436,12 @@ export default {
         return json({ error: 'Not found' }, 404);
       }
 
+      // Public client portal — token in URL, no session required
+      if (path.startsWith('/portal/')) {
+        const token = path.slice('/portal/'.length).replace(/\/$/, '');
+        return handlePortal(request, env, token);
+      }
+
       // Serve HTML — auth check: redirect to login if not authed
       const authed = await authMiddleware(request, env);
       return new Response(getHTML(authed), {
@@ -1162,6 +1456,423 @@ export default {
     }
   }
 };
+
+// ── Floor Pro Portal HTML ─────────────────────────────────────────────────────
+
+function getFloorProHTML(authed) {
+  if (!authed) {
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Floor Pro — Ads Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F8F7F4;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#fff;border:1px solid #E5E2DB;border-radius:12px;padding:40px;width:100%;max-width:360px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+h1{font-size:18px;font-weight:600;margin-bottom:4px}
+.sub{font-size:13px;color:#6B6963;margin-bottom:28px}
+label{display:block;font-size:12px;font-weight:600;color:#6B6963;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+input[type=password]{width:100%;padding:10px 12px;border:1px solid #E5E2DB;border-radius:8px;font-size:15px;font-family:inherit;outline:none}
+input[type=password]:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+button{width:100%;margin-top:16px;padding:12px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
+button:hover{background:#1d4ed8}
+.err{color:#DC2626;font-size:13px;margin-top:10px;display:none}
+</style></head><body>
+<div class="card">
+  <h1>Floor Pro</h1>
+  <div class="sub">Google Ads Dashboard</div>
+  <label>Password</label>
+  <input type="password" id="pw" placeholder="Enter your password" autofocus>
+  <button onclick="login()">Sign In</button>
+  <div class="err" id="err">Incorrect password. Try again.</div>
+</div>
+<script>
+document.getElementById('pw').addEventListener('keydown', function(e){ if(e.key==='Enter') login(); });
+async function login() {
+  var pw = document.getElementById('pw').value;
+  document.getElementById('err').style.display = 'none';
+  var res = await fetch('/api/fp-login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+  if (res.ok) { window.location.reload(); }
+  else { document.getElementById('err').style.display='block'; document.getElementById('pw').select(); }
+}
+</script></body></html>`;
+  }
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Floor Pro — Ads Dashboard</title>
+<style>
+:root{--bg:#F8F7F4;--surface:#fff;--border:#E5E2DB;--text:#1A1A18;--dim:#6B6963;--muted:#A8A29E;--accent:#2563EB;--green:#16A34A;--amber:#D97706}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.header h1{font-size:16px;font-weight:600}.header .sub{font-size:12px;color:var(--dim);margin-top:2px}
+.refresh-btn{padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:background .15s}
+.refresh-btn:hover{background:#1d4ed8}.refresh-btn:disabled{background:#6B7280;cursor:not-allowed}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-bar{height:3px;background:var(--accent);border-radius:2px;animation:progress 2.5s ease-in-out infinite}
+@keyframes progress{0%{width:0;opacity:1}80%{width:90%;opacity:1}100%{width:90%;opacity:.5}}
+.status{font-size:11px;color:var(--muted)}
+.container{max-width:1100px;margin:0 auto;padding:24px 20px}
+.empty-state{text-align:center;padding:80px 20px;color:var(--dim)}
+.empty-state h2{font-size:18px;margin-bottom:8px;color:var(--text)}
+.empty-state p{font-size:14px;line-height:1.6}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.metric .lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px}
+.metric .val{font-size:24px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.metric .val.green{color:var(--green)}
+.bar-wrap{height:5px;background:#E5E7EB;border-radius:3px;margin-top:6px}
+.bar-fill{height:100%;border-radius:3px;background:var(--accent)}
+.as-of{font-size:11px;color:var(--muted);margin-bottom:20px}
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;width:fit-content;margin-bottom:16px}
+.tab{padding:6px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--dim);font-family:inherit}
+.tab.active{background:var(--accent);color:#fff}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:13px}
+thead th{background:#F3F2EF;text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);font-weight:600;white-space:nowrap}
+tbody td{padding:10px 14px;border-top:1px solid var(--border);vertical-align:middle}
+tbody tr:hover{background:#FAFAF8}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600}
+.badge.enabled,.badge.active{background:#DCFCE7;color:#15803D}
+.badge.paused{background:#FEF9C3;color:#A16207}
+.badge.removed{background:#FEE2E2;color:#B91C1C}
+.badge.broad{background:#EFF6FF;color:#1D4ED8}
+.badge.phrase{background:#F5F3FF;color:#6D28D9}
+.badge.exact{background:#F0FDF4;color:#166534}
+.no-data{text-align:center;padding:40px;color:var(--dim);font-size:13px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>Floor Pro — Google Ads Dashboard</h1>
+    <div class="sub">Performance overview &middot; Read-only</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div class="status" id="status">Loading&hellip;</div>
+    <button class="refresh-btn" id="refreshBtn" onclick="refresh()">
+      <span id="refreshLabel">Refresh My Data</span>
+    </button>
+  </div>
+</div>
+<div class="container" id="app"></div>
+<script>
+var data = null;
+var activeTab = 'campaigns';
+
+function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function num(n){ if(n==null||n==='')return'—'; var v=parseFloat(n); return isNaN(v)?'—':Math.round(v).toLocaleString(); }
+function pct(n){ if(n==null||n==='')return'—'; var v=parseFloat(n); return isNaN(v)?'—':(v*100).toFixed(1)+'%'; }
+function statusBadge(s){ var c=(s||'').toLowerCase(); return '<span class="badge '+c+'">'+h(s)+'</span>'; }
+function matchBadge(t){ var c=(t||'').toLowerCase().replace(/_type$/,''); var m={BROAD:'BROAD',broad:'BROAD',PHRASE:'PHRASE',phrase:'PHRASE',EXACT:'EXACT',exact:'EXACT'}; return '<span class="badge '+c+'">'+(m[t]||h(t))+'</span>'; }
+
+// The Google Ads REST API returns nested objects — extract by dot-path
+function get(obj, path) {
+  return path.split('.').reduce(function(o,k){ return o&&o[k]!=null?o[k]:null; }, obj);
+}
+
+function renderEmpty() {
+  document.getElementById('app').innerHTML =
+    '<div class="empty-state"><h2>No data yet</h2><p>Click <strong>Refresh My Data</strong> above to load your Google Ads performance.</p></div>';
+  document.getElementById('status').textContent = '';
+}
+
+function renderDashboard() {
+  if (!data) { renderEmpty(); return; }
+  var sum = (data.summary && data.summary.payload && data.summary.payload[0]) || {};
+  var asOf = data.summary && data.summary.date_range || '';
+  var fetchedAt = data.summary && data.summary.fetched_at || '';
+  var impr = num(get(sum,'metrics.impressions'));
+  var clicks = num(get(sum,'metrics.clicks'));
+  var ctr = pct(get(sum,'metrics.ctr'));
+  var is = parseFloat(get(sum,'metrics.searchImpressionShare') || get(sum,'metrics.search_impression_share') || 0) || 0;
+  var convs = num(get(sum,'metrics.conversions'));
+
+  var html = '<div class="summary-grid">'+
+    '<div class="metric"><div class="lbl">Impressions</div><div class="val">'+impr+'</div></div>'+
+    '<div class="metric"><div class="lbl">Clicks</div><div class="val">'+clicks+'</div></div>'+
+    '<div class="metric"><div class="lbl">Click-Through Rate</div><div class="val">'+ctr+'</div></div>'+
+    '<div class="metric"><div class="lbl">Search Impr. Share</div><div class="val">'+pct(is)+'<div class="bar-wrap"><div class="bar-fill" style="width:'+Math.min(is*100,100)+'%"></div></div></div></div>'+
+    '<div class="metric"><div class="lbl">Conversions</div><div class="val green">'+convs+'</div></div>'+
+    '</div>';
+
+  if (asOf) html += '<div class="as-of">Last 7 days &middot; as of '+h(asOf)+(fetchedAt?' &middot; refreshed '+new Date(fetchedAt+' UTC').toLocaleString():'')+'</div>';
+
+  html += '<div class="tabs">'+
+    ['campaigns','ad_groups','keywords','negatives'].map(function(id){
+      var labels={campaigns:'Campaigns',ad_groups:'Ad Groups',keywords:'Keywords',negatives:'Negatives'};
+      return '<button class="tab'+(activeTab===id?' active':'')+'" onclick="switchTab(\''+id+'\')">'+labels[id]+'</button>';
+    }).join('')+'</div>';
+
+  html += renderTab();
+  document.getElementById('app').innerHTML = html;
+}
+
+function renderTab() {
+  var d = data && data[activeTab];
+  var rows = d && d.payload || [];
+  if (!rows.length) return '<div class="no-data">No data for this section.</div>';
+
+  if (activeTab === 'campaigns') {
+    var h2 = '<table><thead><tr><th>Campaign</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Impr. Share</th><th>Conversions</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var is2 = get(r,'metrics.searchImpressionShare') || get(r,'metrics.search_impression_share');
+      h2 += '<tr><td>'+h(get(r,'campaign.name'))+'</td><td>'+statusBadge(get(r,'campaign.status'))+'</td><td>'+num(get(r,'metrics.impressions'))+'</td><td>'+num(get(r,'metrics.clicks'))+'</td><td>'+pct(get(r,'metrics.ctr'))+'</td><td>'+pct(is2)+'</td><td>'+num(get(r,'metrics.conversions'))+'</td></tr>';
+    });
+    return h2+'</tbody></table>';
+  }
+  if (activeTab === 'ad_groups') {
+    var h2 = '<table><thead><tr><th>Campaign</th><th>Ad Group</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var ag = get(r,'adGroup') || get(r,'ad_group') || {};
+      h2 += '<tr><td>'+h(get(r,'campaign.name'))+'</td><td>'+h(ag.name)+'</td><td>'+statusBadge(ag.status)+'</td><td>'+num(get(r,'metrics.impressions'))+'</td><td>'+num(get(r,'metrics.clicks'))+'</td><td>'+pct(get(r,'metrics.ctr'))+'</td></tr>';
+    });
+    return h2+'</tbody></table>';
+  }
+  if (activeTab === 'keywords') {
+    var h2 = '<table><thead><tr><th>Keyword</th><th>Match</th><th>Ad Group</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var agc = get(r,'adGroupCriterion') || get(r,'ad_group_criterion') || {};
+      var ag2 = get(r,'adGroup') || get(r,'ad_group') || {};
+      var kw = agc.keyword || {};
+      h2 += '<tr><td><strong>'+h(kw.text)+'</strong></td><td>'+matchBadge(kw.matchType||kw.match_type)+'</td><td>'+h(ag2.name)+'</td><td>'+statusBadge(agc.status)+'</td><td>'+num(get(r,'metrics.impressions'))+'</td><td>'+num(get(r,'metrics.clicks'))+'</td><td>'+pct(get(r,'metrics.ctr'))+'</td></tr>';
+    });
+    return h2+'</tbody></table>';
+  }
+  if (activeTab === 'negatives') {
+    var h2 = '<table><thead><tr><th>Negative Keyword</th><th>Match</th><th>Campaign</th><th>Ad Group</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var agc2 = get(r,'adGroupCriterion') || get(r,'ad_group_criterion') || {};
+      var ag3 = get(r,'adGroup') || get(r,'ad_group') || {};
+      var kw2 = agc2.keyword || {};
+      h2 += '<tr><td>'+h(kw2.text)+'</td><td>'+matchBadge(kw2.matchType||kw2.match_type)+'</td><td>'+h(get(r,'campaign.name'))+'</td><td>'+h(ag3.name||'')+'</td></tr>';
+    });
+    return h2+'</tbody></table>';
+  }
+  return '';
+}
+
+function switchTab(tab) { activeTab = tab; renderDashboard(); }
+
+async function refresh() {
+  var btn = document.getElementById('refreshBtn');
+  var label = document.getElementById('refreshLabel');
+  var status = document.getElementById('status');
+  btn.disabled = true;
+  label.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" style="animation:spin .7s linear infinite;flex-shrink:0"><circle cx="7" cy="7" r="5.5" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"/><path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg> Pulling data\u2026';
+  status.textContent = 'Connecting to Google Ads\u2026';
+  document.getElementById('app').innerHTML = '<div style="padding:20px 0"><div class="loading-bar" style="width:0"></div></div><div class="empty-state" style="padding-top:40px"><p style="color:var(--dim)">Fetching your latest data\u2026 this takes about 10\u201320 seconds.</p></div>';
+  try {
+    var res = await fetch('/api/fp-refresh', {method:'POST'});
+    var j = await res.json();
+    if (!res.ok) throw new Error(j.error||'Refresh failed');
+    data = j.data;
+    status.textContent = 'Updated just now';
+    renderDashboard();
+  } catch(e) {
+    status.textContent = 'Error \u2014 see below';
+    document.getElementById('app').innerHTML = '<div class="empty-state"><h2 style="color:#DC2626">Refresh failed</h2><p style="margin-top:8px">'+h(e.message)+'</p><p style="margin-top:12px;font-size:12px;color:var(--muted)">Try again in a moment. If this keeps happening, contact your account manager.</p></div>';
+  } finally {
+    btn.disabled = false;
+    label.textContent = 'Refresh My Data';
+  }
+}
+
+async function load() {
+  try {
+    var res = await fetch('/api/fp-data');
+    var json = await res.json();
+    if (json.data) {
+      data = json.data;
+      var dates = Object.values(json.data).map(function(d){return d&&d.fetched_at;}).filter(Boolean).sort();
+      var latest = dates[dates.length-1];
+      document.getElementById('status').textContent = latest ? 'Last updated '+new Date(latest+' UTC').toLocaleString() : '';
+      renderDashboard();
+    } else {
+      renderEmpty();
+    }
+  } catch(e) {
+    renderEmpty();
+  }
+}
+
+load();
+</script>
+</body>
+</html>`;
+}
+
+// ── Portal HTML ───────────────────────────────────────────────────────────────
+
+function getPortalNotFoundHTML() {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Not Found</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F8F7F4;display:flex;align-items:center;justify-content:center;min-height:100vh}.card{background:#fff;border:1px solid #E5E2DB;border-radius:12px;padding:40px;text-align:center;max-width:380px}h2{font-size:18px;margin-bottom:8px}p{color:#6B6963;font-size:14px;line-height:1.5}</style>
+</head><body><div class="card"><h2>Dashboard Link Not Found</h2><p>This link is invalid or has been revoked. Please contact your account manager for an updated link.</p></div></body></html>`;
+}
+
+function getPortalHTML(token, clientName) {
+  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(clientName)} — Ads Dashboard</title>
+<style>
+:root{--bg:#F8F7F4;--surface:#FFFFFF;--border:#E5E2DB;--text:#1A1A18;--text-dim:#6B6963;--accent:#2563EB;--green:#16A34A;--amber:#D97706}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.header-left h1{font-size:16px;font-weight:600}.header-left .sub{font-size:12px;color:var(--text-dim);margin-top:2px}
+.freshness{font-size:11px;color:var(--text-dim)}
+.container{max-width:1100px;margin:0 auto;padding:24px 20px}
+.section-label{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:12px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.metric .label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px}
+.metric .value{font-size:24px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.metric .value.green{color:var(--green)}.metric .value.amber{color:var(--amber)}
+.bar-wrap{height:5px;background:#E5E7EB;border-radius:3px;margin-top:6px}
+.bar-fill{height:100%;border-radius:3px;background:var(--accent)}
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;width:fit-content;margin-bottom:16px}
+.tab{padding:6px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text-dim);font-family:inherit}
+.tab.active{background:var(--accent);color:#fff}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:13px}
+thead th{background:#F3F2EF;text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-dim);font-weight:600;white-space:nowrap}
+tbody td{padding:10px 14px;border-top:1px solid var(--border);vertical-align:middle}
+tbody tr:hover{background:#FAFAF8}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600}
+.badge.enabled,.badge.active{background:#DCFCE7;color:#15803D}
+.badge.paused{background:#FEF9C3;color:#A16207}
+.badge.removed{background:#FEE2E2;color:#B91C1C}
+.badge.broad{background:#EFF6FF;color:#1D4ED8}
+.badge.phrase{background:#F5F3FF;color:#6D28D9}
+.badge.exact{background:#F0FDF4;color:#166534}
+.loading,.empty{text-align:center;padding:60px;color:var(--text-dim);font-size:14px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <h1>${esc(clientName)} — Google Ads Dashboard</h1>
+    <div class="sub">Performance overview &middot; Read-only</div>
+  </div>
+  <div class="freshness" id="freshness">Loading&hellip;</div>
+</div>
+<div class="container" id="app"><div class="loading">Loading your data&hellip;</div></div>
+<script>
+var TOKEN='${esc(token)}';
+var API='/api/portal/'+TOKEN+'/data';
+var portalData=null;
+var activeTab='campaigns';
+
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(n){if(n==null||n==='')return'—';n=parseFloat(n);return isNaN(n)?'—':n.toLocaleString();}
+function pct(n){if(n==null||n==='')return'—';var v=parseFloat(n);return isNaN(v)?'—':(v*100).toFixed(1)+'%';}
+function statusBadge(s){var cls=(s||'').toLowerCase();return '<span class="badge '+cls+'">'+escHtml(s)+'</span>';}
+function matchBadge(t){var cls=(t||'').toLowerCase().replace(/_type$/,'');var labels={broad:'BROAD',phrase:'PHRASE',exact:'EXACT'};return '<span class="badge '+cls+'">'+(labels[cls]||escHtml(t))+'</span>';}
+
+function renderSummary(){
+  if(!portalData||!portalData.summary)return'';
+  var rows=portalData.summary.payload||[];
+  var r=rows[0]||{};
+  var impr=parseInt(r['metrics.impressions']||0)||0;
+  var clicks=parseInt(r['metrics.clicks']||0)||0;
+  var ctr=parseFloat(r['metrics.ctr']||0)||0;
+  var is=parseFloat(r['metrics.search_impression_share']||0)||0;
+  var convs=parseFloat(r['metrics.conversions']||0)||0;
+  var d=portalData.summary;
+  return '<div class="section-label">Last 7 Days &middot; as of '+escHtml(d.date_range)+'</div>'+
+    '<div class="summary-grid">'+
+    '<div class="metric"><div class="label">Impressions</div><div class="value">'+fmt(impr)+'</div></div>'+
+    '<div class="metric"><div class="label">Clicks</div><div class="value">'+fmt(clicks)+'</div></div>'+
+    '<div class="metric"><div class="label">Click-Through Rate</div><div class="value'+(ctr>0.05?' green':'')+'">'+pct(ctr)+'</div></div>'+
+    '<div class="metric"><div class="label">Search Impr. Share</div><div class="value">'+pct(is)+'<div class="bar-wrap"><div class="bar-fill" style="width:'+Math.min(is*100,100)+'%"></div></div></div></div>'+
+    '<div class="metric"><div class="label">Conversions</div><div class="value green">'+fmt(convs)+'</div></div>'+
+    '</div>';
+}
+
+function renderCampaigns(){
+  var d=portalData&&portalData.campaigns;
+  if(!d||!d.payload.length)return'<div class="empty">No campaign data yet.</div>';
+  var h='<table><thead><tr><th>Campaign</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Impr. Share</th><th>Conversions</th></tr></thead><tbody>';
+  for(var i=0;i<d.payload.length;i++){var r=d.payload[i];
+    h+='<tr><td>'+escHtml(r['campaign.name'])+'</td><td>'+statusBadge(r['campaign.status'])+'</td><td>'+fmt(r['metrics.impressions'])+'</td><td>'+fmt(r['metrics.clicks'])+'</td><td>'+pct(r['metrics.ctr'])+'</td><td>'+pct(r['metrics.search_impression_share'])+'</td><td>'+fmt(r['metrics.conversions'])+'</td></tr>';
+  }
+  return h+'</tbody></table>';
+}
+
+function renderAdGroups(){
+  var d=portalData&&portalData.ad_groups;
+  if(!d||!d.payload.length)return'<div class="empty">No ad group data yet.</div>';
+  var h='<table><thead><tr><th>Campaign</th><th>Ad Group</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>';
+  for(var i=0;i<d.payload.length;i++){var r=d.payload[i];
+    h+='<tr><td>'+escHtml(r['campaign.name'])+'</td><td>'+escHtml(r['ad_group.name'])+'</td><td>'+statusBadge(r['ad_group.status'])+'</td><td>'+fmt(r['metrics.impressions'])+'</td><td>'+fmt(r['metrics.clicks'])+'</td><td>'+pct(r['metrics.ctr'])+'</td></tr>';
+  }
+  return h+'</tbody></table>';
+}
+
+function renderKeywords(){
+  var d=portalData&&portalData.keywords;
+  if(!d||!d.payload.length)return'<div class="empty">No keyword data yet.</div>';
+  var h='<table><thead><tr><th>Keyword</th><th>Match</th><th>Ad Group</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>';
+  for(var i=0;i<d.payload.length;i++){var r=d.payload[i];
+    h+='<tr><td><strong>'+escHtml(r['ad_group_criterion.keyword.text'])+'</strong></td><td>'+matchBadge(r['ad_group_criterion.keyword.match_type'])+'</td><td>'+escHtml(r['ad_group.name'])+'</td><td>'+statusBadge(r['ad_group_criterion.status'])+'</td><td>'+fmt(r['metrics.impressions'])+'</td><td>'+fmt(r['metrics.clicks'])+'</td><td>'+pct(r['metrics.ctr'])+'</td></tr>';
+  }
+  return h+'</tbody></table>';
+}
+
+function renderNegatives(){
+  var d=portalData&&portalData.negatives;
+  if(!d||!d.payload.length)return'<div class="empty">No negative keywords yet.</div>';
+  var h='<table><thead><tr><th>Negative Keyword</th><th>Match</th><th>Campaign</th><th>Ad Group</th></tr></thead><tbody>';
+  for(var i=0;i<d.payload.length;i++){var r=d.payload[i];
+    h+='<tr><td>'+escHtml(r['ad_group_criterion.keyword.text'])+'</td><td>'+matchBadge(r['ad_group_criterion.keyword.match_type'])+'</td><td>'+escHtml(r['campaign.name'])+'</td><td>'+escHtml(r['ad_group.name']||'Account-level')+'</td></tr>';
+  }
+  return h+'</tbody></table>';
+}
+
+function renderTabs(){
+  var defs=[{id:'campaigns',label:'Campaigns'},{id:'ad_groups',label:'Ad Groups'},{id:'keywords',label:'Keywords'},{id:'negatives',label:'Negatives'}];
+  var h='<div class="tabs">';
+  for(var i=0;i<defs.length;i++){var t=defs[i];h+='<button class="tab'+(activeTab===t.id?' active':'')+'" onclick="switchTab(\''+t.id+'\')">'+t.label+'</button>';}
+  return h+'</div>';
+}
+
+function render(){
+  if(!portalData)return;
+  var content='';
+  if(activeTab==='campaigns')content=renderCampaigns();
+  else if(activeTab==='ad_groups')content=renderAdGroups();
+  else if(activeTab==='keywords')content=renderKeywords();
+  else if(activeTab==='negatives')content=renderNegatives();
+  document.getElementById('app').innerHTML=renderSummary()+renderTabs()+content;
+}
+
+function switchTab(tab){activeTab=tab;render();}
+
+async function load(){
+  try{
+    var res=await fetch(API);
+    if(!res.ok)throw new Error('fetch failed');
+    var json=await res.json();
+    portalData=json.data||{};
+    var dates=Object.values(portalData).map(function(d){return d&&d.fetched_at;}).filter(Boolean).sort();
+    var latest=dates[dates.length-1];
+    document.getElementById('freshness').textContent=latest?'Updated '+new Date(latest+' UTC').toLocaleString():'No data yet';
+    render();
+  }catch(e){
+    document.getElementById('app').innerHTML='<div class="empty">Error loading data. Please try again.</div>';
+  }
+}
+
+load();
+</script>
+</body>
+</html>`;
+}
 
 // ── HTML ──────────────────────────────────────────────────────────────────────
 
@@ -1764,6 +2475,9 @@ document.addEventListener('click', function(e) {
   else if (act === 'intake-chat-send') { sendIntakeChat(); }
   else if (act === 'intake-add-to-client') { confirmIntakeProposal(id); }
   else if (act === 'upload-proposal') { document.getElementById('proposalFileInput').click(); }
+  else if (act === 'portal-create') { portalCreate(id); }
+  else if (act === 'portal-revoke') { portalRevoke(id); }
+  else if (act === 'portal-copy') { navigator.clipboard.writeText(val).then(function(){ showSnackbar('Link copied!'); }); }
 });
 
 document.addEventListener('change', function(e) {
@@ -2054,6 +2768,8 @@ function renderClientDetail(data) {
   html += '<div class="notes-saved" id="notesSaved">Saved</div>';
   html += '<div class="notes-error" id="notesError">Save failed</div>';
   html += '</div>';
+  // Google Ads Portal
+  html += '<div id="portalSection" style="margin:16px 0 8px"></div>';
   // Active jobs
   var activeJobs = jobs.filter(function(j) { return j.status === 'Active'; });
   var completeJobs = jobs.filter(function(j) { return j.status === 'Complete'; });
@@ -2085,6 +2801,8 @@ function renderClientDetail(data) {
   }
   // Load templates for add job form
   loadTemplatesForForm(client.id);
+  // Load portal section
+  loadPortalSection(client.id);
 }
 
 function renderJobSection(job, tasks, clientId, today, collapsed) {
@@ -3516,6 +4234,48 @@ async function activateSprintClient() {
   dashboardData = await dr.json();
   renderSprintClientBar();
   loadSprintClient(sel.value);
+}
+
+// ── Google Ads Portal ──────────────────────────────────────────────────────
+
+async function loadPortalSection(clientId) {
+  var el = document.getElementById('portalSection');
+  if (!el) return;
+  var res = await fetch(API + '/api/clients/' + clientId + '/portal-token');
+  if (res.status === 401) return;
+  var d = await res.json();
+  var tok = d.token;
+  if (tok) {
+    var url = 'https://floorpro.engageengine.ai/portal/' + tok.token;
+    el.innerHTML =
+      '<div style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;background:var(--surface)">' +
+      '<div class="section-title" style="margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Google Ads Client Portal</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+      '<input type="text" value="' + url + '" readonly style="flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:monospace;background:var(--bg);color:var(--text)">' +
+      '<button data-action="portal-copy" data-id="' + esc(clientId) + '" data-val="' + url + '" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-family:inherit">Copy</button>' +
+      '<button data-action="portal-revoke" data-id="' + esc(clientId) + '" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-family:inherit;color:var(--red)">Revoke</button>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">Created ' + new Date(tok.created_at).toLocaleDateString() + ' &middot; Data updated by running push_floor_pro_to_portal.py</div>' +
+      '</div>';
+  } else {
+    el.innerHTML =
+      '<div style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;background:var(--surface)">' +
+      '<div class="section-title" style="margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Google Ads Client Portal</div>' +
+      '<button data-action="portal-create" data-id="' + esc(clientId) + '" style="padding:7px 14px;border-radius:6px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">Generate Portal Link</button>' +
+      '</div>';
+  }
+}
+
+async function portalCreate(clientId) {
+  var res = await fetch(API + '/api/clients/' + clientId + '/portal-token', { method: 'POST' });
+  if (!res.ok) { var e = await res.json(); alert(e.error || 'Failed'); return; }
+  loadPortalSection(clientId);
+}
+
+async function portalRevoke(clientId) {
+  if (!confirm('Revoke this portal link? Larry will lose access immediately.')) return;
+  await fetch(API + '/api/clients/' + clientId + '/portal-token', { method: 'DELETE' });
+  loadPortalSection(clientId);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
