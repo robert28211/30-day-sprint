@@ -1231,11 +1231,11 @@ async function handleFloorProRefresh(env) {
       WHERE segments.date BETWEEN '${thirtyAgo}' AND '${yesterday}'
         AND ad_group_criterion.status != 'REMOVED'
       ORDER BY metrics.impressions DESC LIMIT 200`,
-    negatives: `SELECT campaign.name, ad_group.name, ad_group_criterion.keyword.text,
-        ad_group_criterion.keyword.match_type
-      FROM ad_group_criterion
-      WHERE ad_group_criterion.type = 'KEYWORD'
-        AND ad_group_criterion.negative = true
+    negatives: `SELECT campaign.name, campaign_criterion.keyword.text,
+        campaign_criterion.keyword.match_type
+      FROM campaign_criterion
+      WHERE campaign_criterion.type = 'KEYWORD'
+        AND campaign_criterion.negative = true
       ORDER BY campaign.name LIMIT 500`,
   };
 
@@ -1641,12 +1641,11 @@ function renderTab() {
     return h2+'</tbody></table>';
   }
   if (activeTab === 'negatives') {
-    var h2 = '<table><thead><tr><th>Negative Keyword</th><th>Match</th><th>Campaign</th><th>Ad Group</th></tr></thead><tbody>';
+    var h2 = '<table><thead><tr><th>Negative Keyword</th><th>Match</th><th>Campaign</th></tr></thead><tbody>';
     rows.forEach(function(r){
-      var agc2 = get(r,'adGroupCriterion') || get(r,'ad_group_criterion') || {};
-      var ag3 = get(r,'adGroup') || get(r,'ad_group') || {};
-      var kw2 = agc2.keyword || {};
-      h2 += '<tr><td>'+h(kw2.text)+'</td><td>'+matchBadge(kw2.matchType||kw2.match_type)+'</td><td>'+h(get(r,'campaign.name'))+'</td><td>'+h(ag3.name||'')+'</td></tr>';
+      var cc = get(r,'campaignCriterion') || get(r,'campaign_criterion') || {};
+      var kw2 = cc.keyword || {};
+      h2 += '<tr><td>'+h(kw2.text)+'</td><td>'+matchBadge(kw2.matchType||kw2.match_type)+'</td><td>'+h(get(r,'campaign.name'))+'</td></tr>';
     });
     return h2+'</tbody></table>';
   }
