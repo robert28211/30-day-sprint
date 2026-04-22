@@ -1127,12 +1127,12 @@ async function handleFloorProDomain(request, env, path) {
 
     if (path === '/api/fp-refresh' && request.method === 'POST') {
       if (!await floorProAuth(request, env)) return json({ error: 'Unauthorized' }, 401);
-      return handleFloorProRefresh(env);
+      return await handleFloorProRefresh(env);
     }
 
     if (path === '/api/fp-data' && request.method === 'GET') {
       if (!await floorProAuth(request, env)) return json({ error: 'Unauthorized' }, 401);
-      return handleFloorProData(env);
+      return await handleFloorProData(env);
     }
 
     // HTML
@@ -1166,7 +1166,7 @@ async function getGadsAccessToken(env) {
 async function runGAQL(accessToken, env, query) {
   const custId = '8999197888';
   const resp = await fetch(
-    `https://googleads.googleapis.com/v19/customers/${custId}/googleAds:search`,
+    `https://googleads.googleapis.com/v20/customers/${custId}/googleAds:search`,
     {
       method: 'POST',
       headers: {
@@ -1602,7 +1602,7 @@ function renderDashboard() {
   html += '<div class="tabs">'+
     ['campaigns','ad_groups','keywords','negatives'].map(function(id){
       var labels={campaigns:'Campaigns',ad_groups:'Ad Groups',keywords:'Keywords',negatives:'Negatives'};
-      return '<button class="tab'+(activeTab===id?' active':'')+'" onclick="switchTab(\''+id+'\')">'+labels[id]+'</button>';
+      return '<button class="tab'+(activeTab===id?' active':'')+'" onclick="switchTab(\\''+id+'\\')">'+labels[id]+'</button>';
     }).join('')+'</div>';
 
   html += renderTab();
@@ -1837,7 +1837,7 @@ function renderNegatives(){
 function renderTabs(){
   var defs=[{id:'campaigns',label:'Campaigns'},{id:'ad_groups',label:'Ad Groups'},{id:'keywords',label:'Keywords'},{id:'negatives',label:'Negatives'}];
   var h='<div class="tabs">';
-  for(var i=0;i<defs.length;i++){var t=defs[i];h+='<button class="tab'+(activeTab===t.id?' active':'')+'" onclick="switchTab(\''+t.id+'\')">'+t.label+'</button>';}
+  for(var i=0;i<defs.length;i++){var t=defs[i];h+='<button class="tab'+(activeTab===t.id?' active':'')+'" onclick="switchTab(\\''+t.id+'\\')">'+t.label+'</button>';}
   return h+'</div>';
 }
 
