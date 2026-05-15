@@ -1,0 +1,21 @@
+name: Prospector Pipeline
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # every 15 minutes
+  workflow_dispatch:          # manual trigger from GitHub UI
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Trigger pipeline
+        run: |
+          curl -s -X POST \
+            https://engageengine-prospector.robertlbutt.workers.dev/api/pipeline \
+            -H "X-Cron-Secret: ${{ secrets.PROSPECTOR_CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 \
+            --fail \
+            | cat
