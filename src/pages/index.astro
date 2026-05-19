@@ -12,11 +12,26 @@ import Footer from '../components/Footer.astro'
 
     <!-- ═══ HERO ═══ -->
     <section class="hero">
-      <h1>The in-market buyers in your backyard are being served ads right now.</h1>
-      <p class="hero-punch">None of them are yours.</p>
+      <h1>
+        <span class="hero-word">The </span>
+        <span class="hero-word">in-market </span>
+        <span class="hero-word">buyers </span>
+        <span class="hero-word">in </span>
+        <span class="hero-word">your </span>
+        <span class="hero-word">backyard </span>
+        <span class="hero-word">are </span>
+        <span class="hero-word">being </span>
+        <span class="hero-word">served </span>
+        <span class="hero-word">ads </span>
+        <span class="hero-word">right </span>
+        <span class="hero-word">now.</span>
+      </h1>
+      <p class="hero-punch hero-sub">None of them are yours.</p>
       <p class="hero-sub">We already know who's searching for your services in your market. Find out how many — and whether a competitor has already pulled this data.</p>
-      <a href="https://marketingperformance.net/snapshot" class="btn btn-blue">See Who's Searching →</a>
-      <p class="hero-micro">Free · No email required · Results in seconds</p>
+      <div class="hero-cta">
+        <a href="https://marketingperformance.net/snapshot" class="btn btn-blue">See Who's Searching →</a>
+        <p class="hero-micro">Free · No email required · Results in seconds</p>
+      </div>
     </section>
 
     <!-- ═══ PRODUCT VIDEO ═══ -->
@@ -32,22 +47,22 @@ import Footer from '../components/Footer.astro'
     <!-- ═══ PROOF BAR ═══ -->
     <div class="proof-bar">
       <div class="proof-grid">
-        <div class="proof-item">
+        <div class="proof-item" data-animate>
           <div class="proof-label">Audience Segments</div>
           <div class="proof-value">45,000+</div>
           <div class="proof-unit">Intent signals, daily refresh</div>
         </div>
-        <div class="proof-item">
+        <div class="proof-item" data-animate data-delay="0.1">
           <div class="proof-label">Audience Refresh</div>
           <div class="proof-value">Daily</div>
           <div class="proof-unit">New segments every 24 hours</div>
         </div>
-        <div class="proof-item">
+        <div class="proof-item" data-animate data-delay="0.2">
           <div class="proof-label">Wasted Ad Spend</div>
           <div class="proof-value">67–90%</div>
           <div class="proof-unit">Less vs. platform-native targeting</div>
         </div>
-        <div class="proof-item">
+        <div class="proof-item" data-animate data-delay="0.3">
           <div class="proof-label">Attribution</div>
           <div class="proof-value">Closed<br>Loop</div>
           <div class="proof-unit">Conversion data feeds back in</div>
@@ -57,7 +72,7 @@ import Footer from '../components/Footer.astro'
 
     <!-- ═══ HOW IT WORKS ═══ -->
     <section class="engine">
-      <div class="engine-header">
+      <div class="engine-header" data-animate>
         <span class="engine-eyebrow">How It Works</span>
         <h2 class="engine-h2-gray">We don't guess who might buy from you.</h2>
         <p class="engine-h2-blue">We already know who's looking.</p>
@@ -67,11 +82,11 @@ import Footer from '../components/Footer.astro'
         </div>
       </div>
 
-      <p class="engine-bridge">The system runs five layers. Each one feeds the next.<br>The longer it runs, the harder it is to beat.</p>
+      <p class="engine-bridge" data-animate data-delay="0.1">The system runs five layers. Each one feeds the next.<br>The longer it runs, the harder it is to beat.</p>
 
-      <img src="/ee-explode.png" alt="EngageEngine — Exploded View" class="engine-explode">
+      <img src="/ee-explode.png" alt="EngageEngine — Exploded View" class="engine-explode" data-animate data-delay="0.15">
 
-      <div class="modules">
+      <div class="modules" data-animate data-delay="0.2">
         <div class="module">
           <div class="module-num">01</div>
           <div class="module-name">Intent Signal Engine</div>
@@ -99,7 +114,7 @@ import Footer from '../components/Footer.astro'
         </div>
       </div>
 
-      <div class="status-panel">
+      <div class="status-panel" data-animate data-delay="0.1">
         <div class="status-head">// engageengine · system status</div>
         <div class="status-row">
           <span class="status-k">System Status</span>
@@ -123,7 +138,7 @@ import Footer from '../components/Footer.astro'
         </div>
       </div>
 
-      <p class="engine-stat-line">
+      <p class="engine-stat-line" data-animate data-delay="0.15">
         <strong>67–90% reduction</strong> in wasted ad spend &nbsp;·&nbsp;
         <strong>Closed-loop</strong> attribution &nbsp;·&nbsp;
         Audiences <strong>refreshed daily</strong>
@@ -133,37 +148,37 @@ import Footer from '../components/Footer.astro'
     <!-- ═══ RESULTS ═══ -->
     <section class="results">
       <div class="wrap-wide">
-        <div class="results-header">
+        <div class="results-header" data-animate>
           <h2 class="results-h2-line1">Six businesses. Six different problems.</h2>
           <p class="results-h2-line2">One system. Same result.</p>
         </div>
         <div class="results-grid">
-          <div class="result-card">
+          <div class="result-card" data-animate>
             <p class="result-headline">$440K in sales. One week.</p>
             <p class="result-quote">"We diagnosed the problem — buyers found us but didn't trust what they saw. We tightened the trust signals. A hundred and twenty days later, we did $440,000 in sales in one week. Same traffic. Different result."</p>
             <p class="result-attr">— <strong>Bob Farnsworth</strong>, Landscape Charleston · Charleston, SC</p>
           </div>
-          <div class="result-card">
+          <div class="result-card" data-animate data-delay="0.1">
             <p class="result-headline">170% more booked appointments. Same ad budget.</p>
             <p class="result-quote">"We were running ads, getting clicks, and losing people. They found the problem. Appointments jumped 170%. I haven't touched the budget since."</p>
             <p class="result-attr">— <strong>George Rogerson</strong>, McClintock HVAC · Charlotte, NC</p>
           </div>
-          <div class="result-card">
+          <div class="result-card" data-animate data-delay="0.2">
             <p class="result-headline">Monthly sales tripled. Ad spend cut 60%.</p>
             <p class="result-quote">"We fixed the right problem. Monthly sales tripled. We're spending 60% less than before."</p>
             <p class="result-attr">— <strong>Bobby Wood</strong>, King's Fencing · Nashville, TN</p>
           </div>
-          <div class="result-card">
+          <div class="result-card" data-animate data-delay="0.1">
             <p class="result-headline">No more seasonal slowdowns.</p>
             <p class="result-quote">"The phones ring. The jobs book. We don't have seasonal slowdowns anymore. And we're not spending any more than we were."</p>
             <p class="result-attr">— <strong>Ethan Del Priore</strong>, Carolina Stone Craftsman · Columbia, SC</p>
           </div>
-          <div class="result-card">
+          <div class="result-card" data-animate data-delay="0.2">
             <p class="result-headline">Call volume down. Sales actually up.</p>
             <p class="result-quote">"Our call volume went down. Our sales went up. We're getting better customers — people who are actually ready to buy."</p>
             <p class="result-attr">— <strong>Larry Gates</strong>, Floor Pro · Columbia, SC</p>
           </div>
-          <div class="result-card">
+          <div class="result-card" data-animate data-delay="0.3">
             <p class="result-headline">Close rates up. Price objections gone.</p>
             <p class="result-quote">"Our close rates jumped. The price conversations got easier. Buyers just stopped pushing back."</p>
             <p class="result-attr">— <strong>John Raz</strong>, Orange County Garage Doors · Tustin, CA</p>
@@ -175,24 +190,26 @@ import Footer from '../components/Footer.astro'
     <!-- ═══ GUARANTEE ═══ -->
     <section class="guarantee">
       <div class="guarantee-inner">
-        <span class="guarantee-eyebrow">The Guarantee</span>
-        <h2>The guarantee nobody else in this industry will make.</h2>
-        <div class="guarantee-body">
+        <span class="guarantee-eyebrow" data-animate>The Guarantee</span>
+        <h2 data-animate data-delay="0.05">The guarantee nobody else in this industry will make.</h2>
+        <div class="guarantee-body" data-animate data-delay="0.1">
           <p>If EngageEngine™ doesn't deliver at least 2X our fee in closed revenue within 90 days — we keep working until it does. Free.</p>
           <p>We don't refund you and disappear. We stay. We fix. We run it until it works. Because if we can't find the buyers, we don't deserve to get paid.</p>
         </div>
-        <p class="guarantee-track">31 years. Zero refunds.<br>That's not a pitch. That's a track record.</p>
-        <a href="https://marketingperformance.net/snapshot" class="btn btn-blue">See Who's Searching in Your Market →</a>
+        <p class="guarantee-track" data-animate data-delay="0.15">31 years. Zero refunds.<br>That's not a pitch. That's a track record.</p>
+        <a href="https://marketingperformance.net/snapshot" class="btn btn-blue" data-animate data-delay="0.2">See Who's Searching in Your Market →</a>
       </div>
     </section>
 
     <!-- ═══ THE CLOSE ═══ -->
     <section class="close-section">
-      <h2 class="close-h2-line1">The buyers are already in your market.</h2>
-      <p class="close-h2-line2">The only question is who gets to them first.</p>
-      <p class="close-body">Every day this runs without you, a competitor is capturing demand that should be yours. The snapshot takes ten seconds. No email. No sales call. Just your data.</p>
-      <a href="https://marketingperformance.net/snapshot" class="btn btn-blue">See Who's Searching →</a>
-      <p class="close-micro">Free · No email required · Results in seconds</p>
+      <h2 class="close-h2-line1" data-animate>The buyers are already in your market.</h2>
+      <p class="close-h2-line2" data-animate data-delay="0.05">The only question is who gets to them first.</p>
+      <p class="close-body" data-animate data-delay="0.1">Every day this runs without you, a competitor is capturing demand that should be yours. The snapshot takes ten seconds. No email. No sales call. Just your data.</p>
+      <div data-animate data-delay="0.2">
+        <a href="https://marketingperformance.net/snapshot" class="btn btn-blue">See Who's Searching →</a>
+        <p class="close-micro">Free · No email required · Results in seconds</p>
+      </div>
     </section>
 
   </main>
