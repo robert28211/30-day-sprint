@@ -1,0 +1,62 @@
+---
+const services = [
+  {
+    problemRef: 'For Problem 1 — You\'re invisible when it matters',
+    name: 'Presence Fix',
+    body: 'You need to be visible at the exact moment buyers search — in Google, in AI-generated answers, in the directories that matter to your vertical. We audit your complete digital footprint and close every gap where demand is leaking before you ever see it.',
+    arrow: '→ If your diagnostic reveals this problem, this is where we start.',
+    delay: '0',
+  },
+  {
+    problemRef: 'For Problem 2 — They find you and leave',
+    name: 'Trust Fix',
+    body: 'Visibility doesn\'t convert if the trust signals aren\'t there. We rebuild your credibility infrastructure — reviews, authority signals, site structure, and the specific trust markers buyers look for before they decide. You stop being passed over.',
+    arrow: '→ If your diagnostic reveals this problem, this is the fix.',
+    delay: '0.1',
+  },
+  {
+    problemRef: 'For Problem 3 — You\'re getting price-shopped to death',
+    name: 'Positioning Fix',
+    body: 'When a buyer is comparing you to a competitor, most of the damage is already done. We reposition your business so that price isn\'t the deciding factor — because comparison becomes irrelevant. This is the work that ends the price war permanently.',
+    arrow: '→ If your diagnostic reveals this problem, this changes everything.',
+    delay: '0.2',
+  },
+  {
+    problemRef: 'For Problem 4 — They said yes and then disappeared',
+    name: 'Pipeline Fix',
+    body: 'Real buyers who went dark aren\'t lost — they\'re stuck. We install the follow-up and re-engagement systems that catch the \'yes that never moved\' before it becomes a deal for your competitor. Fast response, structured follow-up, no more ghosted estimates.',
+    arrow: '→ If your diagnostic reveals this problem, this system recovers the pipeline.',
+    delay: '0.3',
+  },
+]
+---
+<section class="py-24 px-6 bg-bg">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="mb-12" data-animate>
+      <span class="text-xs tracking-[0.2em] uppercase text-muted font-sans block mb-8">/ THE FIX</span>
+      <h2 class="font-serif text-4xl lg:text-5xl text-heading leading-tight mb-6">
+        One Problem. One Fix. Measurable Result.
+      </h2>
+      <p class="text-body text-lg max-w-2xl">
+        After the diagnostic identifies your failure point, we deploy the matching fix. Every engagement is built around one outcome: stop the leak.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-px bg-border">
+      {services.map((svc) => (
+        <div
+          class="bg-surface p-8 flex flex-col"
+          data-animate
+          data-delay={svc.delay}
+        >
+          <p class="text-xs text-muted uppercase tracking-[0.15em] font-sans mb-4">{svc.problemRef}</p>
+          <h3 class="font-serif text-2xl lg:text-3xl text-heading mb-5">{svc.name}</h3>
+          <p class="text-body leading-relaxed flex-1 mb-6">{svc.body}</p>
+          <p class="text-muted text-sm italic">{svc.arrow}</p>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>

@@ -1,0 +1,107 @@
+---
+const testimonials = [
+  {
+    headline: '$440K Sales in One Week',
+    quote: 'We diagnosed the problem — buyers found us but didn\'t trust what they saw. We tightened the trust signals on our site and our reviews. A hundred and twenty days later, we did four hundred and forty thousand dollars in sales in one week. Same traffic. Different result.',
+    name: 'Bob Farnsworth',
+    company: 'Landscape Charleston · Charleston, SC',
+    initials: 'BF',
+    photo: null,
+    delay: '0',
+  },
+  {
+    headline: '170% Increase in Appointments',
+    quote: 'We were running ads, getting clicks, and losing people. They found the problem. Our appointments jumped 170%. I haven\'t touched the ad budget since.',
+    name: 'George Rogerson',
+    company: 'McClintock HVAC · Charlotte, NC',
+    initials: 'GR',
+    photo: null,
+    delay: '0.1',
+  },
+  {
+    headline: '3X — Monthly Sales Tripled',
+    quote: 'We fixed the right problem. Monthly sales tripled. We\'re spending 60% less than we were before.',
+    name: 'Bobby Wood',
+    company: 'King\'s Fencing · Nashville, TN',
+    initials: 'BW',
+    photo: null,
+    delay: '0.2',
+  },
+  {
+    headline: 'Phones Ring. Jobs Book. No Seasonal Slowdowns.',
+    quote: 'The phones ring. The jobs book. We don\'t have seasonal slowdowns anymore. And we\'re not spending any more than we were before.',
+    name: 'Ethan Del Priore',
+    company: 'Carolina Stone Craftsman · Columbia, SC',
+    initials: 'ED',
+    photo: null,
+    delay: '0',
+  },
+  {
+    headline: 'Call Volume Down · Sales Actually Up',
+    quote: 'Our call volume went down. Our sales went up. We\'re getting better customers — people who are actually ready to buy. That\'s the difference.',
+    name: 'Larry Gates',
+    company: 'Floor Pro · Columbia, SC',
+    initials: 'LG',
+    photo: null,
+    delay: '0.1',
+  },
+  {
+    headline: 'Close Rates Up. Price Conversations Got Easier.',
+    quote: 'Our close rates jumped. The price conversations got easier. It wasn\'t that we lowered prices — buyers just stopped pushing back.',
+    name: 'John Raz',
+    company: 'Orange County Garage Doors · Tustin, CA',
+    initials: 'JR',
+    photo: null,
+    delay: '0.2',
+  },
+]
+---
+<section class="py-24 px-6 bg-bg">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="mb-16" data-animate>
+      <span class="text-xs tracking-[0.2em] uppercase text-muted font-sans block mb-8">/ RESULTS</span>
+      <h2 class="font-serif text-4xl lg:text-5xl text-heading leading-tight mb-4">
+        What Fixing the Right Problem Looks Like.
+      </h2>
+      <p class="text-body text-lg">
+        What happens when you stop guessing and start fixing.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-px bg-border">
+      {testimonials.map((t) => (
+        <div
+          class="bg-surface p-8 flex flex-col"
+          data-animate
+          data-delay={t.delay}
+        >
+          <p class="font-serif text-xl text-accent mb-6 leading-snug">{t.headline}</p>
+          <blockquote class="text-body leading-relaxed flex-1 mb-6 italic">
+            "{t.quote}"
+          </blockquote>
+          <div class="flex items-center gap-3">
+            {t.photo ? (
+              <img
+                src={t.photo}
+                alt={t.name}
+                width="40"
+                height="40"
+                class="rounded-full object-cover w-10 h-10 flex-shrink-0"
+              />
+            ) : (
+              <div class="w-10 h-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center flex-shrink-0">
+                <span class="text-accent text-xs font-sans font-medium">{t.initials}</span>
+              </div>
+            )}
+            <div>
+              <p class="text-heading text-sm font-medium font-sans">{t.name}</p>
+              <p class="text-muted text-xs font-sans mt-0.5">{t.company}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>

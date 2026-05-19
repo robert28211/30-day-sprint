@@ -1,0 +1,96 @@
+---
+const problems = [
+  {
+    number: '/ 01',
+    title: 'You\'re Invisible When It Matters',
+    symptom: 'Leads exist. Buyers are searching. But you\'re not present at the moment they decide. You\'re showing up — but not where the decision lives.',
+    happening: 'Your business isn\'t visible in the places buyers use to confirm their choice. Search rankings, AI-generated answers, third-party directories — you\'re absent when presence matters most.',
+    fix: 'We close every gap where demand is leaking before you ever see it.',
+    delay: '0',
+  },
+  {
+    number: '/ 02',
+    title: 'They Find You and Leave',
+    symptom: 'Traffic without conversion. People find you, look at you, and leave. The interest is real. The trust isn\'t.',
+    happening: 'Your digital presence doesn\'t signal credibility at the decision moment. Missing trust markers, weak proof, inconsistent signals — the buyer sees risk instead of certainty.',
+    fix: 'We rebuild the specific credibility signals that convert lookers into callers.',
+    delay: '0.1',
+  },
+  {
+    number: '/ 03',
+    title: 'You\'re Getting Price-Shopped to Death',
+    symptom: 'You get the estimate. They shop around. You win some. You lose more than you should, usually on price.',
+    happening: 'Buyers who\'ve trusted you enough to get a quote are still comparison shopping. That means your positioning hasn\'t differentiated you. You\'re in a pool, not on a pedestal.',
+    fix: 'We reposition your business so that price isn\'t the deciding factor — because comparison becomes irrelevant.',
+    delay: '0.2',
+  },
+  {
+    number: '/ 04',
+    title: 'They Said Yes and Then Disappeared',
+    symptom: 'They were ready to buy. Then nothing happened. The lead goes cold. The job never books.',
+    happening: 'Intent without urgency dies. Your follow-up system has gaps — or doesn\'t exist. Between \'interested\' and \'booked\' is where most service businesses bleed the most.',
+    fix: 'We install speed-to-lead systems, follow-up sequences, and no-show recovery that catches the \'yes that never moved.\'',
+    delay: '0.3',
+  },
+]
+---
+<section class="py-24 px-6 bg-bg">
+  <div class="max-w-4xl mx-auto">
+
+    <div class="mb-16" data-animate>
+      <span class="text-xs tracking-[0.2em] uppercase text-muted font-sans block mb-8">/ THE FOUR PROBLEMS</span>
+      <h2 class="font-serif text-4xl lg:text-5xl text-heading leading-tight mb-6">
+        There Are Only Four Places a Sale Can Break.
+      </h2>
+      <p class="text-body text-lg max-w-2xl">
+        Every revenue problem in every service business traces to one of these four failure points. Not ten. Not fifty. Four.
+      </p>
+    </div>
+
+    <div class="space-y-0">
+      {problems.map((p, i) => (
+        <div
+          class="border-b border-border py-12"
+          data-animate
+          data-delay={p.delay}
+        >
+          <div class="flex flex-col lg:flex-row lg:gap-16">
+            <div class="lg:w-48 flex-shrink-0 mb-4 lg:mb-0">
+              <span class="text-xs tracking-[0.2em] text-muted font-sans uppercase">{p.number}</span>
+              <h3 class="font-serif text-2xl text-heading mt-2 leading-snug">{p.title}</h3>
+            </div>
+            <div class="flex-1 space-y-4">
+              <div>
+                <p class="text-xs uppercase tracking-[0.15em] text-muted font-sans mb-1">Symptom</p>
+                <p class="text-body">{p.symptom}</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-[0.15em] text-muted font-sans mb-1">What's actually happening</p>
+                <p class="text-body">{p.happening}</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-[0.15em] text-muted font-sans mb-1">What we do about it</p>
+                <p class="text-body text-subtle italic">{p.fix}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-16 text-center" data-animate data-delay="0.1">
+      <p class="text-body text-lg max-w-xl mx-auto mb-8">
+        You don't need all four fixed. You need to identify which one is yours. That's twelve questions.
+      </p>
+      <a
+        href="/diagnostic/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-block bg-white text-black font-sans font-medium px-8 py-4 text-base hover:bg-accent transition-colors duration-200"
+      >
+        12 Questions. 10 Minutes. Find My Profit Leak. →
+      </a>
+    </div>
+
+  </div>
+</section>

@@ -1,0 +1,246 @@
+---
+import Base from '../layouts/Base.astro'
+import Nav from '../components/Nav.astro'
+import Footer from '../components/Footer.astro'
+---
+<Base
+  title="B2B Lead Generation — EngageEngine™"
+  description="Your buyers aren't searching for you yet. They're living with the problem you solve. We find them before they search, fix where your pipeline is breaking, and hand you the evidence trail that proves it's working."
+>
+  <Nav />
+  <main>
+
+    <!-- Hero -->
+    <section class="b2b-hero">
+      <p class="b2b-eyebrow">For B2B companies</p>
+      <h1 class="hero-word">You're losing the demand you already paid for before it becomes revenue.</h1>
+      <p class="hero-sub b2b-lead">
+        Your buyers aren't searching for you yet. They're a warehouse manager watching orders back up. A nursing coordinator juggling volunteers on a whiteboard. An ops lead rebuilding the same checklist in Excel for the third time this year. They're living with the problem you solve — and they haven't named it.
+      </p>
+      <p class="hero-sub b2b-mechanism">
+        By the time they search, they've already talked to two competitors. We reach them before that moment.
+      </p>
+    </section>
+
+    <!-- Symptom Cards -->
+    <section class="cards-section">
+      <div class="cards-inner">
+        <div class="cards-header">
+          <span class="section-eyebrow">Where's Your Leak?</span>
+          <h2>Which one sounds like yours?</h2>
+        </div>
+
+        <div class="cards-grid">
+          <a href="/diagnosis/not-seen/" class="sym-card" data-card-id="not-seen" data-card-name="You're Invisible When It Matters">
+            <span class="card-num">01</span>
+            <p class="card-title">You're Invisible When It Matters</p>
+            <p class="card-body">Your buyers are deep in research — comparison sites, category content, peer reviews — long before they contact a vendor. You're not present when they're forming their shortlist. By the time they search for you by name, they've already chosen someone else.</p>
+            <p class="card-cta">Read more →</p>
+          </a>
+
+          <a href="/diagnosis/not-trusted/" class="sym-card" data-card-id="not-trusted" data-card-name="They Find You and Leave">
+            <span class="card-num">02</span>
+            <p class="card-title">They Find You and Leave</p>
+            <p class="card-body">B2B buyers research quietly and decide slowly. They found your site. Something didn't give them enough confidence to engage. The interest was real — the trust signals weren't. They're now on a competitor's demo page.</p>
+            <p class="card-cta">Read more →</p>
+          </a>
+
+          <a href="/diagnosis/still-compared/" class="sym-card" data-card-id="still-compared" data-card-name="You're Getting Price-Shopped to Death">
+            <span class="card-num">03</span>
+            <p class="card-title">You're Getting Price-Shopped to Death</p>
+            <p class="card-body">You're getting to the demo. You're not winning the deal. The evaluation process has put you in a pool with three other vendors. Your positioning hasn't differentiated you — so the only remaining variable is price.</p>
+            <p class="card-cta">Read more →</p>
+          </a>
+
+          <a href="/diagnosis/no-action/" class="sym-card" data-card-id="no-action" data-card-name="They Said Yes and Then Disappeared">
+            <span class="card-num">04</span>
+            <p class="card-title">They Said Yes and Then Disappeared</p>
+            <p class="card-body">They were ready to move forward. Then the champion went quiet. A budget cycle shifted. The decision stalled. Intent without urgency dies — and B2B deals stall more than any other category. Most of those deals aren't dead. They're stuck.</p>
+            <p class="card-cta">Read more →</p>
+          </a>
+        </div>
+
+        <div class="cards-footer">
+          <p>Not sure which one? 12 questions finds it.</p>
+          <a href="/diagnostic/" class="btn btn-blue">Free Diagnostic →</a>
+          <p class="cards-sub">12 questions. No sales call.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- The Approach -->
+    <section class="method-section">
+      <div class="method-inner">
+        <span class="section-eyebrow">The Approach</span>
+        <div class="method-grid">
+          <div class="method-block">
+            <p class="method-label">Step One — Find the Leak</p>
+            <p class="method-body">Before we touch anything, we go upstream of every tactic already running. No new spend. No new campaigns. A 30-day sprint to identify exactly where demand is collapsing — before we fix anything else.</p>
+          </div>
+          <div class="method-block">
+            <p class="method-label">Step Two — Build the Machine</p>
+            <p class="method-body">We monitor buyer behavior across the open web. When someone's activity signals they're living with the problem you solve, they enter your pipeline — before they search, before your competitors exist in their consideration set. We reach them first. Then we hand you the complete evidence trail: every touchpoint, every signal, every conversion.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="b2b-testimonials">
+      <div class="b2b-t-inner">
+        <img src="/b2b-testimonials.png" alt="B2B client results — pipeline increased 215%, 42% more meetings booked, CAC reduced 38%" class="b2b-t-img" />
+      </div>
+    </section>
+
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  /* Hero */
+  .b2b-hero {
+    padding: 80px 22px 72px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .b2b-eyebrow {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--blue); margin-bottom: 24px; display: block;
+  }
+  .b2b-hero h1 {
+    font-family: var(--font-d);
+    font-size: clamp(36px, 5.5vw, 56px);
+    font-weight: 600; line-height: 1.07;
+    letter-spacing: -0.005em;
+    color: var(--graphite); margin-bottom: 32px;
+  }
+  .b2b-lead {
+    font-size: 19px; font-weight: 400;
+    line-height: 1.6; letter-spacing: -0.022em;
+    color: var(--mid-gray);
+    max-width: 720px; margin-bottom: 24px;
+  }
+  .b2b-mechanism {
+    font-size: 17px; font-weight: 400;
+    line-height: 1.6; letter-spacing: -0.022em;
+    color: var(--mid-gray);
+    max-width: 560px;
+    padding-left: 18px;
+    border-left: 3px solid var(--blue);
+  }
+
+  /* Cards */
+  .cards-section {
+    background: var(--canvas);
+    border-top: 1px solid var(--border);
+    padding: 80px 22px 96px;
+  }
+  .cards-inner { max-width: 1100px; margin: 0 auto; }
+  .cards-header { margin-bottom: 48px; }
+  .section-eyebrow {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--blue); display: block; margin-bottom: 12px;
+  }
+  .cards-header h2 {
+    font-family: var(--font-d);
+    font-size: clamp(24px, 3vw, 36px);
+    font-weight: 600; color: var(--graphite); line-height: 1.1;
+    letter-spacing: -0.005em;
+  }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px; background: var(--border);
+    margin-bottom: 56px;
+  }
+  .sym-card {
+    background: var(--white);
+    padding: 40px;
+    text-decoration: none;
+    display: block;
+    transition: background 0.2s;
+  }
+  .sym-card:hover { background: var(--canvas); }
+  .card-num {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--blue); display: block; margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: var(--font-d);
+    font-size: 19px; font-weight: 600;
+    color: var(--graphite); margin-bottom: 14px;
+    line-height: 1.19; letter-spacing: -0.022em;
+    transition: color 0.2s;
+  }
+  .sym-card:hover .card-title { color: var(--blue); }
+  .card-body {
+    font-size: 15px; font-weight: 400;
+    line-height: 1.6; letter-spacing: -0.018em;
+    color: var(--mid-gray); margin-bottom: 20px;
+  }
+  .card-cta {
+    font-size: 13px; color: var(--blue-link); font-weight: 500;
+  }
+  .cards-footer { text-align: center; }
+  .cards-footer p {
+    font-size: 17px; font-weight: 400;
+    color: var(--mid-gray); margin-bottom: 24px;
+  }
+  .cards-sub {
+    font-size: 13px; color: var(--light-gray); margin-top: 12px;
+  }
+
+  /* Method */
+  .method-section {
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 96px 22px;
+  }
+  .method-inner { max-width: 900px; margin: 0 auto; }
+  .method-inner > .section-eyebrow { margin-bottom: 48px; }
+  .method-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+  }
+  .method-label {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--blue); margin-bottom: 14px;
+  }
+  .method-body {
+    font-size: 17px; font-weight: 400;
+    line-height: 1.6; letter-spacing: -0.022em;
+    color: var(--mid-gray);
+  }
+
+  /* Testimonials */
+  .b2b-testimonials {
+    padding: 64px 22px 80px;
+    background: var(--canvas);
+    border-top: 1px solid var(--border);
+  }
+  .b2b-t-inner { max-width: 1100px; margin: 0 auto; }
+  .b2b-t-img { width: 100%; height: auto; }
+
+  @media (max-width: 640px) {
+    .b2b-hero { padding: 52px 16px 52px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .method-grid { grid-template-columns: 1fr; gap: 32px; }
+    .sym-card { padding: 28px 22px; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll('[data-card-id]').forEach((el) => {
+    el.addEventListener('click', () => {
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'symptom_card_click', {
+          card_id: (el as HTMLElement).dataset.cardId,
+          card_name: (el as HTMLElement).dataset.cardName,
+        })
+      }
+    })
+  })
+</script>

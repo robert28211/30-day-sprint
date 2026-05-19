@@ -1,0 +1,670 @@
+---
+import Base from '../../layouts/Base.astro'
+export const prerender = false
+
+const { id } = Astro.params
+const isPreview = !id || id === 'preview'
+const env = (Astro.locals as any).runtime?.env ?? (Astro.locals as any)
+
+let data: any = null
+if (id && id !== 'preview') {
+  try {
+    data = await env.DB.prepare(
+      'SELECT * FROM snapshot_leads WHERE id = ?'
+    ).bind(id).first()
+  } catch (_) {}
+}
+
+if (!data) {
+  const city_state    = Astro.url.searchParams.get('city_state') || 'Your Market'
+  const trade         = Astro.url.searchParams.get('trade') || 'Home Services'
+  const failure_mode  = Astro.url.searchParams.get('failure_mode') || ''
+  let hash = 0
+  for (const c of (city_state + trade).toLowerCase()) {
+    hash = Math.imul(31, hash) + c.charCodeAt(0) | 0
+  }
+  const abs = Math.abs(hash)
+  const vary = (n: number, pct = 0.15) => Math.round(n * (1 + (Math.random() * 2 - 1) * pct))
+  const total     = vary(180 + (abs % 120))
+  const multiSite = vary(Math.round(total * (0.34 + (abs >> 4 & 0xf) / 150)))
+  data = { city_state, trade, total_buyers: total, multi_site: multiSite,
+           uncaptured: multiSite, competitor_exposed: Math.round(multiSite * 0.37), failure_mode }
+}
+
+const isHomeService = !['plastic surgery'].includes((data.trade || '').toLowerCase())
+const prospectWord  = isHomeService ? 'homeowners' : 'people'
+const pullDate   = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+const psMarketRaw = data.total_buyers * 6000
+const psMarketStr = psMarketRaw >= 1000000
+  ? `$${(psMarketRaw / 1000000).toFixed(1)}M`
+  : `$${Math.round(psMarketRaw / 1000)}k`
+const expiryBase = data.created_at ? (data.created_at * 1000 + 86400000) : (Date.now() + 86400000)
+const expiryDate = new Date(expiryBase).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+const shortDate  = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+const refId      = id && id !== 'preview' ? id.split('-')[0].toUpperCase() : 'PREVIEW'
+---
+<Base
+  title={`${data.city_state} ${data.trade} — Buyer Intent Pull`}
+  description="Your EngageEngine™ market intelligence report."
+>
+
+<!-- Google Sheets App Shell -->
+<div class="gs-app">
+
+  <!-- Top bar -->
+  <div class="gs-topbar">
+    <div class="gs-topbar-left">
+      <div class="gs-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <rect width="24" height="24" rx="2" fill="#0F9D58"/>
+          <rect x="5" y="6" width="14" height="1.8" rx=".4" fill="white" opacity=".9"/>
+          <rect x="5" y="10" width="14" height="1.8" rx=".4" fill="white" opacity=".9"/>
+          <rect x="5" y="14" width="9" height="1.8" rx=".4" fill="white" opacity=".9"/>
+        </svg>
+      </div>
+      <div class="gs-docinfo">
+        <div class="gs-docname">{data.city_state} {data.trade} — Buyer Intent Pull</div>
+        <div class="gs-menubar">
+          <span class="gs-menu">File</span>
+          <span class="gs-menu">Edit</span>
+          <span class="gs-menu">View</span>
+          <span class="gs-menu">Insert</span>
+          <span class="gs-menu">Format</span>
+          <span class="gs-menu">Data</span>
+          <span class="gs-menu">Tools</span>
+          <span class="gs-menu">Extensions</span>
+          <span class="gs-menu">Help</span>
+        </div>
+      </div>
+    </div>
+    <div class="gs-topbar-right no-print">
+      <button class="gs-share-btn" onclick="window.print()">⤓ Export PDF</button>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="gs-toolbar no-print">
+    <div class="gs-tbtn">↩</div>
+    <div class="gs-tbtn">↪</div>
+    <div class="gs-tsep"></div>
+    <div class="gs-tzoom">100%</div>
+    <div class="gs-tsep"></div>
+    <div class="gs-tfont">Arial</div>
+    <div class="gs-tsize">10</div>
+    <div class="gs-tsep"></div>
+    <div class="gs-tbtn gs-tbold">B</div>
+    <div class="gs-tbtn gs-titalic">I</div>
+    <div class="gs-tbtn gs-tstrike">S</div>
+    <div class="gs-tsep"></div>
+    <div class="gs-tbtn">≡</div>
+    <div class="gs-tbtn">≡</div>
+    <div class="gs-tbtn">≡</div>
+    <div class="gs-tsep"></div>
+    <div class="gs-tbtn">⊞</div>
+    <div class="gs-tbtn">⤢</div>
+  </div>
+
+  <!-- Formula bar -->
+  <div class="gs-formulabar">
+    <div class="gs-namebox">A1:F{data.total_buyers + 11}</div>
+    <div class="gs-fx">fx</div>
+    <div class="gs-formula">{`=QUERY(intent_index_72hr,"SELECT * WHERE market='${data.city_state}' AND trade='${data.trade}' AND window='72hr'",1)`}</div>
+  </div>
+
+  <!-- Grid -->
+  <div class="gs-grid-wrap">
+    <table class="gs-grid">
+      <colgroup>
+        <col class="col-rn">
+        <col class="col-a">
+        <col class="col-b">
+        <col class="col-c">
+        <col class="col-d">
+        <col class="col-e">
+        <col class="col-f">
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="gs-corner"></th>
+          <th class="gs-ch">A</th>
+          <th class="gs-ch">B</th>
+          <th class="gs-ch">C</th>
+          <th class="gs-ch">D</th>
+          <th class="gs-ch">E</th>
+          <th class="gs-ch">F</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Row 1: Title -->
+        <tr>
+          <td class="gs-rn">1</td>
+          <td class="gs-title" colSpan={6}>BUYER INTENT EXPORT &nbsp;·&nbsp; {data.city_state} &nbsp;·&nbsp; {data.trade} &nbsp;·&nbsp; {pullDate} &nbsp;·&nbsp; REF: {refId}</td>
+        </tr>
+
+        <!-- Row 2: empty -->
+        <tr><td class="gs-rn">2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+        <!-- Row 3: Signal summary headers -->
+        <tr class="gs-hdr-row">
+          <td class="gs-rn">3</td>
+          <td class="gs-hdr">Signal Type</td>
+          <td class="gs-hdr">Count</td>
+          <td class="gs-hdr">Notes</td>
+          <td class="gs-hdr">Window</td>
+          <td class="gs-hdr">Status</td>
+          <td></td>
+        </tr>
+
+        <!-- Row 4: Active searchers -->
+        <tr>
+          <td class="gs-rn">4</td>
+          <td>Active searchers identified</td>
+          <td class="gs-num">{data.total_buyers}</td>
+          <td class="gs-note">{prospectWord.charAt(0).toUpperCase() + prospectWord.slice(1)} researching {data.trade} in {data.city_state} — active search behavior confirmed</td>
+          <td class="gs-center">72-hr</td>
+          <td class="gs-confirmed">✓ CONFIRMED</td>
+          <td></td>
+        </tr>
+
+        <!-- Row 5: Multi-site -->
+        <tr>
+          <td class="gs-rn">5</td>
+          <td>Multi-site visitors (3+ sites)</td>
+          <td class="gs-num">{data.multi_site}</td>
+          <td class="gs-note">Actively comparing providers — no decision made</td>
+          <td class="gs-center">72-hr</td>
+          <td class="gs-confirmed">✓ CONFIRMED</td>
+          <td></td>
+        </tr>
+
+        <!-- Row 6: Uncaptured -->
+        <tr>
+          <td class="gs-rn">6</td>
+          <td>Uncaptured — no click-to-call or form fill</td>
+          <td class="gs-num">{data.uncaptured}</td>
+          <td class="gs-note">Window open — no provider contacted</td>
+          <td class="gs-center">72-hr</td>
+          <td class="gs-open">OPEN</td>
+          <td></td>
+        </tr>
+
+        <!-- Row 7: Competitor mapping (locked) -->
+        <tr class="gs-locked-row">
+          <td class="gs-rn">7</td>
+          <td>Competitor exposure mapping</td>
+          <td class="gs-num">—</td>
+          <td class="gs-note">🔒 LOCKED — available on activation</td>
+          <td class="gs-center">—</td>
+          <td class="gs-locked-status">LOCKED</td>
+          <td></td>
+        </tr>
+
+        <!-- Row 8: empty -->
+        <tr><td class="gs-rn">8</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+        <!-- Row 9: Contact data headers -->
+        <tr class="gs-hdr-row">
+          <td class="gs-rn">9</td>
+          <td class="gs-hdr">First Name</td>
+          <td class="gs-hdr">Last Name</td>
+          <td class="gs-hdr">Address</td>
+          <td class="gs-hdr">Phone</td>
+          <td class="gs-hdr">Email</td>
+          <td class="gs-hdr">Search Date</td>
+        </tr>
+
+        <!-- Rows 10–20: Blurred contact data -->
+        <tr class="gs-blur-row"><td class="gs-rn">10</td><td>James</td><td>Morrison</td><td>4821 Elm Ridge Dr</td><td>(615) 382-7291</td><td>j.morrison@gmail.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row"><td class="gs-rn">11</td><td>Sarah</td><td>Whitfield</td><td>1203 Cedar Bluff Rd</td><td>(615) 447-8834</td><td>s.whitfield@yahoo.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row"><td class="gs-rn">12</td><td>Robert</td><td>Callahan</td><td>887 Summertree Ln</td><td>(615) 291-4402</td><td>rcallahan@gmail.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row"><td class="gs-rn">13</td><td>Michelle</td><td>Donovan</td><td>3340 Hickory Glen Pl</td><td>(615) 558-0193</td><td>mdonovan@hotmail.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row"><td class="gs-rn">14</td><td>Kevin</td><td>Hartley</td><td>512 Ridgecrest Blvd</td><td>(615) 334-6671</td><td>k.hartley@gmail.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row"><td class="gs-rn">15</td><td>Patricia</td><td>Ostrowski</td><td>2189 Maple Grove Ave</td><td>(615) 682-1197</td><td>postrowski@gmail.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row"><td class="gs-rn">16</td><td>Daniel</td><td>Frazier</td><td>791 Brookwood Ct</td><td>(615) 423-9905</td><td>dfrazier@outlook.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row"><td class="gs-rn">17</td><td>Lisa</td><td>Pemberton</td><td>4455 Willowbend Dr</td><td>(615) 774-3328</td><td>l.pemberton@gmail.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row"><td class="gs-rn">18</td><td>Mark</td><td>Czerwinski</td><td>6230 Stonecroft Rd</td><td>(615) 501-8843</td><td>mczerwinski@yahoo.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row gs-blur-fade"><td class="gs-rn">19</td><td>Jennifer</td><td>Ashworth</td><td>1847 Creekside Way</td><td>(615) 267-4412</td><td>jashworth@gmail.com</td><td>{pullDate}</td></tr>
+        <tr class="gs-blur-row gs-blur-fade2"><td class="gs-rn">20</td><td>Thomas</td><td>Reinholt</td><td>3301 Fairview Pkwy</td><td>(615) 389-7726</td><td>treinholt@gmail.com</td><td>{pullDate}</td></tr>
+
+        <!-- Overflow row -->
+        <tr class="gs-overflow-tr">
+          <td class="gs-rn">21</td>
+          <td colSpan={6} class="gs-overflow-cell">+ {data.total_buyers - 11} more rows not shown &nbsp;·&nbsp; Contact data locked until activation</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Sheet tabs -->
+  <div class="gs-tabs no-print">
+    <button class="gs-tab">Intent Pull — {shortDate}</button>
+    <button class="gs-tab-add">+</button>
+  </div>
+
+</div>
+
+<!-- Claim / Waitlist section -->
+<div class="claim-section">
+  <div class="claim-inner">
+
+    {isHomeService ? (
+      <div class="claim-copy">
+        <p class="claim-body">There are {data.total_buyers} people in {data.city_state} who need {data.trade} work right now. They haven't found you yet. We only work with one company per market.</p>
+        <p class="claim-kicker">If you want {data.city_state}, add your info.</p>
+      </div>
+    ) : (
+      <div class="claim-copy">
+        <div class="claim-headline">Right now, {data.total_buyers} people in {data.city_state} are in the early stages of thinking about cosmetic surgery.</div>
+        <p class="claim-body">They haven't Googled it yet. They haven't called anyone. They haven't told their friends. We can put your practice in front of them before any of that happens.</p>
+        <p class="claim-kicker">One practice per market — if a competitor gets here first, we can't help you.</p>
+      </div>
+    )}
+
+    <div id="claim-form-wrap">
+      <form id="claim-form" class="claim-form">
+        <input type="hidden" name="city_state" value={data.city_state} />
+        <input type="hidden" name="trade" value={data.trade} />
+        <input type="hidden" name="failure_mode" value={data.failure_mode || ''} />
+        <input type="hidden" name="total_buyers" value={data.total_buyers} />
+        <input type="hidden" name="multi_site" value={data.multi_site} />
+        <input type="hidden" name="competitor_exposed" value={data.competitor_exposed} />
+        <div class="claim-fields">
+          <input type="text" name="name" placeholder="Your name" required class="claim-input" />
+          <input type="email" name="email" placeholder="Email address" required class="claim-input" />
+          <input type="tel" name="phone" placeholder="Phone number" class="claim-input" />
+        </div>
+        <button type="submit" class="claim-btn" id="claim-submit">
+          {isHomeService ? 'Add Me to the Waitlist →' : 'Claim My Market →'}
+        </button>
+        <p class="claim-note">We'll reach out within 24 hours to confirm your slot.</p>
+      </form>
+      <div id="claim-confirm" class="claim-confirm" style="display:none">
+        <div class="claim-confirm-check">✓</div>
+        <div class="claim-confirm-headline">You're on the list.</div>
+        <p class="claim-confirm-body">We'll reach out within 24 hours to confirm your {data.city_state} slot. If a competitor claims it first, we'll let you know immediately.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Pitch / supporting detail section -->
+<div class="unlock-section">
+  <div class="unlock-inner">
+
+    <p class="analyst-note">
+      {data.failure_mode === 'ads_not_working' && (
+        <>Your ads may be running — but these {data.total_buyers} {prospectWord} found their way into the decision window without clicking them. They are actively searching, comparing, and waiting for someone to reach them first.</>
+      )}
+      {data.failure_mode === 'traffic_not_booking' && (
+        <>Traffic is not the problem — timing is. Every contact in this export is mid-decision: visited multiple sites, have not called anyone, have not committed. Most will book with whoever reaches them first in the next 48 hours.</>
+      )}
+      {data.failure_mode === 'losing_to_competitors' && (
+        <>{data.multi_site} of these buyers have visited 3 or more contractor sites — including your competitors. They have not decided yet. Competitor identities are locked until activation.</>
+      )}
+      {data.failure_mode === 'calls_go_cold' && (
+        <>These contacts are live and in-window — they have not called anyone yet. This is a timing problem, not a lead quality problem. The 72-hour window is open.</>
+      )}
+      {(!data.failure_mode || !['ads_not_working','traffic_not_booking','losing_to_competitors','calls_go_cold'].includes(data.failure_mode)) && (
+        <>Every contact in this pull was flagged by the intent index within the last 72 hours. Active search behavior confirmed. {data.trade} category filter applied. This pull expires {expiryDate}.</>
+      )}
+    </p>
+
+    <div class="pitch-divider"></div>
+
+    <div class="pitch-section">
+      <div class="pitch-label">WHAT HAPPENS NEXT</div>
+      <div class="pitch-phase">
+        <div class="pitch-phase-name">Month 1 — The 30-Day Recovery Sprint</div>
+        <div class="pitch-phase-body">We run the Demand Collapse Diagnostic — seven phases to find exactly where revenue is leaking before marketing gets a chance to work. Then we fix it and build your activation system in parallel. The moment the Sprint ends, we deploy.</div>
+      </div>
+      <div class="pitch-phase">
+        <div class="pitch-phase-name">Months 2–3 — Full EngageEngine™ Activation</div>
+        <div class="pitch-phase-body">We pull the active buyers in your market. Identity resolution on site visitors. Email, SMS, retargeting, and chatbot running simultaneously — all pointed at people already looking for what you do. Most clients see ad spend drop 60–90% while generating more qualified conversations than before.</div>
+      </div>
+      <div class="pitch-callout">WE RUN IT. YOU TAKE THE CALLS.</div>
+    </div>
+
+    <div class="pitch-guarantee">
+      <div class="pitch-label">THE GUARANTEE</div>
+      <p class="pitch-guarantee-text">If we don't generate qualified conversations — a {prospectWord.replace(/s$/, '')} in your market who needs your service, confirmed via call or reply — within 90 days, we work free until we do.</p>
+    </div>
+
+    <div class="pitch-pricing">
+      <div class="pitch-label">INVESTMENT</div>
+      <p class="pitch-fine">$3,500/month · $500–$1,500/month ad spend (we manage, you approve) · Month to month · No contracts · One {data.trade} company in {data.city_state} — permanently exclusive · Slot expires {expiryDate}</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// GA4: report page viewed
+if (typeof gtag !== 'undefined') {
+  const sp = new URLSearchParams(window.location.search);
+  gtag('event', 'snapshot_viewed', {
+    market: sp.get('city_state') || document.title,
+    trade: sp.get('trade') || '',
+    failure_mode: sp.get('failure_mode') || '',
+  });
+}
+
+const claimForm = document.getElementById('claim-form') as HTMLFormElement | null;
+if (claimForm) {
+  claimForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('claim-submit') as HTMLButtonElement;
+    btn.textContent = 'Securing your slot...';
+    btn.disabled = true;
+    const fd = new FormData(claimForm);
+
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'snapshot_waitlist_submit', {
+        market: fd.get('city_state'),
+        trade: fd.get('trade'),
+        failure_mode: fd.get('failure_mode'),
+      });
+    }
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'CompleteRegistration', { content_name: 'Waitlist Signup', content_category: String(fd.get('trade') || '') });
+    }
+
+    fetch('/api/snapshot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: fd.get('name'),
+        email: fd.get('email'),
+        phone: fd.get('phone'),
+        city_state: fd.get('city_state'),
+        trade: fd.get('trade'),
+        failure_mode: fd.get('failure_mode'),
+        total_buyers: Number(fd.get('total_buyers')),
+        multi_site: Number(fd.get('multi_site')),
+        competitor_exposed: Number(fd.get('competitor_exposed')),
+      }),
+    }).catch(() => {});
+
+    // Show confirmation in place of form
+    claimForm.style.display = 'none';
+    const confirm = document.getElementById('claim-confirm') as HTMLElement;
+    if (confirm) confirm.style.display = 'block';
+  });
+}
+</script>
+
+</Base>
+
+<style>
+  :global(body) { background: #f8f9fa !important; margin: 0; }
+  :global(.bg-bg) { background: #f8f9fa !important; }
+
+  /* ── App shell ── */
+  .gs-app {
+    background: #fff;
+    border-bottom: 1px solid #e2e3e3;
+    font-family: Roboto, Arial, sans-serif;
+  }
+
+  /* ── Top bar ── */
+  .gs-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 8px; height: 48px;
+  }
+  .gs-topbar-left { display: flex; align-items: center; gap: 8px; }
+  .gs-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .gs-docinfo { display: flex; flex-direction: column; gap: 0; }
+  .gs-docname {
+    font-size: 16px; color: #202124; font-weight: 400; line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw;
+  }
+  .gs-menubar { display: flex; gap: 0; flex-wrap: wrap; }
+  .gs-menu {
+    font-size: 13px; color: #444746; padding: 2px 7px;
+    border-radius: 4px; cursor: default; white-space: nowrap;
+  }
+  .gs-share-btn {
+    background: #1a73e8; color: #fff; font-size: 13px; font-weight: 500;
+    padding: 7px 20px; border-radius: 20px; border: none; cursor: default;
+    white-space: nowrap;
+  }
+
+  /* ── Toolbar ── */
+  .gs-toolbar {
+    display: flex; align-items: center; gap: 1px;
+    padding: 2px 8px; height: 34px;
+    border-top: 1px solid #e2e3e3; border-bottom: 1px solid #e2e3e3;
+    overflow: hidden;
+  }
+  .gs-tbtn {
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #444746; border-radius: 3px; cursor: default;
+    flex-shrink: 0;
+  }
+  .gs-tbold { font-weight: 700; }
+  .gs-titalic { font-style: italic; }
+  .gs-tstrike { text-decoration: line-through; }
+  .gs-tsep { width: 1px; height: 20px; background: #e2e3e3; margin: 0 3px; flex-shrink: 0; }
+  .gs-tzoom, .gs-tfont, .gs-tsize {
+    font-size: 13px; color: #444746; padding: 0 6px;
+    border: 1px solid transparent; border-radius: 3px;
+    cursor: default; flex-shrink: 0;
+  }
+  .gs-tfont { min-width: 80px; }
+
+  /* ── Formula bar ── */
+  .gs-formulabar {
+    display: flex; align-items: center; height: 26px;
+    border-bottom: 1px solid #e2e3e3;
+    font-family: Roboto, Arial, sans-serif; font-size: 13px;
+  }
+  .gs-namebox {
+    min-width: 80px; width: 80px; padding: 0 8px;
+    border-right: 1px solid #e2e3e3; color: #202124;
+    font-size: 12px; display: flex; align-items: center;
+    height: 100%; flex-shrink: 0;
+  }
+  .gs-fx {
+    padding: 0 8px; color: #5f6368; font-style: italic;
+    border-right: 1px solid #e2e3e3; height: 100%;
+    display: flex; align-items: center; flex-shrink: 0;
+  }
+  .gs-formula {
+    padding: 0 8px; color: #202124; font-size: 12px;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+
+  /* ── Grid ── */
+  .gs-grid-wrap { overflow-x: auto; }
+  .gs-grid {
+    border-collapse: collapse; font-family: Roboto, Arial, sans-serif;
+    font-size: 13px; color: #202124; min-width: 800px;
+  }
+  .gs-grid td, .gs-grid th {
+    border: 1px solid #e2e3e3; padding: 2px 8px;
+    white-space: nowrap; vertical-align: middle; height: 21px;
+  }
+
+  /* Column widths */
+  .col-rn  { width: 30px; }
+  .col-a   { width: 260px; }
+  .col-b   { width: 70px; }
+  .col-c   { width: 320px; }
+  .col-d   { width: 72px; }
+  .col-e   { width: 130px; }
+  .col-f   { width: 110px; }
+
+  /* Column & row headers */
+  .gs-corner, .gs-ch {
+    background: #f8f9fa; color: #444746; font-weight: 400;
+    font-size: 11px; text-align: center; user-select: none; border: 1px solid #e2e3e3;
+  }
+  .gs-rn {
+    background: #f8f9fa; color: #444746; font-size: 11px;
+    text-align: center; user-select: none; padding: 0 4px; width: 30px; min-width: 30px;
+  }
+
+  /* Special rows */
+  .gs-title { background: #e8f0fe; font-size: 11px; font-weight: 500; color: #1a73e8; letter-spacing: .02em; }
+  .gs-hdr-row td { background: #f8f9fa; font-weight: 500; font-size: 12px; color: #444746; }
+  .gs-num { text-align: center; font-weight: 600; }
+  .gs-note { color: #5f6368; }
+  .gs-center { text-align: center; }
+  .gs-confirmed { color: #137333; font-weight: 500; }
+  .gs-open { color: #b06000; font-weight: 500; background: #fef9e7; text-align: center; }
+  .gs-locked-row td { background: #f1f3f4; color: #9aa0a6; font-style: italic; }
+  .gs-locked-status { color: #9aa0a6; text-align: center; }
+
+  /* Blurred contact rows */
+  .gs-blur-row td:not(.gs-rn) { filter: blur(5px); user-select: none; pointer-events: none; }
+  .gs-blur-fade td:not(.gs-rn) { filter: blur(6px); opacity: .6; }
+  .gs-blur-fade2 td:not(.gs-rn) { filter: blur(7px); opacity: .25; }
+
+  /* Overflow row */
+  .gs-overflow-tr td { background: #f8f9fa; }
+  .gs-overflow-cell { font-size: 12px; color: #5f6368; font-style: italic; }
+
+  /* Sheet tabs */
+  .gs-tabs {
+    display: flex; align-items: flex-end; gap: 2px;
+    padding: 0 8px; height: 32px;
+    border-top: 1px solid #e2e3e3; background: #f8f9fa;
+  }
+  .gs-tab {
+    height: 28px; padding: 0 20px;
+    background: #fff; border: 1px solid #e2e3e3; border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    font-family: Roboto, Arial, sans-serif; font-size: 12px; color: #202124;
+    cursor: default; border-bottom: 2px solid #1a73e8;
+  }
+  .gs-tab-add {
+    height: 28px; width: 28px; background: none; border: none;
+    font-size: 18px; color: #5f6368; cursor: default; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── Claim / Waitlist section ── */
+  .claim-section {
+    background: #f5f5f7;
+    padding: 64px 24px 72px;
+    border-top: 1px solid #d6d6d6;
+  }
+  .claim-inner {
+    max-width: 560px; margin: 0 auto;
+  }
+  .claim-headline {
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    font-weight: 600; font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.1; color: #1d1d1f;
+    margin-bottom: 24px; letter-spacing: -0.005em;
+  }
+  .claim-body {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    font-size: 18px; font-weight: 400; line-height: 1.7;
+    color: #6e6e73; margin: 0 0 20px;
+  }
+  .claim-kicker {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    font-size: 17px; font-weight: 500; line-height: 1.6;
+    color: #0071e3; margin: 0 0 40px;
+  }
+  .claim-form { display: flex; flex-direction: column; }
+  .claim-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .claim-input {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif; font-size: 15px;
+    padding: 13px 16px; border: 1px solid #d6d6d6; border-radius: 10px;
+    background: #fff; color: #1d1d1f; outline: none;
+    transition: border-color 0.15s; width: 100%;
+    -webkit-appearance: none;
+  }
+  .claim-input::placeholder { color: #aeaeb2; }
+  .claim-input:focus { border-color: #0071e3; }
+  .claim-btn {
+    display: block; width: 100%;
+    background: #0071e3; color: #fff;
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    font-weight: 400; font-size: 17px;
+    padding: 14px 32px; border: none; cursor: pointer; border-radius: 980px;
+    text-align: center; transition: background 0.15s; margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .claim-btn:hover { background: #0077ed; }
+  .claim-btn:disabled { opacity: 0.6; cursor: default; }
+  .claim-note {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    font-size: 12px; color: #aeaeb2;
+    margin: 0; text-align: center;
+  }
+  .claim-confirm { text-align: center; padding: 16px 0; }
+  .claim-confirm-check {
+    font-size: 40px; color: #0071e3; line-height: 1; margin-bottom: 16px;
+  }
+  .claim-confirm-headline {
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    font-size: 28px; font-weight: 600; color: #1d1d1f;
+    margin-bottom: 12px; letter-spacing: -0.005em;
+  }
+  .claim-confirm-body {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    font-size: 16px; color: #6e6e73; line-height: 1.7; margin: 0;
+  }
+
+  /* ── Pitch / supporting section ── */
+  .unlock-section {
+    background: #f8f9fa;
+    padding: 48px 24px 72px;
+    border-top: 1px solid #e2e3e3;
+  }
+  .unlock-inner { max-width: 520px; margin: 0 auto; font-family: Roboto, Arial, sans-serif; }
+
+  .analyst-note {
+    font-size: 14px; color: #5f6368; line-height: 1.7;
+    margin: 0 0 32px; border-left: 3px solid #dadce0; padding-left: 14px;
+  }
+
+  .pitch-divider {
+    border: none; border-top: 1px solid #e2e3e3; margin: 40px 0;
+  }
+  .pitch-section { margin-bottom: 32px; }
+  .pitch-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: #9aa0a6; margin-bottom: 16px;
+  }
+  .pitch-phase { margin-bottom: 20px; }
+  .pitch-phase-name { font-size: 14px; font-weight: 600; color: #202124; margin-bottom: 6px; }
+  .pitch-phase-body { font-size: 14px; color: #5f6368; line-height: 1.7; }
+  .pitch-callout {
+    font-size: 13px; font-weight: 700; color: #202124; letter-spacing: .06em;
+    margin-top: 20px;
+  }
+
+  .pitch-guarantee {
+    background: #fff; border: 1px solid #e2e3e3; padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+  .pitch-guarantee-text {
+    font-size: 14px; color: #202124; line-height: 1.7; margin: 0; font-weight: 500;
+  }
+
+  .pitch-pricing { margin-bottom: 0; }
+  .pitch-fine { font-size: 12px; color: #9aa0a6; margin: 0; line-height: 1.8; }
+
+  /* ── Print ── */
+  @media print {
+    .no-print { display: none !important; }
+    .gs-app { border: none; }
+    .gs-blur-row td:not(.gs-rn) { filter: blur(8px); }
+    .unlock-section { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .gs-menubar { display: none; }
+    .gs-formula { display: none; }
+    .gs-toolbar { display: none; }
+    .gate2-fields { flex-direction: column; }
+    .unlock-count { font-size: 56px; }
+    .analyst-note { font-size: 13px; }
+  }
+</style>

@@ -1,0 +1,125 @@
+---
+interface Props {
+  endpoint: string      // Formspree form ID (e.g. "xkovrbbp")
+  downloadUrl: string   // e.g. "/downloads/fm1-toolkit.zip"
+  problemNumber: string // e.g. "1"
+  problemName: string   // e.g. "You're invisible when it matters"
+  toolkitLabel: string  // e.g. "Visibility Toolkit — 7 Tools"
+}
+const { endpoint, downloadUrl, problemNumber, problemName, toolkitLabel } = Astro.props
+const formId = `diagnosis-gate-${problemNumber}`
+---
+
+<section class="py-24 px-6 bg-surface border-t border-border">
+  <div class="max-w-2xl mx-auto">
+
+    <div data-animate>
+      <span class="text-xs tracking-[0.2em] uppercase text-muted font-sans block mb-6">/ YOUR TOOLKIT</span>
+      <h2 class="font-serif text-3xl lg:text-4xl text-heading leading-tight mb-4">
+        Get the tools built for this exact problem.
+      </h2>
+      <p class="text-body text-lg leading-relaxed mb-2">
+        Your diagnostic identified: <span class="text-accent font-medium">{problemName}</span>
+      </p>
+      <p class="text-subtle text-base leading-relaxed mb-10">
+        We've pre-sorted the {toolkitLabel} for your specific failure point. Enter your info below — your download starts immediately.
+      </p>
+
+      <form id={formId} class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-sans text-sm text-subtle mb-2">Full Name</label>
+            <input
+              type="text"
+              name="name"
+              required
+              placeholder="Your name"
+              class="w-full bg-bg border border-border px-4 py-3 font-sans text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors duration-200"
+            />
+          </div>
+          <div>
+            <label class="block font-sans text-sm text-subtle mb-2">Email Address</label>
+            <input
+              type="email"
+              name="email"
+              required
+              placeholder="your@email.com"
+              class="w-full bg-bg border border-border px-4 py-3 font-sans text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors duration-200"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="block font-sans text-sm text-subtle mb-2">Business Website</label>
+          <input
+            type="url"
+            name="website"
+            placeholder="https://yourbusiness.com"
+            class="w-full bg-bg border border-border px-4 py-3 font-sans text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors duration-200"
+          />
+        </div>
+        <input type="hidden" name="_replyto" id={`${formId}-replyto`} value="" />
+        <input type="hidden" name="_subject" value={`Toolkit Request — Problem ${problemNumber}: ${problemName}`} />
+        <input type="hidden" name="toolkit" value={`problem-${problemNumber}`} />
+        <button
+          type="submit"
+          class="bg-accent text-bg font-sans font-medium py-4 px-8 text-base hover:opacity-90 transition-opacity duration-200"
+        >
+          Send Me the Toolkit →
+        </button>
+        <p id={`${formId}-error`} class="hidden text-red-400 text-sm font-sans text-center">
+          Something went wrong. Please try again.
+        </p>
+      </form>
+
+      <div id={`${formId}-success`} class="hidden mt-6 p-6 border border-accent/30 bg-accent/5">
+        <p class="font-serif text-xl text-accent mb-2">Got it. Your download is starting.</p>
+        <p class="font-sans text-body text-sm">If it doesn't start automatically, <a id={`${formId}-fallback`} href={downloadUrl} class="text-accent hover:text-white transition-colors duration-200">click here</a>.</p>
+      </div>
+
+      <p class="font-sans text-muted text-xs mt-4 text-center">No sales call. No sequence. Just the tools for your problem.</p>
+    </div>
+
+  </div>
+</section>
+
+<script define:vars={{ formId, endpoint, downloadUrl }}>
+  const form = document.getElementById(formId)
+  const replytoField = document.getElementById(`${formId}-replyto`)
+  const errorMsg = document.getElementById(`${formId}-error`)
+
+  if (form) {
+    // Mirror email input into _replyto hidden field
+    const emailInput = form.querySelector('input[name="email"]')
+    if (emailInput && replytoField) {
+      emailInput.addEventListener('input', () => {
+        replytoField.value = emailInput.value
+      })
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const btn = form.querySelector('button[type="submit"]')
+      if (btn) { btn.disabled = true; btn.textContent = 'Downloading…' }
+      errorMsg.classList.add('hidden')
+
+      try {
+        const res = await fetch(`https://formspree.io/f/${endpoint}`, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        })
+        if (res.ok) {
+          form.style.display = 'none'
+          const successMsg = document.getElementById(`${formId}-success`)
+          if (successMsg) successMsg.classList.remove('hidden')
+          setTimeout(() => { window.location.href = downloadUrl }, 1200)
+        } else {
+          throw new Error()
+        }
+      } catch {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Me the Toolkit →' }
+        errorMsg.classList.remove('hidden')
+      }
+    })
+  }
+</script>

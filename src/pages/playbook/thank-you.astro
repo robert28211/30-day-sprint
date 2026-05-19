@@ -1,0 +1,66 @@
+---
+import Base from '../../layouts/Base.astro'
+import Nav from '../../components/Nav.astro'
+import Footer from '../../components/Footer.astro'
+---
+<Base
+  title="You're In — EngageEngine™"
+  description="Your copy of the Find Your Profit Leak playbook is ready."
+>
+  <Nav />
+  <main class="ty-page">
+    <div class="ty-wrap">
+      <div class="ty-check">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h1>You're all set.</h1>
+      <p class="ty-body">
+        Your copy of <strong>Find Your Profit Leak</strong> is ready. Click below to download it now.
+      </p>
+      <a
+        href="/demand-control-playbook-v3.pdf"
+        download="Find-Your-Profit-Leak-Playbook.pdf"
+        class="btn btn-blue ty-btn"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Download the Playbook (PDF)
+      </a>
+      <p class="ty-meta">76 pages · 337 KB · PDF</p>
+      <div class="ty-footer-cta">
+        <p class="ty-footer-text">Want to talk about what's leaking in your business?</p>
+        <a href="/" class="ty-footer-link">See how EngageEngine™ works →</a>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Base>
+
+<script>
+  window.addEventListener('load', () => {
+    const link = document.createElement('a')
+    link.href = '/demand-control-playbook-v3.pdf'
+    link.download = 'Find-Your-Profit-Leak-Playbook.pdf'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  })
+</script>
+
+<style>
+  .ty-page { min-height: calc(100vh - 200px); display: flex; align-items: center; justify-content: center; padding: 80px 22px; background: var(--canvas); }
+  .ty-wrap { max-width: 480px; width: 100%; text-align: center; }
+  .ty-check { width: 56px; height: 56px; border: 2px solid var(--blue); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--blue); margin-bottom: 28px; }
+  .ty-wrap h1 { font-family: var(--font-d); font-size: clamp(32px, 5vw, 44px); font-weight: 600; color: var(--graphite); margin-bottom: 16px; letter-spacing: -0.005em; }
+  .ty-body { font-size: 17px; font-weight: 400; line-height: 1.6; color: var(--mid-gray); margin-bottom: 32px; }
+  .ty-body strong { color: var(--graphite); font-weight: 500; }
+  .ty-btn { display: inline-flex; align-items: center; gap: 10px; }
+  .ty-meta { font-size: 12px; color: var(--light-gray); margin-top: 12px; }
+  .ty-footer-cta { margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--border); }
+  .ty-footer-text { font-size: 14px; color: var(--mid-gray); margin-bottom: 8px; }
+  .ty-footer-link { font-size: 14px; color: var(--blue-link); text-decoration: none; font-weight: 500; }
+  .ty-footer-link:hover { text-decoration: underline; }
+</style>

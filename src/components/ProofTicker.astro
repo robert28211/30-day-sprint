@@ -1,0 +1,32 @@
+---
+const items = [
+  '$440K in one week — same traffic.',
+  '170% more appointments — ad budget untouched.',
+  'Monthly sales tripled — spending 60% less.',
+  'Phones ring. Jobs book. No slow seasons.',
+  'Call volume down. Sales up.',
+  'Close rates jumped. Price wars ended.',
+  '2,401 businesses diagnosed.',
+  '$529M+ in profit loss recovered.',
+]
+---
+<div class="bg-surface border-y border-border overflow-hidden">
+  <div class="py-4">
+  <div class="animate-marquee flex flex-nowrap w-max">
+    {items.map((item) => (
+      <>
+        <span class="text-sm text-subtle whitespace-nowrap px-6">{item}</span>
+        <span class="text-subtle text-sm select-none px-2" aria-hidden="true">·</span>
+      </>
+    ))}
+    {/* Duplicate for seamless loop */}
+    {items.map((item) => (
+      <>
+        <span class="text-sm text-subtle whitespace-nowrap px-6">{item}</span>
+        <span class="text-subtle text-sm select-none px-2" aria-hidden="true">·</span>
+      </>
+    ))}
+  </div>
+  </div>
+  <p class="text-center text-xs px-6 pb-3" style="color: rgba(92,123,170,0.5); letter-spacing: 0.04em;">Based on avg. $218K revenue leak × 2,401 businesses diagnosed as of Q1 2026, rounded conservatively.</p>
+</div>

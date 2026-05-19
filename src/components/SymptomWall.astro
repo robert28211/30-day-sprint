@@ -1,0 +1,78 @@
+---
+const cards = [
+  {
+    number: '01',
+    title: "You're Invisible When It Matters",
+    body: "Buyers are in the market right now. They're searching, comparing, deciding. You're not present at the moment it matters — and by the time they find you, someone else is already the default choice.",
+    href: '/diagnosis/not-seen/',
+    cardId: 'not-seen',
+    delay: '0',
+  },
+  {
+    number: '02',
+    title: 'They Find You and Leave',
+    body: "Traffic isn't the problem. Something on your site or in your presence isn't converting the interest that's already there. They looked. They left. The trust wasn't there when they needed it.",
+    href: '/diagnosis/not-trusted/',
+    cardId: 'not-trusted',
+    delay: '0.1',
+  },
+  {
+    number: '03',
+    title: "You're Getting Price-Shopped to Death",
+    body: "You're getting to the table. You're not winning it. Buyers are comparing you on price because nothing in your positioning has given them a reason to stop comparing. You're in the pool, not on a pedestal.",
+    href: '/diagnosis/still-compared/',
+    cardId: 'still-compared',
+    delay: '0.2',
+  },
+  {
+    number: '04',
+    title: 'They Said Yes and Then Disappeared',
+    body: "They were ready. Then momentum decayed. Intent without urgency dies — and without the right follow-up system, warm demand goes cold. Most of those deals aren't dead. They're stuck.",
+    href: '/diagnosis/no-action/',
+    cardId: 'no-action',
+    delay: '0.3',
+  },
+]
+---
+<section class="pt-8 pb-24 px-6 bg-bg border-t border-border">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-border">
+      {cards.map((card) => (
+        <a
+          href={card.href}
+          class="group bg-surface p-8 lg:p-10 hover:bg-[#0F1F36] transition-colors duration-300 block no-underline"
+          data-animate
+          data-delay={card.delay}
+          data-card-id={card.cardId}
+          data-card-name={card.title}
+        >
+          <p class="text-xs tracking-[0.18em] uppercase text-accent font-sans mb-5">/ {card.number}</p>
+          <p class="font-serif text-xl text-heading mb-4 leading-snug group-hover:text-accent transition-colors duration-200">{card.title}</p>
+          <p class="text-body text-base leading-relaxed mb-6">{card.body}</p>
+          <p class="text-xs text-accent font-sans">Read more →</p>
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-12 text-center">
+      <a href="/diagnostic/" class="text-sm text-muted hover:text-accent transition-colors duration-200 font-sans">
+        Not sure which one? Take the free diagnostic →
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('[data-card-id]').forEach((el) => {
+    el.addEventListener('click', () => {
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'symptom_card_click', {
+          card_id: (el as HTMLElement).dataset.cardId,
+          card_name: (el as HTMLElement).dataset.cardName,
+        })
+      }
+    })
+  })
+</script>

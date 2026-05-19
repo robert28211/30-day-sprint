@@ -1,0 +1,129 @@
+---
+---
+<section class="py-24 px-6 bg-bg border-t border-border">
+  <div class="max-w-3xl mx-auto">
+
+    <div class="mb-10" data-animate>
+      <span class="text-xs tracking-[0.2em] uppercase text-muted font-sans block mb-4">/ Your Next Step</span>
+      <h2 class="font-serif text-4xl lg:text-5xl text-heading leading-tight mb-8">
+        Do You Want to Talk?
+      </h2>
+
+      <p class="text-body text-xl leading-relaxed mb-8">
+        You just got more diagnostic clarity in 5 minutes than most consultants deliver in a $5,000 engagement. But knowing the failure mode and knowing YOUR exact fix path are two different things.
+      </p>
+
+      <ul class="space-y-3 text-body mb-6">
+        <li class="flex gap-3"><span class="text-accent shrink-0">✓</span><span>Walk through your specific diagnosis</span></li>
+        <li class="flex gap-3"><span class="text-accent shrink-0">✓</span><span>Map the fix sequence for YOUR business</span></li>
+        <li class="flex gap-3"><span class="text-accent shrink-0">✓</span><span>Receive a written action plan either way</span></li>
+      </ul>
+
+      <p class="text-subtle text-sm italic">
+        No pitch. No pressure. Just clarity.
+      </p>
+    </div>
+
+    <form id="clarity-form" class="space-y-4" data-animate data-delay="0.1">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="cf-name" class="block font-sans text-sm text-subtle mb-2">Name</label>
+          <input
+            id="cf-name"
+            type="text"
+            name="name"
+            required
+            placeholder="Your name"
+            class="w-full bg-bg border border-border px-4 py-3 font-sans text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors duration-200"
+          />
+        </div>
+        <div>
+          <label for="cf-email" class="block font-sans text-sm text-subtle mb-2">Email</label>
+          <input
+            id="cf-email"
+            type="email"
+            name="email"
+            required
+            placeholder="your@email.com"
+            class="w-full bg-bg border border-border px-4 py-3 font-sans text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors duration-200"
+          />
+        </div>
+        <div>
+          <label for="cf-website" class="block font-sans text-sm text-subtle mb-2">Website</label>
+          <input
+            id="cf-website"
+            type="text"
+            name="website"
+            placeholder="yoursite.com"
+            class="w-full bg-bg border border-border px-4 py-3 font-sans text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors duration-200"
+          />
+        </div>
+        <div>
+          <label for="cf-phone" class="block font-sans text-sm text-subtle mb-2">Phone</label>
+          <input
+            id="cf-phone"
+            type="tel"
+            name="phone"
+            placeholder="(555) 000-0000"
+            class="w-full bg-bg border border-border px-4 py-3 font-sans text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors duration-200"
+          />
+        </div>
+      </div>
+
+      <button
+        id="clarity-submit"
+        type="submit"
+        class="w-full bg-accent text-bg font-sans font-medium text-sm py-4 px-6 hover:opacity-90 transition-opacity duration-200"
+      >
+        Please contact me
+      </button>
+
+      <p id="clarity-error" class="hidden font-sans text-red-400 text-sm text-center">
+        Something went wrong. Please try again.
+      </p>
+
+      <p class="text-muted text-xs text-center">No sales pitch. Action plan either way.</p>
+    </form>
+
+    <div id="clarity-success" class="hidden text-center py-8" data-animate>
+      <p class="font-serif text-2xl text-heading mb-3">You're confirmed.</p>
+      <p class="text-body">Check your email — we'll send a calendar link within one business day.</p>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  const form = document.getElementById('clarity-form') as HTMLFormElement
+  const btn = document.getElementById('clarity-submit') as HTMLButtonElement
+  const errorMsg = document.getElementById('clarity-error') as HTMLElement
+  const successDiv = document.getElementById('clarity-success') as HTMLElement
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    btn.disabled = true
+    btn.textContent = 'Sending…'
+    errorMsg.classList.add('hidden')
+
+    const data = new FormData(form)
+
+    try {
+      const res = await fetch('https://formspree.io/f/mkoprqzn', {
+        method: 'POST',
+        body: data,
+        headers: { Accept: 'application/json' },
+      })
+
+      if (res.ok) {
+        form.classList.add('hidden')
+        successDiv.classList.remove('hidden')
+      } else {
+        throw new Error('Form error')
+      }
+    } catch {
+      btn.disabled = false
+      btn.textContent = 'Please contact me'
+      errorMsg.classList.remove('hidden')
+    }
+  })
+</script>

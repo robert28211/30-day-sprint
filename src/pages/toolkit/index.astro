@@ -1,0 +1,187 @@
+---
+import Base from '../../layouts/Base.astro'
+import Nav from '../../components/Nav.astro'
+import Footer from '../../components/Footer.astro'
+---
+<Base
+  title="Free Toolkit — 30 Tools for Home Service Businesses | EngageEngine™"
+  description="30 tools across four failure points. Free. The same checklists, templates, and worksheets we use with retainer clients. Download all 30 or take the diagnostic to get just what applies to you."
+>
+  <Nav />
+  <main class="tk-page">
+
+    <section class="tk-hero">
+      <div class="tk-hero-inner">
+        <p class="tk-eye">Free Resource — 30 Tools</p>
+        <h1 class="tk-h1">We Published Our Entire Playbook.</h1>
+        <p class="tk-body">30 tools across four failure points. Checklists, templates, worksheets — organized by problem, built for operators. The same tools we use with $3,500/month retainer clients.</p>
+        <p class="tk-fine">Here's what we learned: the people who download this don't become competitors. They become clients. Because knowing what to fix and having time to fix it are two different things.</p>
+      </div>
+    </section>
+
+    <section class="tk-paths">
+      <div class="tk-paths-inner">
+        <div class="tk-grid">
+
+          <div class="tk-path">
+            <p class="tk-path-eye">Know your problem already?</p>
+            <h2 class="tk-path-h">Download All 30 Tools</h2>
+            <p class="tk-path-body">All four failure points. Take what you need. We'll email you the full toolkit instantly.</p>
+            <form id="toolkit-form" class="tk-form">
+              <div class="tk-field">
+                <label for="name" class="tk-label">Full Name</label>
+                <input id="name" type="text" name="name" required placeholder="Your name" class="tk-input" />
+              </div>
+              <div class="tk-field">
+                <label for="email" class="tk-label">Email Address</label>
+                <input id="email" type="email" name="email" required placeholder="your@email.com" class="tk-input" />
+              </div>
+              <div class="tk-field">
+                <label for="website" class="tk-label">Business Website</label>
+                <input id="website" type="url" name="website" placeholder="https://yourbusiness.com" class="tk-input" />
+              </div>
+              <input type="hidden" name="_replyto" id="toolkit-replyto" value="" />
+              <input type="hidden" name="_subject" value="Free Toolkit Request — Full 30 Tools" />
+              <input type="hidden" name="toolkit" value="full-30-tools" />
+              <button id="submit-btn" type="submit" class="btn btn-blue tk-btn">Send Me the Full Toolkit →</button>
+              <p id="form-error" class="tk-error hidden">Something went wrong. Please try again.</p>
+            </form>
+            <div id="toolkit-success" class="tk-success hidden">
+              <p class="tk-success-head">Got it. Your download is starting.</p>
+              <p class="tk-success-sub">If it doesn't start automatically, <a href="/downloads/full-toolkit.zip">click here</a>.</p>
+            </div>
+            <p class="tk-path-trust">No sales call. No sequence. Just the tools.</p>
+          </div>
+
+          <div class="tk-path tk-path-alt">
+            <p class="tk-path-eye">Not sure where you're leaking?</p>
+            <h2 class="tk-path-h">Take the Diagnostic First</h2>
+            <p class="tk-path-body">12 questions. Instant results. We'll identify your specific failure point and deliver just the tools that apply — pre-sorted, ready to use. You don't have to figure out which folder to open.</p>
+            <a href="/diagnostic/" target="_blank" rel="noopener noreferrer" class="tk-diag-btn">Find My Profit Leak →</a>
+            <p class="tk-path-trust">Most operators take the diagnostic and download the full toolkit anyway. The diagnostic tells you which folder to open first.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <section class="tk-inside">
+      <div class="tk-inside-inner">
+        <p class="tk-inside-eye">/ WHAT'S INSIDE</p>
+        <h2 class="tk-inside-h">30 Tools Across Four Failure Points</h2>
+        <div class="tk-fps">
+          <div class="tk-fp">
+            <p class="tk-fp-num">Failure Point 1</p>
+            <p class="tk-fp-title">You're invisible when it matters</p>
+            <p class="tk-fp-body">Tools for visibility, local search, and showing up when buyers decide.</p>
+          </div>
+          <div class="tk-fp">
+            <p class="tk-fp-num">Failure Point 2</p>
+            <p class="tk-fp-title">They find you and leave</p>
+            <p class="tk-fp-body">Tools for trust signals, website conversion, and turning traffic into calls.</p>
+          </div>
+          <div class="tk-fp">
+            <p class="tk-fp-num">Failure Point 3</p>
+            <p class="tk-fp-title">You're getting price-shopped</p>
+            <p class="tk-fp-body">Tools for differentiation, positioning, and ending price comparison.</p>
+          </div>
+          <div class="tk-fp">
+            <p class="tk-fp-num">Failure Point 4</p>
+            <p class="tk-fp-title">They said yes and disappeared</p>
+            <p class="tk-fp-body">Tools for follow-up systems, pipeline recovery, and deal activation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <Footer />
+</Base>
+
+<script>
+  const form = document.getElementById('toolkit-form') as HTMLFormElement | null
+  const btn = document.getElementById('submit-btn') as HTMLButtonElement | null
+  const errorMsg = document.getElementById('form-error') as HTMLElement | null
+  const successMsg = document.getElementById('toolkit-success') as HTMLElement | null
+
+  if (form && btn && errorMsg && successMsg) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      btn.disabled = true
+      btn.textContent = 'Downloading…'
+      errorMsg.classList.add('hidden')
+
+      const emailEl = form.querySelector('input[name="email"]') as HTMLInputElement | null
+      const replytoEl = document.getElementById('toolkit-replyto') as HTMLInputElement | null
+      if (emailEl && replytoEl) replytoEl.value = emailEl.value
+
+      const data = new FormData(form)
+
+      try {
+        const res = await fetch('https://formspree.io/f/xkovrbbp', {
+          method: 'POST',
+          body: data,
+          headers: { Accept: 'application/json' },
+        })
+
+        if (res.ok) {
+          form.style.display = 'none'
+          successMsg.classList.remove('hidden')
+          setTimeout(() => { window.location.href = '/downloads/full-toolkit.zip' }, 1200)
+        } else {
+          throw new Error('Form error')
+        }
+      } catch {
+        btn.disabled = false
+        btn.textContent = 'Send Me the Full Toolkit →'
+        errorMsg.classList.remove('hidden')
+      }
+    })
+  }
+</script>
+
+<style>
+  .tk-page { background: var(--canvas); }
+  .tk-hero { padding: 72px 22px 56px; border-bottom: 1px solid var(--border); background: #fff; }
+  .tk-hero-inner { max-width: 640px; margin: 0 auto; }
+  .tk-eye { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); margin-bottom: 16px; }
+  .tk-h1 { font-family: var(--font-d); font-size: clamp(32px, 5vw, 48px); font-weight: 600; color: var(--graphite); letter-spacing: -0.005em; line-height: 1.08; margin-bottom: 20px; }
+  .tk-body { font-size: 17px; line-height: 1.65; color: var(--mid-gray); margin-bottom: 16px; }
+  .tk-fine { font-size: 15px; line-height: 1.65; color: var(--light-gray); }
+  .tk-paths { padding: 56px 22px; }
+  .tk-paths-inner { max-width: 880px; margin: 0 auto; }
+  .tk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  @media (max-width: 720px) { .tk-grid { grid-template-columns: 1fr; } }
+  .tk-path { background: #fff; padding: 40px 36px; display: flex; flex-direction: column; }
+  .tk-path-alt { background: var(--canvas); }
+  .tk-path-eye { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid-gray); margin-bottom: 12px; }
+  .tk-path-h { font-family: var(--font-d); font-size: 24px; font-weight: 600; color: var(--graphite); margin-bottom: 16px; }
+  .tk-path-body { font-size: 15px; line-height: 1.65; color: var(--mid-gray); margin-bottom: 28px; flex: 1; }
+  .tk-form { display: flex; flex-direction: column; gap: 14px; margin-bottom: 12px; }
+  .tk-field { display: flex; flex-direction: column; gap: 6px; }
+  .tk-label { font-size: 12px; font-weight: 500; color: var(--mid-gray); text-transform: uppercase; letter-spacing: 0.06em; }
+  .tk-input { width: 100%; background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; font-size: 15px; color: var(--graphite); outline: none; transition: border-color 0.15s; -webkit-appearance: none; }
+  .tk-input:focus { border-color: var(--blue); }
+  .tk-input::placeholder { color: var(--light-gray); }
+  .tk-btn { width: 100%; margin-top: 4px; }
+  .tk-error { font-size: 13px; color: #c0392b; text-align: center; }
+  .tk-error.hidden, .tk-success.hidden { display: none; }
+  .tk-success { background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-top: 8px; }
+  .tk-success-head { font-weight: 500; color: var(--blue); font-size: 14px; margin-bottom: 4px; }
+  .tk-success-sub { font-size: 13px; color: var(--mid-gray); }
+  .tk-success-sub a { color: var(--blue-link); }
+  .tk-path-trust { font-size: 12px; color: var(--light-gray); text-align: center; margin-top: 16px; margin-bottom: 0; }
+  .tk-diag-btn { display: block; text-align: center; border: 1.5px solid var(--blue); color: var(--blue); background: transparent; border-radius: 980px; padding: 13px 22px; font-size: 15px; font-weight: 400; letter-spacing: -0.01em; text-decoration: none; transition: background 0.15s, color 0.15s; margin-bottom: 0; }
+  .tk-diag-btn:hover { background: var(--blue); color: #fff; }
+  .tk-inside { padding: 64px 22px; background: #fff; border-top: 1px solid var(--border); }
+  .tk-inside-inner { max-width: 880px; margin: 0 auto; }
+  .tk-inside-eye { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid-gray); margin-bottom: 12px; }
+  .tk-inside-h { font-family: var(--font-d); font-size: clamp(24px, 3vw, 32px); font-weight: 600; color: var(--graphite); letter-spacing: -0.005em; margin-bottom: 40px; }
+  .tk-fps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  @media (max-width: 720px) { .tk-fps { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .tk-fps { grid-template-columns: 1fr; } }
+  .tk-fp { background: var(--canvas); padding: 24px; }
+  .tk-fp-num { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+  .tk-fp-title { font-size: 16px; font-weight: 500; color: var(--graphite); margin-bottom: 8px; line-height: 1.35; }
+  .tk-fp-body { font-size: 13px; color: var(--mid-gray); line-height: 1.55; }
+</style>

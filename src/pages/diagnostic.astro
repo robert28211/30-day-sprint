@@ -1,0 +1,780 @@
+---
+import Base from '../layouts/Base.astro'
+import Nav from '../components/Nav.astro'
+import Footer from '../components/Footer.astro'
+---
+<Base
+  title="Demand Collapse Diagnostic™ — EngageEngine™"
+  description="12-question diagnostic that identifies exactly where your revenue breaks down. 2,401 businesses diagnosed. $340M+ in profit leaks found."
+>
+  <Nav />
+  <main>
+
+    <style>
+      /* ─── Progress bar ─── */
+      #sticky-bar {
+        position: fixed;
+        top: 52px; /* below sticky nav */
+        left: 0; right: 0;
+        z-index: 90;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        height: 44px;
+        font-size: 13px;
+      }
+      .bar-brand {
+        font-family: var(--font-t);
+        font-size: 12px; font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--graphite); opacity: 0.7;
+      }
+      .bar-right { display: flex; align-items: center; gap: 14px; }
+      .bar-answered { color: var(--mid-gray); font-size: 12px; }
+      .bar-score { font-size: 14px; font-weight: 700; color: var(--graphite); }
+      .progress-track {
+        width: 100px; height: 3px;
+        background: var(--border);
+        border-radius: 2px; overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%; background: var(--blue);
+        border-radius: 2px; width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      /* ─── Wrap ─── */
+      .diag-wrap {
+        max-width: 820px;
+        margin: 96px auto 0; /* 52px nav + 44px progress bar */
+        padding: 40px 24px 100px;
+      }
+
+      /* ─── Page header ─── */
+      .page-header {
+        text-align: center;
+        padding: 48px 0 40px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 40px;
+      }
+      .header-eyebrow {
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--blue); margin-bottom: 16px;
+      }
+      .page-headline {
+        font-family: var(--font-d);
+        font-size: clamp(28px, 4vw, 44px);
+        font-weight: 600; color: var(--graphite);
+        letter-spacing: -0.005em; line-height: 1.08;
+        margin-bottom: 14px;
+      }
+      .page-sub {
+        font-size: 19px; color: var(--mid-gray);
+        margin-bottom: 24px; font-weight: 400;
+        letter-spacing: -0.022em;
+      }
+      .social-proof-row {
+        display: flex; align-items: center;
+        justify-content: center;
+        flex-wrap: wrap; margin-bottom: 10px;
+      }
+      .proof-item {
+        font-size: 13px; font-weight: 500;
+        color: var(--graphite); padding: 0 18px;
+        border-right: 1px solid var(--border);
+      }
+      .proof-item:last-child { border-right: none; }
+      .proof-item strong { color: var(--blue); }
+      .proof-item--single {
+        font-style: italic; font-weight: 400;
+        color: var(--mid-gray); border-right: none; padding: 0;
+      }
+      .hook-line {
+        font-size: 13px; color: var(--mid-gray);
+        margin-bottom: 18px; font-style: italic;
+      }
+      .score-instruction {
+        display: inline-block;
+        font-size: 13px; color: var(--mid-gray);
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--blue);
+        padding: 10px 16px;
+        border-radius: 0 4px 4px 0;
+        text-align: left;
+      }
+
+      /* ─── Section cards ─── */
+      .section-card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+      .section-header {
+        display: flex; align-items: flex-start;
+        justify-content: space-between;
+        padding: 24px 28px 20px;
+        border-bottom: 1px solid var(--border);
+        gap: 16px;
+        background: var(--canvas);
+      }
+      .section-header-left { flex: 1; }
+      .symptom-headline {
+        font-family: var(--font-d);
+        font-size: 18px; font-weight: 600;
+        color: var(--graphite); line-height: 1.25;
+        letter-spacing: -0.022em; margin-bottom: 10px;
+      }
+      .section-fm-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--blue);
+        background: rgba(0,113,227,0.08);
+        border: 1px solid rgba(0,113,227,0.2);
+        padding: 4px 10px; border-radius: 20px; margin-bottom: 4px;
+      }
+      .section-fm-name {
+        font-size: 13px; color: var(--mid-gray); font-weight: 400;
+      }
+      .section-score-display { text-align: right; flex-shrink: 0; }
+      .section-score-number {
+        font-family: var(--font-d);
+        font-size: 32px; font-weight: 700;
+        color: var(--graphite); line-height: 1;
+      }
+      .section-score-max { font-size: 13px; color: var(--mid-gray); margin-top: 2px; }
+      .section-score-band {
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.06em; text-transform: uppercase; margin-top: 6px;
+      }
+
+      /* ─── Questions ─── */
+      .question-block {
+        padding: 22px 28px 20px;
+        border-bottom: 1px solid rgba(214,214,214,0.5);
+      }
+      .question-block:last-child { border-bottom: none; }
+      .question-section-title {
+        font-size: 15px; font-weight: 600;
+        color: var(--graphite); margin-bottom: 4px;
+      }
+      .question-main {
+        font-size: 14px; color: var(--mid-gray); margin-bottom: 10px;
+      }
+      .think-about { list-style: none; margin-bottom: 16px; }
+      .think-about li {
+        font-size: 12px; color: var(--light-gray);
+        font-style: italic; padding: 2px 0 2px 14px; position: relative;
+      }
+      .think-about li::before {
+        content: '—'; position: absolute; left: 0;
+        color: var(--border); font-style: normal;
+      }
+
+      /* ─── Score buttons ─── */
+      .score-row { display: flex; gap: 6px; }
+      :global(.score-btn) {
+        flex: 1; min-width: 0; height: 44px;
+        border: 1.5px solid var(--border);
+        background: var(--canvas);
+        color: var(--mid-gray);
+        font-family: var(--font-t);
+        font-size: 14px; font-weight: 600;
+        border-radius: 6px; cursor: pointer;
+        transition: all 0.12s ease;
+        display: flex; align-items: center; justify-content: center;
+      }
+      :global(.score-btn:hover) {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: rgba(0,113,227,0.06);
+      }
+      :global(.score-btn.selected) {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: var(--white);
+        font-weight: 700;
+      }
+      .score-labels {
+        display: flex; justify-content: space-between;
+        margin-top: 7px; padding: 0 2px;
+      }
+      .score-label-text { font-size: 11px; color: var(--light-gray); }
+
+      /* ─── Quick flags ─── */
+      .quick-flags-card {
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px 28px; margin-bottom: 24px;
+      }
+      .quick-flags-title {
+        font-size: 13px; font-weight: 600;
+        color: var(--graphite); margin-bottom: 16px;
+        letter-spacing: 0.02em;
+      }
+      .flag-item {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 8px 0; border-bottom: 1px solid var(--border);
+        cursor: pointer;
+      }
+      .flag-item:last-child { border-bottom: none; }
+      .flag-item input[type="checkbox"] {
+        width: 16px; height: 16px; flex-shrink: 0;
+        margin-top: 2px; accent-color: var(--blue); cursor: pointer;
+      }
+      .flag-item label {
+        font-size: 13px; color: var(--graphite); cursor: pointer; line-height: 1.5;
+      }
+
+      /* ─── Results panel ─── */
+      #results-panel {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 36px;
+        border-top: 3px solid var(--blue);
+        margin-top: 8px;
+      }
+      .results-eyebrow {
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--blue); margin-bottom: 24px;
+      }
+      .total-score-block {
+        display: flex; align-items: baseline; gap: 8px;
+        margin-bottom: 32px; padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+      }
+      .total-score-number {
+        font-family: var(--font-d);
+        font-size: 72px; font-weight: 700;
+        color: var(--graphite); line-height: 1; letter-spacing: -0.03em;
+      }
+      .total-denom { font-size: 28px; font-weight: 400; color: var(--mid-gray); }
+      .total-label { font-size: 13px; color: var(--mid-gray); margin-left: 6px; }
+
+      .result-pending {
+        text-align: center; padding: 32px 16px;
+        color: var(--mid-gray); font-size: 14px;
+        border: 1px dashed var(--border);
+        border-radius: 6px; margin-bottom: 24px;
+      }
+      .result-pending strong {
+        display: block; font-size: 15px;
+        color: var(--graphite); margin-bottom: 6px;
+      }
+      #primary-fm-block { margin-bottom: 28px; display: none; }
+      #primary-fm-block.visible { display: block; }
+      .primary-fm-eyebrow {
+        font-size: 11px; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--blue); margin-bottom: 10px;
+      }
+      #primary-fm-name {
+        font-family: var(--font-d);
+        font-size: 28px; font-weight: 600;
+        color: var(--graphite); margin-bottom: 14px; line-height: 1.19;
+        letter-spacing: -0.005em;
+      }
+      #primary-fm-copy {
+        font-size: 15px; color: var(--mid-gray);
+        line-height: 1.7; margin-bottom: 6px;
+      }
+      .primary-fm-score { font-size: 12px; color: var(--mid-gray); margin-top: 12px; }
+
+      .band-pill {
+        display: inline-block; font-size: 11px; font-weight: 600;
+        padding: 3px 10px; border-radius: 20px;
+        letter-spacing: 0.04em; margin-left: 6px;
+      }
+      .band-green  { background: rgba(34,197,94,0.12);   color: #16a34a; }
+      .band-yellow { background: rgba(245,158,11,0.12);  color: #b45309; }
+      .band-orange { background: rgba(249,115,22,0.12);  color: #c2410c; }
+      .band-red    { background: rgba(239,68,68,0.12);   color: #dc2626; }
+
+      /* CTAs */
+      .cta-primary {
+        display: block; width: 100%;
+        background: var(--blue); color: var(--white);
+        text-decoration: none; text-align: center;
+        font-family: var(--font-t);
+        font-size: 16px; font-weight: 600;
+        padding: 16px 24px;
+        border-radius: var(--r-btn);
+        margin-bottom: 16px;
+        transition: background 0.15s;
+        letter-spacing: -0.022em;
+      }
+      .cta-primary:hover { background: var(--blue-link); color: var(--white); text-decoration: none; }
+      .cta-primary.disabled {
+        background: var(--border); color: var(--mid-gray);
+        cursor: default; pointer-events: none; opacity: 0.6;
+      }
+      .cta-secondary-block {
+        border: 1px solid var(--border); border-radius: 8px;
+        padding: 20px 24px; text-align: center;
+        background: var(--canvas);
+      }
+      .cta-secondary-block p {
+        font-size: 14px; color: var(--mid-gray); margin-bottom: 12px;
+      }
+      .cta-secondary-link {
+        display: inline-block; color: var(--blue-link);
+        font-weight: 600; text-decoration: none; font-size: 15px;
+        transition: color 0.15s;
+      }
+      .cta-secondary-link:hover { color: var(--blue); }
+      .cta-secondary-note { font-size: 12px; color: var(--light-gray); margin-top: 8px; }
+      .private-note {
+        text-align: center; font-size: 11px;
+        color: var(--light-gray); margin-top: 20px; font-style: italic;
+      }
+
+      /* ─── Responsive ─── */
+      @media (max-width: 600px) {
+        .diag-wrap { padding: 24px 16px 80px; }
+        .page-headline { font-size: 28px; }
+        .page-sub { font-size: 17px; }
+        .proof-item { font-size: 12px; padding: 4px 12px; }
+        :global(.score-btn) { height: 36px; font-size: 12px; }
+        .score-row { gap: 3px; }
+        .section-header { padding: 18px 20px 16px; }
+        .symptom-headline { font-size: 16px; }
+        .section-score-number { font-size: 26px; }
+        .question-block { padding: 18px 20px 16px; }
+        #results-panel { padding: 24px 20px; }
+        .total-score-number { font-size: 56px; }
+        .quick-flags-card { padding: 20px; }
+      }
+    </style>
+
+    <!-- Sticky progress bar -->
+    <div id="sticky-bar">
+      <span class="bar-brand">Demand Collapse Diagnostic™</span>
+      <div class="bar-right">
+        <span class="bar-answered" id="bar-answered">0 of 12 answered</span>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <span class="bar-score" id="bar-score">0 / 120</span>
+      </div>
+    </div>
+
+    <div class="diag-wrap">
+
+      <!-- Header -->
+      <header class="page-header">
+        <div class="header-eyebrow">Demand Collapse Diagnostic™</div>
+        <h1 class="page-headline">You're Losing Deals<br/>You Should Win.</h1>
+        <p class="page-sub">This 10-Minute Diagnostic Shows You Exactly Where.</p>
+        <div class="social-proof-row">
+          <div class="proof-item proof-item--single">"170% increase in appointments in 90 days." — George Rogerson, McClintock HVAC, Charlotte NC</div>
+        </div>
+        <p class="hook-line">80% were fixing the wrong problem before the diagnostic.</p>
+        <div class="score-instruction">
+          Score based on what's <strong style="color: var(--graphite);">consistently true</strong> — not your best day. &nbsp;
+          <span style="color: var(--light-gray);">1 = lowest &nbsp;/&nbsp; 10 = highest</span>
+        </div>
+      </header>
+
+      <!-- SECTION 1 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-header-left">
+            <div class="symptom-headline">"Your Google reviews are 4.8 stars but your phone stopped ringing."</div>
+            <div class="section-fm-pill">Failure Mode #1</div>
+            <div class="section-fm-name">Not Seen When Decisions Are Made</div>
+          </div>
+          <div class="section-score-display">
+            <div class="section-score-number" id="s0-score">0</div>
+            <div class="section-score-max">/ 30</div>
+            <div class="section-score-band" id="s0-band"></div>
+          </div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Visibility Where Decisions Are Made</div>
+          <div class="question-main">Are you present when people are choosing?</div>
+          <ul class="think-about">
+            <li>Google Maps visibility</li>
+            <li>Search results for your brand name</li>
+            <li>Competitors appearing above you</li>
+          </ul>
+          <div class="score-row" id="q0-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Demand Protection</div>
+          <div class="question-main">Are you losing people who already want you?</div>
+          <ul class="think-about">
+            <li>Competitor ads on your name</li>
+            <li>Review sites outranking you</li>
+            <li>Marketplaces intercepting traffic</li>
+          </ul>
+          <div class="score-row" id="q1-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Relevance in Today's Market</div>
+          <div class="question-main">Do you still feel current to today's buyer?</div>
+          <ul class="think-about">
+            <li>Website quality on mobile</li>
+            <li>Google Business Profile activity</li>
+            <li>Whether your brand feels dated or modern</li>
+          </ul>
+          <div class="score-row" id="q2-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+      </div>
+
+      <!-- SECTION 2 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-header-left">
+            <div class="symptom-headline">"You're getting website traffic but nobody books."</div>
+            <div class="section-fm-pill">Failure Mode #2</div>
+            <div class="section-fm-name">Seen But Not Trusted</div>
+          </div>
+          <div class="section-score-display">
+            <div class="section-score-number" id="s1-score">0</div>
+            <div class="section-score-max">/ 30</div>
+            <div class="section-score-band" id="s1-band"></div>
+          </div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Trust Signals</div>
+          <div class="question-main">Do you look trustworthy before anyone calls?</div>
+          <ul class="think-about">
+            <li>Reviews quantity and quality</li>
+            <li>Photos, credentials, licenses</li>
+            <li>First impressions</li>
+          </ul>
+          <div class="score-row" id="q3-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Message Consistency</div>
+          <div class="question-main">Does everything sound like the same company?</div>
+          <ul class="think-about">
+            <li>Old logos or slogans still floating around</li>
+            <li>Different tones across platforms</li>
+            <li>Conflicting promises</li>
+          </ul>
+          <div class="score-row" id="q4-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Customer Value &amp; Experience</div>
+          <div class="question-main">Do customers clearly understand why they should choose you?</div>
+          <ul class="think-about">
+            <li>Trust and professionalism mentioned in reviews</li>
+            <li>Repeat customers and referrals</li>
+            <li>Whether people explain why they chose you</li>
+          </ul>
+          <div class="score-row" id="q5-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+      </div>
+
+      <!-- SECTION 3 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-header-left">
+            <div class="symptom-headline">"You won the estimate but they picked someone cheaper."</div>
+            <div class="section-fm-pill">Failure Mode #3</div>
+            <div class="section-fm-name">Trusted But Still Compared</div>
+          </div>
+          <div class="section-score-display">
+            <div class="section-score-number" id="s2-score">0</div>
+            <div class="section-score-max">/ 30</div>
+            <div class="section-score-band" id="s2-band"></div>
+          </div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Comparison Justification</div>
+          <div class="question-main">Do customers still compare other options even after they trust you?</div>
+          <ul class="think-about">
+            <li>How often customers ask for multiple quotes</li>
+            <li>Whether price comparisons come up late in the process</li>
+            <li>If customers say they like you but want to "check a few others"</li>
+          </ul>
+          <div class="score-row" id="q6-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Clear Local Positioning</div>
+          <div class="question-main">Are you clearly different from competitors?</div>
+          <ul class="think-about">
+            <li>Can your office staff answer "Why you?"</li>
+            <li>Do your ads and website say something specific?</li>
+            <li>Or could your name be swapped with a competitor's?</li>
+          </ul>
+          <div class="score-row" id="q7-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Perceived Value (Not Just Price)</div>
+          <div class="question-main">Do customers believe you're worth it?</div>
+          <ul class="think-about">
+            <li>Pushback on pricing</li>
+            <li>"Too expensive" objections</li>
+            <li>Whether people compare you to "cheaper guys"</li>
+          </ul>
+          <div class="score-row" id="q8-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+      </div>
+
+      <!-- SECTION 4 -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-header-left">
+            <div class="symptom-headline">"They said yes… then disappeared."</div>
+            <div class="section-fm-pill">Failure Mode #4</div>
+            <div class="section-fm-name">Intended Choice, No Action</div>
+          </div>
+          <div class="section-score-display">
+            <div class="section-score-number" id="s3-score">0</div>
+            <div class="section-score-max">/ 30</div>
+            <div class="section-score-band" id="s3-band"></div>
+          </div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Follow-Through Confidence</div>
+          <div class="question-main">Do customers stall or drop off after showing clear intent to move forward?</div>
+          <ul class="think-about">
+            <li>Leads that go quiet after a strong initial conversation</li>
+            <li>Delays between "yes" signals and actual commitment</li>
+            <li>How often momentum dies at the last step</li>
+          </ul>
+          <div class="score-row" id="q9-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Lead Conversion Clarity</div>
+          <div class="question-main">Is it obvious what to do next?</div>
+          <ul class="think-about">
+            <li>Confusing websites</li>
+            <li>Too many CTAs</li>
+            <li>Missed calls or slow follow-ups</li>
+          </ul>
+          <div class="score-row" id="q10-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+        <div class="question-block">
+          <div class="question-section-title">Overall Brand Control</div>
+          <div class="question-main">Do you feel in control of your growth?</div>
+          <ul class="think-about">
+            <li>How your brand shows up</li>
+            <li>How leads come in</li>
+            <li>How customers choose you</li>
+          </ul>
+          <div class="score-row" id="q11-row"></div>
+          <div class="score-labels"><span class="score-label-text">1 — Lowest</span><span class="score-label-text">10 — Highest</span></div>
+        </div>
+      </div>
+
+      <!-- QUICK FLAGS -->
+      <div class="quick-flags-card">
+        <div class="quick-flags-title">Quick Flags — Check Any That Feel Familiar:</div>
+        <div class="flag-item"><input type="checkbox" id="flag1" /><label for="flag1">We're getting impressions and clicks but not enough calls</label></div>
+        <div class="flag-item"><input type="checkbox" id="flag2" /><label for="flag2">People visit our website but don't reach out</label></div>
+        <div class="flag-item"><input type="checkbox" id="flag3" /><label for="flag3">Leads show interest then go quiet</label></div>
+        <div class="flag-item"><input type="checkbox" id="flag4" /><label for="flag4">We win on quality but lose on price</label></div>
+        <div class="flag-item"><input type="checkbox" id="flag5" /><label for="flag5">Proposals and follow-ups aren't closing the gap</label></div>
+        <div class="flag-item"><input type="checkbox" id="flag6" /><label for="flag6">Our response time could be faster</label></div>
+      </div>
+
+      <!-- RESULTS PANEL -->
+      <div id="results-panel">
+        <div class="results-eyebrow">Your Primary Failure Mode</div>
+        <div class="result-pending" id="result-pending">
+          <strong>Your result will appear here.</strong>
+          Score all 12 questions to reveal the failure mode that's costing you the most deals.
+        </div>
+        <div id="primary-fm-block">
+          <div class="primary-fm-eyebrow">Primary Failure Mode Identified</div>
+          <div id="primary-fm-name"></div>
+          <div id="primary-fm-copy"></div>
+          <div class="primary-fm-score" id="primary-fm-score"></div>
+        </div>
+        <a href="#" class="cta-primary disabled" id="cta-primary-btn">
+          Answer all 12 questions to see your full diagnosis →
+        </a>
+        <div class="cta-secondary-block">
+          <p>Want a second set of eyes on your results?</p>
+          <a class="cta-secondary-link" href="mailto:robert@marketingperformance.net?subject=Diagnostic%20Results">
+            Send me your results →
+          </a>
+          <div class="cta-secondary-note">No call required. I'll reply with exactly what I see.</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <Footer />
+
+  <script>
+    (function () {
+      const SCORES = new Array(12).fill(null);
+
+      const FM = [
+        {
+          name: 'Failure Mode #1 — Not Seen When Decisions Are Made',
+          copy: "Your score suggests buyers can't find you when decisions are being made. This is upstream loss — it happens before you even know an opportunity existed.",
+          url:  'https://marketingperformance.net/diagnosis/not-seen/?src=diagnostic',
+        },
+        {
+          name: 'Failure Mode #2 — Seen But Not Trusted',
+          copy: "Your score suggests trust isn't forming fast enough when buyers evaluate you. Marketing shows engagement. Sales hears hesitation. The gap isn't credibility — it's contextual trust.",
+          url:  'https://marketingperformance.net/diagnosis/not-trusted/?src=diagnostic',
+        },
+        {
+          name: 'Failure Mode #3 — Trusted But Still Compared',
+          copy: "Your score suggests buyers trust you but still feel the need to compare. When they compare, price becomes the deciding factor. This is a justification gap, not a quality problem.",
+          url:  'https://marketingperformance.net/diagnosis/still-compared/?src=diagnostic',
+        },
+        {
+          name: 'Failure Mode #4 — Intended Choice, No Action',
+          copy: "Your score suggests buyers intend to choose you, then momentum decays. This is the most expensive failure mode — and the most fixable. The intent is already there.",
+          url:  'https://marketingperformance.net/diagnosis/no-action/?src=diagnostic',
+        },
+      ];
+
+      function bandFor(score) {
+        if (score >= 25) return { label: 'Solid',       cls: 'band-green',  color: '#16a34a' };
+        if (score >= 18) return { label: 'Leaking',     cls: 'band-yellow', color: '#b45309' };
+        if (score >= 10) return { label: 'Significant', cls: 'band-orange', color: '#c2410c' };
+        return               { label: 'Critical',    cls: 'band-red',    color: '#dc2626' };
+      }
+
+      function sectionTotal(s) {
+        const base = s * 3;
+        let total = 0, answered = 0;
+        for (let i = base; i < base + 3; i++) {
+          if (SCORES[i] !== null) { total += SCORES[i]; answered++; }
+        }
+        return { total, answered };
+      }
+
+      let completionFired = false;
+
+      function update() {
+        let grand = 0, totalAnswered = 0;
+        const totals = [];
+
+        for (let s = 0; s < 4; s++) {
+          const { total, answered } = sectionTotal(s);
+          totals.push(total);
+          grand += total;
+          totalAnswered += answered;
+
+          document.getElementById('s' + s + '-score').textContent = total;
+
+          const bandEl = document.getElementById('s' + s + '-band');
+          if (answered > 0) {
+            const b = bandFor(total);
+            bandEl.textContent = b.label;
+            bandEl.style.color = b.color;
+          } else {
+            bandEl.textContent = '';
+          }
+        }
+
+        document.getElementById('bar-score').textContent    = grand + ' / 120';
+        document.getElementById('bar-answered').textContent = totalAnswered + ' of 12 answered';
+        document.getElementById('progress-fill').style.width = ((totalAnswered / 12) * 100) + '%';
+
+        const pending = document.getElementById('result-pending');
+        const fmBlock = document.getElementById('primary-fm-block');
+        const ctaBtn  = document.getElementById('cta-primary-btn');
+
+        if (totalAnswered === 12) {
+          const min = Math.min(...totals);
+          const idx = totals.indexOf(min);
+          const fm  = FM[idx];
+          const b   = bandFor(min);
+
+          document.getElementById('primary-fm-name').textContent = fm.name;
+          document.getElementById('primary-fm-copy').textContent = fm.copy;
+          document.getElementById('primary-fm-score').innerHTML  =
+            'Section score: ' + min + ' / 30 &nbsp;<span class="band-pill ' + b.cls + '">' + b.label + '</span>' +
+            ' &nbsp;·&nbsp; Total: ' + grand + ' / 120';
+
+          pending.style.display  = 'none';
+          fmBlock.classList.add('visible');
+          ctaBtn.textContent = 'See Your Full Diagnosis →';
+          ctaBtn.href        = fm.url;
+          ctaBtn.classList.remove('disabled');
+
+          if (!completionFired) {
+            completionFired = true;
+            trackCompletion({ fm: fm.name, fmIdx: idx + 1, total: grand, scores: totals });
+          }
+        } else {
+          pending.style.display = '';
+          fmBlock.classList.remove('visible');
+          ctaBtn.textContent = 'Answer all 12 questions to see your full diagnosis →';
+          ctaBtn.href        = '#';
+          ctaBtn.classList.add('disabled');
+        }
+      }
+
+      function trackCompletion({ fm, fmIdx, total, scores }) {
+        if (typeof gtag === 'function') {
+          gtag('event', 'diagnostic_complete', {
+            primary_fm:   fm,
+            primary_fm_num: fmIdx,
+            total_score:  total,
+            fm1_score:    scores[0],
+            fm2_score:    scores[1],
+            fm3_score:    scores[2],
+            fm4_score:    scores[3],
+          });
+        }
+
+        fetch('https://formspree.io/f/mnjlkyjo', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            _subject:     'Diagnostic Completed — ' + fm,
+            primary_fm:   fm,
+            total_score:  total + ' / 120',
+            fm1_not_seen: scores[0] + ' / 30',
+            fm2_not_trusted: scores[1] + ' / 30',
+            fm3_still_compared: scores[2] + ' / 30',
+            fm4_no_action: scores[3] + ' / 30',
+          }),
+        }).catch(() => {});
+      }
+
+      function buildRow(qIdx) {
+        const row = document.getElementById('q' + qIdx + '-row');
+        for (let v = 1; v <= 10; v++) {
+          const btn = document.createElement('button');
+          btn.className  = 'score-btn';
+          btn.textContent = v;
+          btn.addEventListener('click', () => {
+            SCORES[qIdx] = v;
+            row.querySelectorAll('.score-btn').forEach(b =>
+              b.classList.toggle('selected', +b.textContent === v)
+            );
+            update();
+          });
+          row.appendChild(btn);
+        }
+      }
+
+      for (let i = 0; i < 12; i++) buildRow(i);
+      update();
+    })();
+  </script>
+
+</Base>

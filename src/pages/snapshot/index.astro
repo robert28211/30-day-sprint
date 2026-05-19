@@ -1,6 +1,7 @@
 ---
 export const prerender = false
 import Base from '../../layouts/Base.astro'
+import Nav from '../../components/Nav.astro'
 
 const cf = (Astro.locals as any).runtime?.cf
 const detectedCity   = cf?.city   || ''
@@ -13,70 +14,66 @@ const detectedLocation = detectedCity
   title="Your Market Snapshot — EngageEngine™"
   description="See the buyers already looking for your services in your market right now. Free Market Snapshot from EngageEngine™."
 >
-  <main class="snapshot-page">
+  <Nav />
+  <main class="snap-page">
 
-    <div class="snap-logo">
-      <a href="https://marketingperformance.net" class="snap-logo-link">Marketing Performance Group</a>
-      <span class="snap-logo-sub">Powered by EngageEngine™</span>
-    </div>
-
-    <!-- Above fold: headline + form -->
     <section class="snap-above">
-      <div class="snap-eyebrow">We track every service search in your market</div>
+      <div class="snap-wrap">
+        <div class="snap-eyebrow">We track every service search in your market</div>
 
-      <h1 class="snap-headline">
-        We already know who's looking for your services in your city.
-        <em class="snap-headline-sub">They haven't called you yet.</em>
-      </h1>
+        <h1 class="snap-headline">
+          We already know who's looking for your services in your city.
+          <em class="snap-headline-sub">They haven't called you yet.</em>
+        </h1>
 
-      <form id="snapshot-form" class="snap-form" novalidate>
-        <label class="field-label" for="service-input">What service do you offer?</label>
-        <input
-          type="text"
-          name="trade"
-          id="service-input"
-          placeholder="e.g. HVAC, Plumbing, Roofing, Fencing"
-          required
-          class="snap-input"
-          autocomplete="off"
-          inputmode="text"
-        />
+        <form id="snapshot-form" class="snap-form" novalidate>
+          <label class="snap-field-label" for="service-input">What service do you offer?</label>
+          <input
+            type="text"
+            name="trade"
+            id="service-input"
+            placeholder="e.g. HVAC, Plumbing, Roofing, Fencing"
+            required
+            class="snap-input"
+            autocomplete="off"
+            inputmode="text"
+          />
 
-        <div class="snap-scarcity">
-          <strong>One business per service per market.</strong> If a competitor pulls this before you, you lose access.
+          <div class="snap-scarcity">
+            <strong>One business per service per market.</strong> If a competitor pulls this before you, you lose access.
+          </div>
+
+          <button type="submit" class="btn btn-blue snap-cta" id="snap-submit">
+            Show Me Who's Searching →
+          </button>
+          <p class="snap-cta-trust">Free &nbsp;·&nbsp; No email required &nbsp;·&nbsp; Results in seconds</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="snap-below">
+      <div class="snap-wrap">
+        <div class="snap-proof">
+          <div class="snap-proof-label">Real result</div>
+          <div class="snap-proof-result">170% more booked appointments.</div>
+          <div class="snap-proof-detail">McClintock HVAC — same ad budget, 90 days.</div>
         </div>
 
-        <button type="submit" class="snap-cta" id="snap-submit">
-          Show Me Who's Searching →
-        </button>
-        <p class="snap-cta-trust">Free &nbsp;·&nbsp; No email required &nbsp;·&nbsp; Results in seconds</p>
-      </form>
-    </section>
+        <div class="snap-value-heading">Your snapshot includes</div>
+        <ul class="snap-value-stack">
+          <li><span class="snap-check">✓</span> How many buyers searched for your service in the last 72 hours</li>
+          <li><span class="snap-check">✓</span> Which competitor sites they visited — and who's already reaching them</li>
+          <li><span class="snap-check">✓</span> How many of those buyers are reachable with ads right now</li>
+          <li><span class="snap-check">✓</span> No account, no pitch, no sales call — just your data</li>
+        </ul>
 
-    <!-- Below fold: proof + value stack -->
-    <section class="snap-below">
-      <div class="snap-proof">
-        <div class="snap-proof-label">Real result</div>
-        <div class="snap-proof-result">170% more booked appointments.</div>
-        <div class="snap-proof-detail">McClintock HVAC — same ad budget, 90 days.</div>
+        <p class="snap-footer-line">EngageEngine™ is a full-stack demand activation platform. The snapshot is where we start.</p>
       </div>
-
-      <div class="snap-value-heading">Your snapshot includes</div>
-      <ul class="snap-value-stack">
-        <li><span class="check">✓</span> How many buyers searched for your service in the last 72 hours</li>
-        <li><span class="check">✓</span> Which competitor sites they visited — and who's already reaching them</li>
-        <li><span class="check">✓</span> How many of those buyers are reachable with ads right now</li>
-        <li><span class="check">✓</span> No account, no pitch, no sales call — just your data</li>
-      </ul>
     </section>
-
-    <div class="snap-footer-line">
-      EngageEngine™ is a full-stack demand activation platform. The snapshot is where we start.
-    </div>
 
   </main>
 
-  <!-- Spinner overlay -->
+  <!-- Spinner overlay — stays dark: it's a dramatic loading state -->
   <div id="snap-spinner" aria-hidden="true">
     <div class="spinner-inner">
       <div class="spinner-ref" id="spinner-ref"></div>
@@ -92,10 +89,8 @@ const detectedLocation = detectedCity
   </div>
 
 <script define:vars={{ detectedLocation }}>
-// Auto-detected city from Cloudflare geolocation (server-side)
 const autoCity = detectedLocation;
 
-// Pre-fill service from URL params (?trade=Roofing)
 const params = new URLSearchParams(window.location.search);
 const paramService = params.get('trade') || params.get('service') || '';
 if (paramService) (document.getElementById('service-input')).value = paramService;
@@ -117,7 +112,6 @@ form?.addEventListener('submit', (e) => {
 
   if (!service) return;
 
-  // Use auto-detected city, fallback to generic label if geo unavailable
   const city = autoCity || 'your market';
 
   const refNum      = 'EE-' + Date.now().toString(36).toUpperCase().slice(-6);
@@ -177,246 +171,54 @@ function runSteps(steps) {
 </Base>
 
 <style>
-  :global(body) { background: #0d1525; }
+  .snap-page { background: var(--canvas); }
+  .snap-wrap { max-width: 480px; margin: 0 auto; padding: 0 22px; }
 
-  .snapshot-page {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 20px 22px 40px;
-  }
+  .snap-above { padding: 48px 0 40px; border-bottom: 1px solid var(--border); background: #fff; }
+  .snap-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); margin-bottom: 16px; }
+  .snap-headline { font-family: var(--font-d); font-size: clamp(26px, 5vw, 34px); font-weight: 600; line-height: 1.1; letter-spacing: -0.005em; color: var(--graphite); margin: 0 0 28px; display: flex; flex-direction: column; gap: 8px; }
+  .snap-headline-sub { font-style: normal; color: var(--blue); font-size: clamp(20px, 4vw, 26px); font-weight: 400; }
 
-  /* ── Logo ── */
-  .snap-logo {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: rgba(240,240,235,0.4);
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 24px;
-  }
-  .snap-logo-sub  { color: #c9a84c; font-size: 10px; }
-  .snap-logo-link { color: inherit; text-decoration: none; }
-  .snap-logo-link:hover { color: #c9a84c; }
-
-  /* ── Above fold ── */
-  .snap-above { margin-bottom: 0; }
-
-  .snap-eyebrow {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #c9a84c;
-    margin-bottom: 10px;
-  }
-
-  .snap-headline {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(28px, 7vw, 34px);
-    font-weight: 900;
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-    color: #f0f0eb;
-    margin: 0 0 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .snap-headline-sub {
-    font-style: normal;
-    color: #c9a84c;
-    font-size: clamp(22px, 6vw, 28px);
-  }
-
-  /* ── Form ── */
   .snap-form { display: flex; flex-direction: column; }
+  .snap-field-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mid-gray); display: block; margin-bottom: 8px; }
+  .snap-input { width: 100%; background: var(--canvas); border: 1px solid var(--border); border-radius: 10px; color: var(--graphite); font-size: 16px; padding: 14px; margin-bottom: 14px; outline: none; -webkit-appearance: none; transition: border-color 0.15s; }
+  .snap-input::placeholder { color: var(--light-gray); }
+  .snap-input:focus { border-color: var(--blue); }
 
-  .field-label {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(240,240,235,0.45);
-    display: block;
-    margin-bottom: 6px;
-  }
+  .snap-scarcity { background: rgba(192,57,43,0.06); border: 1px solid rgba(192,57,43,0.2); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 13px; line-height: 1.5; color: #8b2e22; }
+  .snap-scarcity strong { color: #c0392b; }
 
-  .snap-input {
-    width: 100%;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 8px;
-    color: #f0f0eb;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 16px; /* prevents iOS zoom */
-    padding: 14px;
-    margin-bottom: 14px;
-    outline: none;
-    -webkit-appearance: none;
-    transition: border-color 0.15s;
-  }
-  .snap-input::placeholder { color: rgba(255,255,255,0.28); }
-  .snap-input:focus { border-color: #c9a84c; }
+  .snap-cta { width: 100%; display: block; border-radius: 10px; font-size: 17px; padding: 16px; margin-bottom: 10px; }
+  .snap-cta-trust { font-size: 12px; color: var(--light-gray); text-align: center; letter-spacing: 0.02em; margin: 0; }
 
-  .snap-scarcity {
-    background: rgba(180,40,30,0.14);
-    border: 1px solid rgba(180,40,30,0.38);
-    border-radius: 8px;
-    padding: 11px 14px;
-    margin-bottom: 14px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    line-height: 1.45;
-    color: #f0a090;
-  }
-  .snap-scarcity strong { color: #f8c0b8; }
+  .snap-below { padding: 36px 0 48px; }
+  .snap-proof { padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .snap-proof-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--light-gray); margin-bottom: 6px; }
+  .snap-proof-result { font-family: var(--font-d); font-size: 22px; font-weight: 600; color: var(--graphite); line-height: 1.2; margin-bottom: 4px; }
+  .snap-proof-detail { font-size: 13px; color: var(--mid-gray); }
 
-  .snap-cta {
-    display: block;
-    width: 100%;
-    background: #c9a84c;
-    color: #0d1525;
-    border: none;
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 17px;
-    font-weight: 700;
-    padding: 17px;
-    cursor: pointer;
-    text-align: center;
-    letter-spacing: 0.01em;
-    -webkit-appearance: none;
-    transition: background 0.12s, transform 0.1s;
-    margin-bottom: 10px;
-  }
-  .snap-cta:hover  { background: #e8c96a; }
-  .snap-cta:active { transform: scale(0.98); }
+  .snap-value-heading { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--light-gray); margin-bottom: 16px; }
+  .snap-value-stack { list-style: none; padding: 0; margin: 0 0 36px; display: flex; flex-direction: column; gap: 14px; }
+  .snap-value-stack li { font-size: 14px; line-height: 1.5; color: var(--mid-gray); display: flex; align-items: flex-start; gap: 10px; }
+  .snap-check { color: var(--blue); flex-shrink: 0; margin-top: 1px; }
+  .snap-footer-line { font-size: 11px; font-style: italic; color: var(--light-gray); text-align: center; letter-spacing: 0.03em; }
 
-  .snap-cta-trust {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    color: rgba(240,240,235,0.35);
-    text-align: center;
-    letter-spacing: 0.02em;
-    margin: 0;
-  }
-
-  /* ── Below fold ── */
-  .snap-below {
-    border-top: 1px solid rgba(255,255,255,0.08);
-    padding: 20px 0 0;
-    margin-top: 28px;
-  }
-
-  .snap-proof {
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    margin-bottom: 20px;
-  }
-  .snap-proof-label {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(240,240,235,0.35);
-    margin-bottom: 6px;
-  }
-  .snap-proof-result {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: #c9a84c;
-    line-height: 1.2;
-    margin-bottom: 4px;
-  }
-  .snap-proof-detail {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    color: rgba(240,240,235,0.45);
-  }
-
-  .snap-value-heading {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(240,240,235,0.35);
-    margin-bottom: 14px;
-  }
-
-  .snap-value-stack {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 13px;
-  }
-  .snap-value-stack li {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    line-height: 1.45;
-    color: rgba(240,240,235,0.65);
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  .check { color: #c9a84c; flex-shrink: 0; margin-top: 1px; }
-
-  .snap-footer-line {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-style: italic;
-    color: rgba(240,240,235,0.2);
-    text-align: center;
-    margin-top: 32px;
-    letter-spacing: 0.03em;
-  }
-
-  /* ── Spinner ── */
-  #snap-spinner {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: #0a0a0a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
+  /* Spinner overlay — dark by design */
+  #snap-spinner { position: fixed; inset: 0; z-index: 9999; background: #0a0a0a; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   #snap-spinner.on { opacity: 1; pointer-events: all; }
-
-  .spinner-inner {
-    width: 100%;
-    max-width: 560px;
-    padding: 0 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
+  .spinner-inner { width: 100%; max-width: 560px; padding: 0 28px; display: flex; flex-direction: column; gap: 18px; }
   .spinner-ref   { font-family: 'Courier New', monospace; font-size: 11px; color: #666; letter-spacing: 0.04em; }
   .spinner-query { font-family: 'Courier New', monospace; font-size: 16px; color: #f0f0f0; border-left: 3px solid #444; padding-left: 14px; line-height: 1.4; }
   .spinner-bar-wrap { display: flex; align-items: center; gap: 12px; }
   .spinner-bar-track { flex: 1; height: 2px; background: #222; overflow: hidden; }
-  .spinner-bar   { height: 2px; background: #c9a84c; width: 0%; transition: width 0.9s linear; }
-  .spinner-pct   { font-family: 'Courier New', monospace; font-size: 12px; color: #666; min-width: 36px; text-align: right; }
-  .spinner-log   { font-family: 'Courier New', monospace; font-size: 12px; line-height: 2; display: flex; flex-direction: column; max-height: 220px; overflow: hidden; }
+  .spinner-bar  { height: 2px; background: #0071e3; width: 0%; transition: width 0.9s linear; }
+  .spinner-pct  { font-family: 'Courier New', monospace; font-size: 12px; color: #666; min-width: 36px; text-align: right; }
+  .spinner-log  { font-family: 'Courier New', monospace; font-size: 12px; line-height: 2; display: flex; flex-direction: column; max-height: 220px; overflow: hidden; }
   .log-line  { color: #5aaeee; }
-  .log-ready { color: #c9a84c; font-weight: bold; }
+  .log-ready { color: #0071e3; font-weight: bold; }
 
-  /* ── Desktop: wider but still centered ── */
   @media (min-width: 640px) {
-    .snapshot-page { padding: 40px 32px 60px; }
-    .snap-headline { font-size: 38px; }
-    .snap-headline-sub { font-size: 30px; }
+    .snap-above { padding: 64px 0 56px; }
+    .snap-below { padding: 48px 0 64px; }
   }
 </style>

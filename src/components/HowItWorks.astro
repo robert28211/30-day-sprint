@@ -1,0 +1,109 @@
+---
+const steps = [
+  {
+    number: '01',
+    title: 'Find the Leak.',
+    body: 'The 12-question diagnostic identifies which of the four problems is suppressing your revenue. Twelve questions. Instant results. No guesswork. No pitch. No proposal. Just your answer.',
+    sub: null,
+    align: 'right',
+  },
+  {
+    number: '02',
+    title: 'Map the Damage.',
+    body: 'We map your specific situation — where buyers find you, how they evaluate you, and exactly where the breakdown is happening. The diagnostic tells us the problem. The map tells us the exact crack.',
+    sub: null,
+    align: 'left',
+  },
+  {
+    number: '03',
+    title: 'Fix It.',
+    body: 'We fix the specific failure point your diagnostic revealed. Not a campaign. Not a rebrand. A targeted fix built around the one thing that\'s actually costing you money.',
+    sub: 'Work begins within 7 days of the diagnostic.',
+    align: 'right',
+  },
+  {
+    number: '04',
+    title: 'Prove It.',
+    body: 'We track the numbers that matter — conversion rates, close rates, revenue per lead, cost per acquisition. Not impressions. Not clicks. The numbers that show up in your bank account.',
+    sub: null,
+    align: 'left',
+  },
+]
+---
+<section id="how-it-works" class="py-24 px-6 bg-surface">
+  <div class="max-w-4xl mx-auto">
+
+    <div class="mb-16" data-animate>
+      <span class="text-xs tracking-[0.2em] uppercase text-muted font-sans block mb-8">/ HOW IT WORKS</span>
+      <h2 class="font-serif text-4xl lg:text-5xl text-heading leading-tight mb-4">
+        Four Steps. One Problem. Fixed.
+      </h2>
+      <p class="text-body text-lg">
+        Find it. Map it. Fix it. Prove it.
+      </p>
+    </div>
+
+    <div class="relative" id="how-it-works-steps">
+
+      <!-- Animated S-curve connector (desktop only) -->
+      <svg
+        class="hidden lg:block absolute inset-0 w-full h-full pointer-events-none"
+        aria-hidden="true"
+        viewBox="0 0 896 960"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M 448,0 C 720,0 800,60 800,120 C 800,240 96,240 96,360 C 96,480 800,480 800,600 C 800,720 96,720 96,840"
+          fill="none"
+          stroke="#253B66"
+          stroke-width="1"
+        />
+        <path
+          id="how-it-works-path"
+          d="M 448,0 C 720,0 800,60 800,120 C 800,240 96,240 96,360 C 96,480 800,480 800,600 C 800,720 96,720 96,840"
+          fill="none"
+          stroke="#8BA8C8"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+        <circle class="how-it-works-dot" cx="800" cy="120" r="4" fill="#C8A84B" />
+        <circle class="how-it-works-dot" cx="96"  cy="360" r="4" fill="#C8A84B" />
+        <circle class="how-it-works-dot" cx="800" cy="600" r="4" fill="#C8A84B" />
+        <circle class="how-it-works-dot" cx="96"  cy="840" r="4" fill="#C8A84B" />
+      </svg>
+
+      {steps.map((step) => (
+        <div
+          class="how-it-works-step border-b border-border py-12 lg:py-16 lg:flex"
+          data-animate
+          data-delay="0"
+        >
+          <div class={`lg:w-1/2 ${step.align === 'right' ? 'lg:order-2 lg:pl-10' : 'lg:order-1 lg:pr-10'}`}>
+            <span class="font-serif text-5xl text-accent opacity-40 block mb-4">{step.number}</span>
+            <h3 class="font-serif text-2xl text-heading mb-4">{step.title}</h3>
+            <p class="text-body leading-relaxed">{step.body}</p>
+            {step.sub && <p class="text-subtle text-sm italic mt-3">{step.sub}</p>}
+          </div>
+          <div class={`hidden lg:block lg:w-1/2 ${step.align === 'right' ? 'lg:order-1' : 'lg:order-2'}`}></div>
+        </div>
+      ))}
+
+    </div>
+
+    <div class="mt-8 py-8 border-t border-border" data-animate data-delay="0.1">
+      <p class="font-serif text-xl text-accent italic mb-10">
+        The fix isn't rented. It's installed.
+      </p>
+      <a
+        href="/diagnostic/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-block bg-accent text-bg font-sans font-medium px-8 py-4 text-base hover:bg-heading transition-colors duration-200"
+      >
+        Start With the Diagnostic →
+      </a>
+      <p class="mt-4 text-muted text-sm">Twelve questions. Ten minutes. No sales call.</p>
+    </div>
+
+  </div>
+</section>

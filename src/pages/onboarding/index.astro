@@ -1,0 +1,753 @@
+---
+export const prerender = false
+import Base from '../../layouts/Base.astro'
+---
+
+<Base
+  title="Client Onboarding — EngageEngine"
+  description="Complete your EngageEngine onboarding. This takes about 15 minutes."
+>
+  <div class="min-h-screen bg-bg flex flex-col items-center py-12 px-4">
+
+    <!-- Header -->
+    <div id="wizard-header" class="w-full max-w-2xl mb-8 text-center">
+      <p class="text-muted text-xs tracking-widest uppercase mb-3 font-inter">EngageEngine</p>
+      <h1 class="font-serif text-heading text-3xl mb-2">Client Onboarding</h1>
+      <p class="text-body text-sm">This takes about 15 minutes. Have your Google account handy.</p>
+    </div>
+
+    <!-- Resume banner (shown if saved draft exists) -->
+    <div id="resume-banner" class="hidden w-full max-w-2xl mb-4 bg-surface border border-accent/40 rounded-xl px-5 py-4 flex items-center justify-between gap-4">
+      <div>
+        <p class="text-body text-sm font-semibold">You have a saved draft.</p>
+        <p class="text-muted text-xs mt-0.5">Pick up where you left off, or start fresh.</p>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <button id="btn-resume" type="button" class="bg-accent hover:bg-yellow-500 text-bg font-semibold text-xs rounded-lg py-2 px-4 transition-colors">Resume</button>
+        <button id="btn-start-over" type="button" class="text-muted hover:text-body text-xs transition-colors">Start over</button>
+      </div>
+    </div>
+
+    <!-- Step indicator — desktop: chips, mobile: label -->
+    <div id="step-indicator" class="w-full max-w-2xl mb-6">
+      <div id="step-chips" class="hidden sm:flex justify-center gap-2">
+        {[1,2,3,4,5,6].map(n => (
+          <div data-chip={n}
+            class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border transition-colors duration-200 bg-transparent border-border text-muted">
+            {n}
+          </div>
+        ))}
+      </div>
+      <p id="step-label" class="sm:hidden text-center text-body text-sm">Step 1 of 6</p>
+    </div>
+
+    <!-- Wizard card -->
+    <div id="wizard-card" class="w-full max-w-2xl bg-surface border border-border rounded-2xl p-8">
+
+      <!-- ─── STEP 1: YOUR BUSINESS ─── -->
+      <div data-step="1">
+        <p class="text-muted text-xs tracking-widest uppercase mb-1 font-inter">Step 1 of 6</p>
+        <h2 class="font-serif text-heading text-2xl mb-1">Your Business</h2>
+        <p class="text-body text-sm mb-6">Let's start with the basics so we have your information on file.</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-body text-sm mb-1" for="clientName">Your Name <span class="text-accent">*</span></label>
+            <input id="clientName" name="clientName" type="text" placeholder="Jane Smith"
+              class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+            <p class="error-msg hidden text-red-400 text-xs mt-1"><span>⚠ </span><span class="msg-text"></span></p>
+          </div>
+          <div>
+            <label class="block text-body text-sm mb-1" for="clientEmail">Your Email <span class="text-accent">*</span></label>
+            <input id="clientEmail" name="clientEmail" type="email" placeholder="jane@yourbusiness.com"
+              class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+            <p class="error-msg hidden text-red-400 text-xs mt-1"><span>⚠ </span><span class="msg-text"></span></p>
+          </div>
+          <div>
+            <label class="block text-body text-sm mb-1" for="businessName">Business Name <span class="text-accent">*</span></label>
+            <input id="businessName" name="businessName" type="text" placeholder="Smith Plumbing LLC"
+              class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+            <p class="error-msg hidden text-red-400 text-xs mt-1"><span>⚠ </span><span class="msg-text"></span></p>
+          </div>
+          <div>
+            <label class="block text-body text-sm mb-1" for="phone">Phone Number <span class="text-accent">*</span></label>
+            <input id="phone" name="phone" type="tel" placeholder="(555) 555-5555"
+              class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+            <p class="error-msg hidden text-red-400 text-xs mt-1"><span>⚠ </span><span class="msg-text"></span></p>
+          </div>
+          <div>
+            <label class="block text-body text-sm mb-1" for="address">Business Address <span class="text-accent">*</span></label>
+            <input id="address" name="address" type="text" placeholder="123 Main St, City, ST 12345"
+              class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+            <p class="error-msg hidden text-red-400 text-xs mt-1"><span>⚠ </span><span class="msg-text"></span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── STEP 2: W-9 ─── -->
+      <div data-step="2" class="hidden">
+        <p class="text-muted text-xs tracking-widest uppercase mb-1 font-inter">Step 2 of 6</p>
+        <h2 class="font-serif text-heading text-2xl mb-1">W-9 Form</h2>
+        <p class="text-body text-sm mb-6">We need a completed W-9 on file before we can begin work. It takes 2 minutes.</p>
+        <div class="bg-bg border border-border rounded-xl p-5 mb-6">
+          <p class="text-body text-sm font-semibold mb-3">How to complete your W-9:</p>
+          <ol class="space-y-2 text-body text-sm">
+            <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">1.</span> Download the W-9 form from the IRS: <a href="https://www.irs.gov/pub/irs-pdf/fw9.pdf" target="_blank" rel="noopener" class="text-accent underline">irs.gov/pub/irs-pdf/fw9.pdf</a></li>
+            <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">2.</span> Fill in your name, business name, address, and tax ID (EIN or SSN).</li>
+            <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">3.</span> Sign and date the form.</li>
+            <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">4.</span> Upload the completed file below.</li>
+          </ol>
+        </div>
+        <div class="upload-field" data-field="w9File">
+          <label class="block text-body text-sm mb-2">W-9 File <span class="text-accent">*</span></label>
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <input type="file" name="w9File" accept=".pdf,.doc,.docx,image/*" class="sr-only file-input" />
+            <span class="inline-flex items-center gap-2 bg-bg border border-border group-hover:border-accent rounded-lg px-4 py-3 text-body text-sm transition-colors shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              Choose File
+            </span>
+            <span class="file-name text-muted text-sm truncate">No file chosen</span>
+          </label>
+          <p class="error-msg hidden text-red-400 text-xs mt-2"><span>⚠ </span><span class="msg-text"></span></p>
+          <p class="text-muted text-xs mt-2">PDF, Word, or image formats accepted.</p>
+        </div>
+      </div>
+
+      <!-- ─── STEP 3: PLATFORM ACCESS ─── -->
+      <div data-step="3" class="hidden">
+        <p class="text-muted text-xs tracking-widest uppercase mb-1 font-inter">Step 3 of 6</p>
+        <h2 class="font-serif text-heading text-2xl mb-1">Platform Access</h2>
+        <p class="text-body text-sm mb-2">Please add us as an admin to the platforms below so we can manage your campaigns.</p>
+        <p class="text-muted text-xs mb-6">Only check the platforms you have. Skip any you don't use.</p>
+        <div class="space-y-3">
+
+          <!-- Google Business Profile -->
+          <div class="border border-border rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between p-4 min-h-[56px]">
+              <label class="flex items-center gap-3 cursor-pointer flex-1">
+                <input type="checkbox" id="gbpCheck" name="gbpCheck" class="w-5 h-5 accent-[#C8A84B] cursor-pointer shrink-0" />
+                <span class="text-body text-sm font-medium">Google Business Profile</span>
+              </label>
+              <button type="button" class="accordion-toggle text-accent text-xs hover:text-heading transition-colors shrink-0 ml-3" data-target="gbp-instructions">How to add us ›</button>
+            </div>
+            <div id="gbp-instructions" class="hidden bg-bg border-t border-border px-5 py-4">
+              <p class="text-body text-sm font-semibold mb-3">Add us to your Google Business Profile:</p>
+              <ol class="space-y-2 text-body text-sm">
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">1.</span> Go to <a href="https://business.google.com" target="_blank" rel="noopener" class="text-accent underline">business.google.com</a> and sign in.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">2.</span> Click the three-dot menu (⋮) in the top right, then select <strong class="text-heading">Business Profile settings</strong>.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">3.</span> Click <strong class="text-heading">Managers</strong>, then the person+ icon to add a manager.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">4.</span> Enter <strong class="text-heading">robertlbutt@gmail.com</strong> and set the role to <strong class="text-heading">Manager</strong>.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">5.</span> Click <strong class="text-heading">Invite</strong>. We'll accept the invitation from our end.</li>
+              </ol>
+              <p class="text-muted text-xs mt-3">Not sure where to find this? Email robert@marketingperformance.net and we'll walk you through it.</p>
+            </div>
+          </div>
+
+          <!-- Facebook Business Page -->
+          <div class="border border-border rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between p-4 min-h-[56px]">
+              <label class="flex items-center gap-3 cursor-pointer flex-1">
+                <input type="checkbox" id="fbCheck" name="fbCheck" class="w-5 h-5 accent-[#C8A84B] cursor-pointer shrink-0" />
+                <span class="text-body text-sm font-medium">Facebook Business Page</span>
+              </label>
+              <button type="button" class="accordion-toggle text-accent text-xs hover:text-heading transition-colors shrink-0 ml-3" data-target="fb-instructions">How to add us ›</button>
+            </div>
+            <div id="fb-instructions" class="hidden bg-bg border-t border-border px-5 py-4">
+              <p class="text-body text-sm font-semibold mb-3">Add us to your Facebook Page:</p>
+              <ol class="space-y-2 text-body text-sm">
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">1.</span> Go to your Facebook Page and click <strong class="text-heading">Settings</strong> (top right or left sidebar).</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">2.</span> Click <strong class="text-heading">Page Access</strong> (or "New Pages Experience" if you see that option).</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">3.</span> Under "People with Facebook access," click <strong class="text-heading">Add New</strong>.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">4.</span> Search for <strong class="text-heading">Robbie Butt</strong> on Facebook.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">5.</span> Grant <strong class="text-heading">Full Control</strong> and click <strong class="text-heading">Give Access</strong>.</li>
+              </ol>
+              <p class="text-muted text-xs mt-3">If your page is connected to a Business Manager, go to <a href="https://business.facebook.com" target="_blank" rel="noopener" class="text-accent underline">business.facebook.com</a> → Settings → Business Assets → Pages → Add People.</p>
+            </div>
+          </div>
+
+          <!-- Google Analytics -->
+          <div class="border border-border rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between p-4 min-h-[56px]">
+              <label class="flex items-center gap-3 cursor-pointer flex-1">
+                <input type="checkbox" id="gaCheck" name="gaCheck" class="w-5 h-5 accent-[#C8A84B] cursor-pointer shrink-0" />
+                <span class="text-body text-sm font-medium">Google Analytics</span>
+              </label>
+              <button type="button" class="accordion-toggle text-accent text-xs hover:text-heading transition-colors shrink-0 ml-3" data-target="ga-instructions">How to add us ›</button>
+            </div>
+            <div id="ga-instructions" class="hidden bg-bg border-t border-border px-5 py-4">
+              <p class="text-body text-sm font-semibold mb-3">Add us to your Google Analytics account:</p>
+              <ol class="space-y-2 text-body text-sm">
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">1.</span> Sign in to <a href="https://analytics.google.com" target="_blank" rel="noopener" class="text-accent underline">analytics.google.com</a>.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">2.</span> Click the <strong class="text-heading">gear icon</strong> (Admin) in the bottom left.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">3.</span> Under the <strong class="text-heading">Account</strong> column, click <strong class="text-heading">Account Access Management</strong>.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">4.</span> Click the blue <strong class="text-heading">+</strong> button in the top right, then <strong class="text-heading">Add users</strong>.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">5.</span> Enter <strong class="text-heading">marketingperformancemcc@gmail.com</strong>, set role to <strong class="text-heading">Editor</strong>, and click <strong class="text-heading">Add</strong>.</li>
+              </ol>
+              <p class="text-muted text-xs mt-3">If you only see GA4 properties (not account-level settings), add us at the Property level using the same steps.</p>
+            </div>
+          </div>
+
+          <!-- Google Search Console -->
+          <div class="border border-border rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between p-4 min-h-[56px]">
+              <label class="flex items-center gap-3 cursor-pointer flex-1">
+                <input type="checkbox" id="gscCheck" name="gscCheck" class="w-5 h-5 accent-[#C8A84B] cursor-pointer shrink-0" />
+                <span class="text-body text-sm font-medium">Google Search Console</span>
+              </label>
+              <button type="button" class="accordion-toggle text-accent text-xs hover:text-heading transition-colors shrink-0 ml-3" data-target="gsc-instructions">How to add us ›</button>
+            </div>
+            <div id="gsc-instructions" class="hidden bg-bg border-t border-border px-5 py-4">
+              <p class="text-body text-sm font-semibold mb-3">Add us to your Google Search Console:</p>
+              <ol class="space-y-2 text-body text-sm">
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">1.</span> Go to <a href="https://search.google.com/search-console" target="_blank" rel="noopener" class="text-accent underline">search.google.com/search-console</a> and sign in.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">2.</span> Select your website property from the left sidebar.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">3.</span> Click <strong class="text-heading">Settings</strong> at the bottom of the left sidebar.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">4.</span> Click <strong class="text-heading">Users and permissions</strong>, then <strong class="text-heading">Add User</strong>.</li>
+                <li class="flex gap-3"><span class="text-accent font-semibold shrink-0">5.</span> Enter <strong class="text-heading">marketingperformancemcc@gmail.com</strong>, set permission to <strong class="text-heading">Full</strong>, and click <strong class="text-heading">Add</strong>.</li>
+              </ol>
+              <p class="text-muted text-xs mt-3">Don't have Search Console set up yet? No problem — skip this and we'll help verify your site during onboarding.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── STEP 4: WEBSITE & DOMAIN ─── -->
+      <div data-step="4" class="hidden">
+        <p class="text-muted text-xs tracking-widest uppercase mb-1 font-inter">Step 4 of 6</p>
+        <h2 class="font-serif text-heading text-2xl mb-1">Website & Domain</h2>
+        <p class="text-body text-sm mb-2">We need login access to make changes to your site and manage your domain.</p>
+        <p class="text-muted text-xs mb-6">We recommend updating these passwords once our work is complete.</p>
+        <div class="space-y-5">
+          <div>
+            <h3 class="text-muted text-xs uppercase tracking-wider mb-3 font-inter">Domain Registrar</h3>
+            <p class="text-body text-xs mb-3">Your domain registrar is where you purchased your domain name (e.g., GoDaddy, Namecheap, Google Domains). Not sure? Email <a href="mailto:robert@marketingperformance.net" class="text-accent">robert@marketingperformance.net</a>.</p>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-body text-sm mb-1" for="registrarUsername">Registrar Login Username / Email</label>
+                <input id="registrarUsername" name="registrarUsername" type="text" placeholder="your@email.com"
+                  class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+              <div>
+                <label class="block text-body text-sm mb-1" for="registrarPassword">Registrar Password</label>
+                <input id="registrarPassword" name="registrarPassword" type="password" placeholder="••••••••"
+                  class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-border pt-5">
+            <h3 class="text-muted text-xs uppercase tracking-wider mb-3 font-inter">Website / CMS</h3>
+            <p class="text-body text-xs mb-3">This is your website's admin panel (e.g., WordPress, Squarespace, Wix, Webflow).</p>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-body text-sm mb-1" for="cmsUrl">CMS / Admin URL</label>
+                <input id="cmsUrl" name="cmsUrl" type="url" placeholder="https://yourdomain.com/wp-admin"
+                  class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+              <div>
+                <label class="block text-body text-sm mb-1" for="cmsUsername">CMS Username</label>
+                <input id="cmsUsername" name="cmsUsername" type="text" placeholder="admin"
+                  class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+              <div>
+                <label class="block text-body text-sm mb-1" for="cmsPassword">CMS Password</label>
+                <input id="cmsPassword" name="cmsPassword" type="password" placeholder="••••••••"
+                  class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── STEP 5: DIGITAL ASSETS ─── -->
+      <div data-step="5" class="hidden">
+        <p class="text-muted text-xs tracking-widest uppercase mb-1 font-inter">Step 5 of 6</p>
+        <h2 class="font-serif text-heading text-2xl mb-1">Digital Assets</h2>
+        <p class="text-body text-sm mb-6">Upload your brand files and enter your social media credentials.</p>
+        <div class="space-y-5">
+          <div>
+            <h3 class="text-muted text-xs uppercase tracking-wider mb-3 font-inter">Brand Files</h3>
+            <div class="space-y-4">
+              <div class="upload-field" data-field="logoFile">
+                <label class="block text-body text-sm mb-2">Logo Files</label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <input type="file" name="logoFile" accept=".png,.jpg,.jpeg,.svg,.ai,.eps,.pdf,.zip" class="sr-only file-input" />
+                  <span class="inline-flex items-center gap-2 bg-bg border border-border group-hover:border-accent rounded-lg px-4 py-3 text-body text-sm transition-colors shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    Choose File
+                  </span>
+                  <span class="file-name text-muted text-sm truncate">No file chosen</span>
+                </label>
+                <p class="text-muted text-xs mt-1">PNG, SVG, AI, or ZIP. Include all formats you have.</p>
+              </div>
+              <div class="upload-field" data-field="photosFile">
+                <label class="block text-body text-sm mb-2">Photos & Videos</label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <input type="file" name="photosFile" accept="image/*,video/*,.zip" class="sr-only file-input" />
+                  <span class="inline-flex items-center gap-2 bg-bg border border-border group-hover:border-accent rounded-lg px-4 py-3 text-body text-sm transition-colors shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    Choose File
+                  </span>
+                  <span class="file-name text-muted text-sm truncate">No file chosen</span>
+                </label>
+                <p class="text-muted text-xs mt-1">Single file or ZIP of multiple images/videos.</p>
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-border pt-5">
+            <h3 class="text-muted text-xs uppercase tracking-wider mb-3 font-inter">Social Media Credentials</h3>
+            <p class="text-body text-xs mb-3">Leave blank for any platform you don't use.</p>
+            <div class="space-y-4">
+              <div>
+                <p class="text-body text-xs font-semibold mb-2 text-subtle">Instagram</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <input name="igUsername" type="text" placeholder="Username"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                  <input name="igPassword" type="password" placeholder="Password"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
+              <div>
+                <p class="text-body text-xs font-semibold mb-2 text-subtle">Pinterest</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <input name="pinterestUsername" type="text" placeholder="Username"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                  <input name="pinterestPassword" type="password" placeholder="Password"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
+              <div>
+                <p class="text-body text-xs font-semibold mb-2 text-subtle">X (Twitter)</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <input name="xUsername" type="text" placeholder="Username"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                  <input name="xPassword" type="password" placeholder="Password"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
+              <div>
+                <p class="text-body text-xs font-semibold mb-2 text-subtle">TikTok</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <input name="tiktokUsername" type="text" placeholder="Username"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                  <input name="tiktokPassword" type="password" placeholder="Password"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── STEP 6: BUSINESS APP SETUP ─── -->
+      <div data-step="6" class="hidden">
+        <p class="text-muted text-xs tracking-widest uppercase mb-1 font-inter">Step 6 of 6</p>
+        <h2 class="font-serif text-heading text-2xl mb-1">Business App Setup</h2>
+        <p class="text-body text-sm mb-6">Almost done. A few details to get your account configured.</p>
+        <div class="space-y-6">
+
+          <!-- Customer List -->
+          <div>
+            <h3 class="text-muted text-xs uppercase tracking-wider mb-1 font-inter">Customer List</h3>
+            <p class="text-body text-xs mb-3">Upload your existing customer list in any format (CSV, Excel, PDF).</p>
+            <div class="upload-field" data-field="customerListFile">
+              <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="file" name="customerListFile" accept=".csv,.xlsx,.xls,.pdf,.doc,.docx" class="sr-only file-input" />
+                <span class="inline-flex items-center gap-2 bg-bg border border-border group-hover:border-accent rounded-lg px-4 py-3 text-body text-sm transition-colors shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                  Choose File
+                </span>
+                <span class="file-name text-muted text-sm truncate">No file chosen</span>
+              </label>
+              <p class="text-muted text-xs mt-1">No list yet? Leave blank — we'll discuss during your onboarding call.</p>
+            </div>
+          </div>
+
+          <!-- App Users -->
+          <div class="border-t border-border pt-5">
+            <h3 class="text-muted text-xs uppercase tracking-wider mb-1 font-inter">App Users</h3>
+            <p class="text-body text-xs mb-3">Up to 3 people who will have access to the EngageEngine app.</p>
+            <div class="space-y-3">
+              {[1,2,3].map(n => (
+                <div class="grid grid-cols-3 gap-2">
+                  <input name={`appUser${n}Name`} type="text" placeholder={`Name ${n}`}
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                  <input name={`appUser${n}Email`} type="email" placeholder="Email"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                  <input name={`appUser${n}Phone`} type="tel" placeholder="Phone"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="border-t border-border pt-5">
+            <h3 class="text-muted text-xs uppercase tracking-wider mb-1 font-inter">Notifications</h3>
+            <p class="text-body text-xs mb-2">Who should receive lead and review notifications?</p>
+            <input id="notificationRecipient" name="notificationRecipient" type="email" placeholder="owner@yourbusiness.com"
+              class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+          </div>
+
+          <!-- Review Sites -->
+          <div class="border-t border-border pt-5">
+            <h3 class="text-muted text-xs uppercase tracking-wider mb-1 font-inter">Review Site Credentials</h3>
+            <p class="text-body text-xs mb-3">Leave blank for sites you don't use.</p>
+            <div class="space-y-4">
+              <div>
+                <p class="text-body text-xs font-semibold mb-2 text-subtle">Angi / HomeAdvisor</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <input name="angiUsername" type="text" placeholder="Username / Email"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                  <input name="angiPassword" type="password" placeholder="Password"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
+              <div>
+                <p class="text-body text-xs font-semibold mb-2 text-subtle">Yelp</p>
+                <div class="grid grid-cols-2 gap-2">
+                  <input name="yelpUsername" type="text" placeholder="Username / Email"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                  <input name="yelpPassword" type="password" placeholder="Password"
+                    class="bg-bg border border-border rounded-lg px-3 py-3 text-body placeholder-muted text-sm focus:outline-none focus:border-accent transition-colors" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Widget + Competitors + Call Time -->
+          <div class="border-t border-border pt-5 space-y-4">
+            <div>
+              <h3 class="text-muted text-xs uppercase tracking-wider mb-2 font-inter">AI Website Widget</h3>
+              <p class="text-body text-xs mb-3">Would you like us to add an AI chat widget to your website?</p>
+              <div class="flex gap-4">
+                <label class="flex items-center gap-2 cursor-pointer min-h-[44px]">
+                  <input type="radio" name="aiWidget" value="yes" class="accent-[#C8A84B]" />
+                  <span class="text-body text-sm">Yes, add it</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer min-h-[44px]">
+                  <input type="radio" name="aiWidget" value="no" class="accent-[#C8A84B]" />
+                  <span class="text-body text-sm">Not right now</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-muted text-xs uppercase tracking-wider mb-1 font-inter">Top 5 Competitors</h3>
+              <p class="text-body text-xs mb-2">List your top local competitors by name or website.</p>
+              <textarea id="competitors" name="competitors" rows="3" placeholder="1. Smith Plumbing&#10;2. ABC HVAC&#10;3. ..."
+                class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors resize-none text-sm"></textarea>
+            </div>
+            <div>
+              <h3 class="text-muted text-xs uppercase tracking-wider mb-1 font-inter">Preferred Onboarding Call Time</h3>
+              <p class="text-body text-xs mb-2">When's a good time to schedule your onboarding call?</p>
+              <input id="callTime" name="callTime" type="text" placeholder="e.g., Weekday mornings, Tuesdays after 2pm"
+                class="w-full bg-bg border border-border rounded-lg px-4 py-3 text-body placeholder-muted focus:outline-none focus:border-accent transition-colors" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── NAV BUTTONS ─── -->
+      <div id="nav-buttons" class="flex items-center justify-between mt-8 pt-6 border-t border-border">
+        <button id="btn-back" type="button"
+          class="hidden text-muted hover:text-body text-sm transition-colors py-3 px-2">
+          ← Back
+        </button>
+        <div class="flex-1"></div>
+        <div class="flex flex-col items-end gap-2">
+          <button id="btn-next" type="button"
+            class="bg-accent hover:bg-yellow-500 text-bg font-semibold text-sm rounded-lg py-3 px-6 transition-colors min-h-[44px]">
+            Next Step →
+          </button>
+          <button id="btn-submit" type="button"
+            class="hidden bg-accent hover:bg-yellow-500 text-bg font-semibold text-sm rounded-lg py-3 px-6 transition-colors min-h-[44px]">
+            Submit →
+          </button>
+          <p id="submit-error" class="hidden text-red-400 text-xs text-right max-w-xs"></p>
+        </div>
+      </div>
+
+    </div><!-- end wizard-card -->
+
+    <!-- Success state -->
+    <div id="success-card" class="hidden w-full max-w-2xl bg-surface border border-border rounded-2xl p-12 text-center">
+      <div class="text-4xl mb-4">✓</div>
+      <h2 class="font-serif text-heading text-2xl mb-3">We've got it.</h2>
+      <p class="text-body text-sm mb-2">Someone from our team will reach out within 24 hours to schedule your onboarding call.</p>
+      <p class="text-muted text-xs">Check your email for a confirmation from EngageEngine.</p>
+    </div>
+
+  </div>
+</Base>
+
+<script>
+  // ─── STATE ───────────────────────────────────────────────────────────────
+  const state = {
+    step: 1,
+    total: 6,
+    data: {} as Record<string, string | boolean>,
+    files: {} as Record<string, File>,
+  }
+
+  // ─── ELEMENTS ─────────────────────────────────────────────────────────
+  const wizardCard = document.getElementById('wizard-card')!
+  const wizardHeader = document.getElementById('wizard-header')!
+  const stepIndicator = document.getElementById('step-indicator')!
+  const successCard = document.getElementById('success-card')!
+  const btnBack = document.getElementById('btn-back') as HTMLButtonElement
+  const btnNext = document.getElementById('btn-next') as HTMLButtonElement
+  const btnSubmit = document.getElementById('btn-submit') as HTMLButtonElement
+  const submitError = document.getElementById('submit-error')!
+  const stepLabel = document.getElementById('step-label')!
+  const resumeBanner = document.getElementById('resume-banner')!
+  const btnResume = document.getElementById('btn-resume') as HTMLButtonElement
+  const btnStartOver = document.getElementById('btn-start-over') as HTMLButtonElement
+
+  // ─── PERSISTENCE ──────────────────────────────────────────────────────
+  const STORAGE_KEY = 'ee_onboarding_draft'
+  const SKIP_PERSIST = new Set(['registrarPassword', 'cmsPassword', 'igPassword', 'pinterestPassword', 'xPassword', 'tiktokPassword', 'angiPassword', 'yelpPassword'])
+
+  function saveDraft() {
+    try {
+      const safeData: Record<string, string | boolean> = {}
+      for (const [k, v] of Object.entries(state.data)) {
+        if (!SKIP_PERSIST.has(k)) safeData[k] = v
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ step: state.step, data: safeData }))
+    } catch {}
+  }
+
+  function clearDraft() {
+    try { localStorage.removeItem(STORAGE_KEY) } catch {}
+  }
+
+  function loadDraft(): { step: number; data: Record<string, string | boolean> } | null {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  }
+
+  // ─── FILE INPUT LABELS ────────────────────────────────────────────────
+  document.querySelectorAll('input[type="file"].file-input').forEach(el => {
+    el.addEventListener('change', () => {
+      const input = el as HTMLInputElement
+      const nameEl = input.closest('label')?.parentElement?.querySelector('.file-name')
+      if (nameEl) nameEl.textContent = input.files?.[0]?.name || 'No file chosen'
+    })
+  })
+
+  // ─── ACCORDION ────────────────────────────────────────────────────────
+  document.querySelectorAll('.accordion-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = (btn as HTMLElement).dataset.target
+      if (!target) return
+      const panel = document.getElementById(target)!
+      const isOpen = !panel.classList.contains('hidden')
+      panel.classList.toggle('hidden', isOpen)
+      btn.textContent = isOpen ? 'How to add us ›' : 'Hide ‹'
+    })
+  })
+
+  // ─── STEP CHIPS ───────────────────────────────────────────────────────
+  function updateChips() {
+    document.querySelectorAll('[data-chip]').forEach(el => {
+      const chip = el as HTMLElement
+      const n = parseInt(chip.dataset.chip || '0')
+      if (n <= state.step) {
+        chip.className = 'w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border transition-colors duration-200 bg-accent border-accent text-bg'
+      } else {
+        chip.className = 'w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border transition-colors duration-200 bg-transparent border-border text-muted'
+      }
+    })
+    stepLabel.textContent = `Step ${state.step} of ${state.total}`
+  }
+
+  // ─── SHOW STEP ────────────────────────────────────────────────────────
+  function showStep(n: number) {
+    document.querySelectorAll('[data-step]').forEach(el => {
+      (el as HTMLElement).classList.toggle('hidden', parseInt((el as HTMLElement).dataset.step || '0') !== n)
+    })
+    btnBack.classList.toggle('hidden', n === 1)
+    btnNext.classList.toggle('hidden', n === state.total)
+    btnSubmit.classList.toggle('hidden', n !== state.total)
+    updateChips()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // ─── COLLECT DATA ────────────────────────────────────────────────────
+  function collectCurrentStep() {
+    const stepEl = document.querySelector(`[data-step="${state.step}"]`)!
+    stepEl.querySelectorAll('input, textarea').forEach(el => {
+      const input = el as HTMLInputElement | HTMLTextAreaElement
+      if (!input.name) return
+      if (input.type === 'file') {
+        const f = (input as HTMLInputElement).files?.[0]
+        if (f) state.files[input.name] = f
+      } else if (input.type === 'checkbox') {
+        state.data[input.name] = (input as HTMLInputElement).checked
+      } else if (input.type === 'radio') {
+        if ((input as HTMLInputElement).checked) state.data[input.name] = input.value
+      } else {
+        state.data[input.name] = input.value.trim()
+      }
+    })
+  }
+
+  // ─── RESTORE DATA ────────────────────────────────────────────────────
+  function restoreCurrentStep() {
+    const stepEl = document.querySelector(`[data-step="${state.step}"]`)!
+    stepEl.querySelectorAll('input, textarea').forEach(el => {
+      const input = el as HTMLInputElement | HTMLTextAreaElement
+      if (!input.name) return
+      if (input.type === 'file') {
+        // Can't restore file inputs for security; show cached filename if available
+        if (input.name in state.files) {
+          const nameEl = input.closest('label')?.parentElement?.querySelector('.file-name')
+          if (nameEl) nameEl.textContent = state.files[input.name].name
+        }
+      } else if (input.type === 'checkbox') {
+        if (input.name in state.data) (input as HTMLInputElement).checked = state.data[input.name] === true
+      } else if (input.type === 'radio') {
+        if (input.name in state.data) (input as HTMLInputElement).checked = input.value === state.data[input.name]
+      } else {
+        if (input.name in state.data) input.value = state.data[input.name] as string
+      }
+    })
+  }
+
+  // ─── VALIDATION ───────────────────────────────────────────────────────
+  function showFieldError(input: HTMLElement, msg: string) {
+    input.classList.add('border-red-500')
+    const errEl = input.nextElementSibling
+    if (errEl?.classList.contains('error-msg')) {
+      errEl.classList.remove('hidden')
+      const msgEl = errEl.querySelector('.msg-text')
+      if (msgEl) msgEl.textContent = msg
+    }
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.error-msg').forEach(el => el.classList.add('hidden'))
+    document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500'))
+  }
+
+  function validateStep(n: number): boolean {
+    clearErrors()
+    let valid = true
+
+    if (n === 1) {
+      const fields = [
+        { id: 'clientName', msg: 'Your name is required' },
+        { id: 'clientEmail', msg: 'Your email is required' },
+        { id: 'businessName', msg: 'Business name is required' },
+        { id: 'phone', msg: 'Phone number is required' },
+        { id: 'address', msg: 'Business address is required' },
+      ]
+      fields.forEach(({ id, msg }) => {
+        const el = document.getElementById(id) as HTMLInputElement
+        if (!el.value.trim()) { showFieldError(el, msg); valid = false }
+      })
+      const emailEl = document.getElementById('clientEmail') as HTMLInputElement
+      if (emailEl.value.trim() && !emailEl.value.includes('@')) {
+        showFieldError(emailEl, 'Enter a valid email address')
+        valid = false
+      }
+    }
+
+    if (n === 2) {
+      if (!state.files['w9File'] && !document.querySelector<HTMLInputElement>('input[name="w9File"]')?.files?.[0]) {
+        const uploadField = document.querySelector('.upload-field[data-field="w9File"]')
+        const errEl = uploadField?.querySelector('.error-msg')
+        if (errEl) {
+          errEl.classList.remove('hidden')
+          const msgEl = errEl.querySelector('.msg-text')
+          if (msgEl) msgEl.textContent = 'Please upload your W-9 file'
+        }
+        valid = false
+      }
+    }
+
+    return valid
+  }
+
+  // ─── NAVIGATION ───────────────────────────────────────────────────────
+  btnNext.addEventListener('click', () => {
+    if (!validateStep(state.step)) return
+    collectCurrentStep()
+    state.step++
+    saveDraft()
+    showStep(state.step)
+    restoreCurrentStep()
+  })
+
+  btnBack.addEventListener('click', () => {
+    collectCurrentStep()
+    state.step--
+    saveDraft()
+    showStep(state.step)
+    restoreCurrentStep()
+  })
+
+  btnResume.addEventListener('click', () => {
+    resumeBanner.classList.add('hidden')
+  })
+
+  btnStartOver.addEventListener('click', () => {
+    clearDraft()
+    state.step = 1
+    state.data = {}
+    state.files = {}
+    resumeBanner.classList.add('hidden')
+    showStep(1)
+  })
+
+  // ─── SUBMIT ───────────────────────────────────────────────────────────
+  btnSubmit.addEventListener('click', async () => {
+    if (!validateStep(state.step)) return
+    collectCurrentStep()
+
+    btnSubmit.disabled = true
+    btnSubmit.textContent = 'Submitting...'
+    submitError.classList.add('hidden')
+
+    try {
+      const fd = new FormData()
+      for (const [k, v] of Object.entries(state.data)) fd.append(k, String(v))
+      for (const [k, file] of Object.entries(state.files)) fd.append(k, file)
+
+      const res = await fetch('/api/onboarding', { method: 'POST', body: fd })
+      const json = await res.json() as { ok: boolean; error?: string }
+
+      if (json.ok) {
+        clearDraft()
+        wizardCard.classList.add('hidden')
+        wizardHeader.classList.add('hidden')
+        stepIndicator.classList.add('hidden')
+        successCard.classList.remove('hidden')
+      } else {
+        submitError.textContent = json.error || 'Submission failed. Please try again or email robert@marketingperformance.net.'
+        submitError.classList.remove('hidden')
+        btnSubmit.disabled = false
+        btnSubmit.textContent = 'Submit →'
+      }
+    } catch {
+      submitError.textContent = 'Network error. Please check your connection and try again.'
+      submitError.classList.remove('hidden')
+      btnSubmit.disabled = false
+      btnSubmit.textContent = 'Submit →'
+    }
+  })
+
+  // ─── INIT ─────────────────────────────────────────────────────────────
+  const draft = loadDraft()
+  if (draft && draft.step > 1 && Object.keys(draft.data).length > 0) {
+    state.data = draft.data
+    state.step = draft.step
+    resumeBanner.classList.remove('hidden')
+    showStep(state.step)
+    restoreCurrentStep()
+  } else {
+    showStep(1)
+  }
+</script>

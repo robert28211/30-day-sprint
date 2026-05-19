@@ -1,0 +1,39 @@
+---
+import Base from '../../layouts/Base.astro'
+import Nav from '../../components/Nav.astro'
+import Footer from '../../components/Footer.astro'
+---
+<Base
+  title="You're Booked — EngageEngine™"
+  description="Your call is confirmed. We'll pull your market live on the call."
+>
+  <Nav />
+  <main class="booked-page">
+    <div class="booked-wrap">
+      <div class="booked-check">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h1>You're on the calendar.</h1>
+      <p class="booked-sub">Check your email for the confirmation. I'll pull your market live on the call — no deck, no pitch, just your data.</p>
+      <p class="booked-fine">If you need to reschedule, use the link in your confirmation email.</p>
+    </div>
+  </main>
+  <Footer />
+</Base>
+
+<script>
+if (typeof gtag !== 'undefined') {
+  gtag('event', 'snapshot_call_booked');
+}
+</script>
+
+<style>
+  .booked-page { min-height: calc(100vh - 200px); display: flex; align-items: center; justify-content: center; padding: 80px 22px; background: var(--canvas); }
+  .booked-wrap { max-width: 480px; width: 100%; text-align: center; }
+  .booked-check { width: 56px; height: 56px; border: 2px solid var(--blue); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--blue); margin-bottom: 28px; }
+  .booked-wrap h1 { font-family: var(--font-d); font-size: clamp(32px, 5vw, 44px); font-weight: 600; color: var(--graphite); margin-bottom: 20px; letter-spacing: -0.005em; }
+  .booked-sub { font-size: 18px; font-weight: 400; line-height: 1.65; color: var(--mid-gray); margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
+  .booked-fine { font-size: 13px; color: var(--light-gray); }
+</style>

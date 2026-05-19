@@ -1,0 +1,224 @@
+---
+import Base from '../layouts/Base.astro'
+import Nav from '../components/Nav.astro'
+import Footer from '../components/Footer.astro'
+
+const beats = [
+  {
+    number: '01',
+    label: 'The Firm',
+    title: '41 Years. 31 Running His Own.',
+    body: '41 years in this industry. 31 years running his own firm. Not as a vendor. Not as a consultant-for-hire. As a practitioner with real clients, real decisions, and real consequences — watching what actually moves the needle, and what doesn\'t.',
+    sub: null,
+    align: 'right',
+  },
+  {
+    number: '02',
+    label: 'The Faculty',
+    title: 'Teaching Isn\'t a Credential. It\'s a Forcing Function.',
+    body: 'For 22 of those years — simultaneously, not sequentially — on faculty at the University of South Carolina\'s journalism school. Advertising campaign strategy. Creative strategy. Writing for public relations.',
+    sub: 'When you have to explain why something works to a room that will push back, you develop a different relationship with the craft than someone who just executes it. You can\'t fake your way through 22 years of that.',
+    align: 'left',
+  },
+  {
+    number: '03',
+    label: 'The Files',
+    title: 'Not Case Studies. The Originals.',
+    body: '24 years of actual client files. Not reconstructions written after the fact. The original documents — strategy briefs, media plans, creative direction, and the email threads where the real decisions got made and the real problems surfaced.',
+    sub: null,
+    align: 'right',
+  },
+  {
+    number: '04',
+    label: 'The Machine',
+    title: 'All of It. Processed.',
+    body: 'Every file processed by AI. Cross-referenced against current consumer behavior data. Validated against performance benchmarks across 17 home service verticals. Pattern-matched against 2,401 diagnosed businesses.',
+    sub: 'The result is a diagnostic system no competitor can replicate. Not with funding. Not with talent. Not with time. Because it required all three — plus 41 years of not throwing anything away.',
+    align: 'left',
+  },
+  {
+    number: '05',
+    label: 'The Diagnostic',
+    title: 'The Demand Collapse Diagnostic™',
+    body: '12 questions. 10 minutes. No call required. One of four specific failure modes is draining your revenue right now. The median business in our dataset loses $218,000 a year to a problem they\'ve never correctly identified.',
+    sub: 'Not theory. Not guesswork. Pattern recognition built on four decades of real data, synthesized by AI, and delivered in under 10 minutes — with a specific diagnosis and a specific path forward.',
+    align: 'right',
+  },
+]
+---
+
+<Base
+  title="The Build — EngageEngine™"
+  description="41 years in the industry. 31 years running his own firm. 24 years of actual client files, processed by AI. This is why no competitor can replicate the Demand Collapse Diagnostic™."
+>
+  <Nav />
+
+  <main class="build-page">
+    <div class="build-inner">
+
+      <div class="build-header" data-animate data-delay="0">
+        <span class="build-eye">/ THE BUILD</span>
+        <h1 class="build-h1">Our Founder Didn't Set Out to Build the Best Diagnostic System in Local Marketing.</h1>
+        <p class="build-kicker">41 years of work just made it inevitable.</p>
+      </div>
+
+      <div class="build-intro" data-animate data-delay="0.1">
+        <div class="build-intro-text">
+          <p>Let's be direct about what most marketing consultancies are.</p>
+          <p>Smart people. Recent experience. Borrowed frameworks.</p>
+          <p>Some of them get results.</p>
+          <p class="build-intro-strong">None of them have what our founder built.</p>
+          <p>Here's the difference.</p>
+        </div>
+        <div class="build-photo-wrap">
+          <img
+            src="/img/robbie-butt.jpg"
+            alt="Robbie Butt, Founder of EngageEngine™"
+            width="224"
+            height="224"
+            class="build-photo"
+          />
+          <p class="build-photo-cap">Robbie Butt · Founder, EngageEngine™<br/>Columbia, SC</p>
+        </div>
+      </div>
+
+      <div class="build-timeline" id="build-steps">
+
+        <svg
+          class="build-svg"
+          aria-hidden="true"
+          viewBox="0 0 896 1200"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M 448,0 C 720,0 800,60 800,120 C 800,240 96,240 96,360 C 96,480 800,480 800,600 C 800,720 96,720 96,840 C 96,960 800,960 800,1080"
+            fill="none"
+            stroke="#d6d6d6"
+            stroke-width="1"
+          />
+          <path
+            id="build-path"
+            d="M 448,0 C 720,0 800,60 800,120 C 800,240 96,240 96,360 C 96,480 800,480 800,600 C 800,720 96,720 96,840 C 96,960 800,960 800,1080"
+            fill="none"
+            stroke="#0071e3"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+          <circle class="build-dot" cx="800" cy="120"  r="4" fill="#0071e3" />
+          <circle class="build-dot" cx="96"  cy="360"  r="4" fill="#0071e3" />
+          <circle class="build-dot" cx="800" cy="600"  r="4" fill="#0071e3" />
+          <circle class="build-dot" cx="96"  cy="840"  r="4" fill="#0071e3" />
+          <circle class="build-dot" cx="800" cy="1080" r="4" fill="#0071e3" />
+        </svg>
+
+        {beats.map((beat) => (
+          <div class="build-step" data-animate data-delay="0">
+            <div class={`build-content ${beat.align === 'right' ? 'align-right' : 'align-left'}`}>
+              <div class="build-num-row">
+                <span class="build-num">{beat.number}</span>
+                <span class="build-label">{beat.label}</span>
+              </div>
+              <h2 class="build-step-h">{beat.title}</h2>
+              <p class="build-step-body">{beat.body}</p>
+              {beat.sub && (
+                <p class="build-step-sub">{beat.sub}</p>
+              )}
+            </div>
+            <div class={`build-spacer ${beat.align === 'right' ? 'align-right' : 'align-left'}`}></div>
+          </div>
+        ))}
+
+      </div>
+
+      <div class="build-cta" data-animate data-delay="0.1">
+        <p class="build-cta-quote">You can't buy this anywhere else. No one else built it. Because no one else had the raw material.</p>
+        <a href="/diagnostic/" class="btn btn-blue build-cta-btn">Take the Demand Collapse Diagnostic →</a>
+        <p class="build-cta-sub">Twelve questions. Ten minutes. No sales call.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <Footer />
+</Base>
+
+<script>
+  import { gsap } from 'gsap'
+  import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+  gsap.registerPlugin(ScrollTrigger)
+
+  const buildPath = document.querySelector('#build-path') as SVGPathElement | null
+  if (buildPath) {
+    const length = buildPath.getTotalLength()
+    const dots = document.querySelectorAll('.build-dot')
+
+    gsap.set(buildPath, { strokeDasharray: length, strokeDashoffset: length })
+    gsap.set(dots, { scale: 0, opacity: 0, transformOrigin: 'center center' })
+
+    gsap.to(buildPath, {
+      strokeDashoffset: 0,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '#build-steps',
+        start: 'top 65%',
+        end: 'bottom 55%',
+        scrub: 1.5,
+      },
+    })
+
+    document.querySelectorAll('.build-step').forEach((step, i) => {
+      const dot = dots[i]
+      if (!dot) return
+      ScrollTrigger.create({
+        trigger: step,
+        start: 'top 75%',
+        once: true,
+        onEnter: () => {
+          gsap.to(dot, { scale: 1, opacity: 1, duration: 0.45, ease: 'back.out(2.5)', delay: 0.15 })
+        },
+      })
+    })
+  }
+</script>
+
+<style>
+  .build-page { background: var(--canvas); padding: 80px 22px; }
+  .build-inner { max-width: 880px; margin: 0 auto; }
+  .build-header { margin-bottom: 72px; }
+  .build-eye { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid-gray); display: block; margin-bottom: 28px; }
+  .build-h1 { font-family: var(--font-d); font-size: clamp(28px, 4vw, 44px); font-weight: 600; color: var(--graphite); line-height: 1.1; letter-spacing: -0.005em; margin-bottom: 16px; max-width: 720px; }
+  .build-kicker { font-family: var(--font-d); font-size: 22px; font-weight: 400; color: var(--blue); font-style: italic; }
+  .build-intro { display: flex; flex-direction: column; gap: 32px; margin-bottom: 72px; }
+  @media (min-width: 768px) { .build-intro { flex-direction: row; align-items: flex-start; gap: 64px; } }
+  .build-intro-text { display: flex; flex-direction: column; gap: 16px; font-size: 18px; line-height: 1.65; color: var(--mid-gray); flex: 1; }
+  .build-intro-strong { color: var(--graphite); font-weight: 500; }
+  .build-photo-wrap { flex-shrink: 0; }
+  .build-photo { width: 192px; height: 192px; object-fit: cover; object-position: top; display: block; }
+  @media (min-width: 768px) { .build-photo { width: 224px; height: 224px; } }
+  .build-photo-cap { font-size: 12px; color: var(--light-gray); margin-top: 12px; max-width: 224px; line-height: 1.5; }
+  .build-timeline { position: relative; }
+  .build-svg { display: none; }
+  @media (min-width: 1024px) { .build-svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; } }
+  .build-step { border-bottom: 1px solid var(--border); padding: 48px 0; }
+  @media (min-width: 1024px) { .build-step { display: flex; padding: 64px 0; } }
+  .build-content { }
+  @media (min-width: 1024px) {
+    .build-content { width: 50%; }
+    .build-content.align-right { order: 2; padding-left: 40px; }
+    .build-content.align-left { order: 1; padding-right: 40px; }
+    .build-spacer { display: block; width: 50%; }
+    .build-spacer.align-right { order: 1; }
+    .build-spacer.align-left { order: 2; }
+  }
+  .build-num-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .build-num { font-family: var(--font-d); font-size: 48px; font-weight: 600; color: var(--blue); opacity: 0.25; line-height: 1; }
+  .build-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid-gray); }
+  .build-step-h { font-family: var(--font-d); font-size: clamp(20px, 2.5vw, 26px); font-weight: 600; color: var(--graphite); margin-bottom: 16px; line-height: 1.2; letter-spacing: -0.003em; }
+  .build-step-body { font-size: 16px; line-height: 1.7; color: var(--mid-gray); }
+  .build-step-sub { font-size: 14px; line-height: 1.7; color: var(--light-gray); font-style: italic; margin-top: 16px; border-left: 2px solid rgba(0,113,227,0.25); padding-left: 16px; }
+  .build-cta { margin-top: 64px; padding-top: 64px; border-top: 1px solid var(--border); }
+  .build-cta-quote { font-family: var(--font-d); font-size: 20px; font-weight: 400; color: var(--blue); font-style: italic; margin-bottom: 32px; line-height: 1.4; }
+  .build-cta-btn { margin-bottom: 16px; }
+  .build-cta-sub { font-size: 14px; color: var(--mid-gray); }
+</style>

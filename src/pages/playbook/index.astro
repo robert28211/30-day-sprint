@@ -1,0 +1,95 @@
+---
+import Base from '../../layouts/Base.astro'
+import Nav from '../../components/Nav.astro'
+import Footer from '../../components/Footer.astro'
+---
+<Base
+  title="Grab the Playbook — EngageEngine™"
+  description="Get the Find Your Profit Leak playbook. Discover exactly where your service business is losing customers — and how to fix it."
+>
+  <Nav />
+  <main class="pb-page">
+    <section class="pb-hero">
+      <div class="pb-wrap">
+        <p class="pb-eye">Free Resource</p>
+        <h1 class="pb-h1">Find Your Profit Leak</h1>
+        <p class="pb-sub">Most service businesses spend money to get noticed — then lose customers at the exact moment those customers were ready to choose. This playbook shows you the four places the breakdown happens and what to install instead.</p>
+        <div class="pb-card">
+          <h2 class="pb-card-h">Get instant access</h2>
+          <p class="pb-card-sub">Enter your name and email — the playbook goes straight to your inbox.</p>
+          <form id="playbook-form" class="pb-form">
+            <div class="pb-field">
+              <label for="name" class="pb-label">Full Name</label>
+              <input id="name" type="text" name="name" required placeholder="Your name" class="pb-input" />
+            </div>
+            <div class="pb-field">
+              <label for="email" class="pb-label">Email Address</label>
+              <input id="email" type="email" name="email" required placeholder="your@email.com" class="pb-input" />
+            </div>
+            <button id="submit-btn" type="submit" class="btn btn-blue pb-btn">Send Me the Playbook</button>
+            <p id="form-error" class="pb-error hidden">Something went wrong. Please try again.</p>
+          </form>
+          <p class="pb-trust">No spam. Unsubscribe anytime.</p>
+        </div>
+        <p class="pb-footer-trust">Used by service businesses across the US to stop the invisible revenue leak.</p>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Base>
+
+<script>
+  const form = document.getElementById('playbook-form') as HTMLFormElement
+  const btn = document.getElementById('submit-btn') as HTMLButtonElement
+  const errorMsg = document.getElementById('form-error') as HTMLElement
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    btn.disabled = true
+    btn.textContent = 'Sending…'
+    errorMsg.classList.add('hidden')
+
+    const data = new FormData(form)
+
+    try {
+      const res = await fetch('https://formspree.io/f/xkovrbbp', {
+        method: 'POST',
+        body: data,
+        headers: { Accept: 'application/json' },
+      })
+
+      if (res.ok) {
+        window.location.href = '/playbook/thank-you'
+      } else {
+        throw new Error('Form error')
+      }
+    } catch {
+      btn.disabled = false
+      btn.textContent = 'Send Me the Playbook'
+      errorMsg.classList.remove('hidden')
+    }
+  })
+</script>
+
+<style>
+  .pb-page { background: var(--canvas); min-height: calc(100vh - 200px); }
+  .pb-hero { display: flex; align-items: center; justify-content: center; padding: 80px 22px; }
+  .pb-wrap { max-width: 520px; width: 100%; }
+  .pb-eye { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); margin-bottom: 16px; }
+  .pb-h1 { font-family: var(--font-d); font-size: clamp(34px, 5vw, 48px); font-weight: 600; color: var(--graphite); letter-spacing: -0.005em; line-height: 1.08; margin-bottom: 20px; }
+  .pb-sub { font-size: 17px; line-height: 1.65; color: var(--mid-gray); margin-bottom: 40px; }
+  .pb-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 36px 32px; margin-bottom: 32px; }
+  .pb-card-h { font-family: var(--font-d); font-size: 20px; font-weight: 600; color: var(--graphite); margin-bottom: 6px; }
+  .pb-card-sub { font-size: 14px; color: var(--mid-gray); margin-bottom: 24px; }
+  .pb-form { display: flex; flex-direction: column; gap: 16px; }
+  .pb-field { display: flex; flex-direction: column; gap: 6px; }
+  .pb-label { font-size: 12px; font-weight: 500; color: var(--mid-gray); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pb-input { width: 100%; background: var(--canvas); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 15px; color: var(--graphite); outline: none; transition: border-color 0.15s; -webkit-appearance: none; }
+  .pb-input:focus { border-color: var(--blue); }
+  .pb-input::placeholder { color: var(--light-gray); }
+  .pb-btn { width: 100%; margin-top: 4px; }
+  .pb-error { font-size: 13px; color: #c0392b; text-align: center; }
+  .pb-error.hidden { display: none; }
+  .pb-trust { font-size: 12px; color: var(--light-gray); text-align: center; margin-top: 16px; margin-bottom: 0; }
+  .pb-footer-trust { font-size: 14px; color: var(--mid-gray); text-align: center; }
+</style>
