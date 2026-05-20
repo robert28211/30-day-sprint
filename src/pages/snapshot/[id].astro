@@ -371,9 +371,9 @@ if (claimForm) {
       fbq('track', 'CompleteRegistration', { content_name: 'Waitlist Signup', content_category: String(fd.get('trade') || '') });
     }
 
-    fetch('/api/snapshot', {
+    fetch('https://formspree.io/f/mgodnjje', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
         name: fd.get('name'),
         email: fd.get('email'),
@@ -381,9 +381,9 @@ if (claimForm) {
         city_state: fd.get('city_state'),
         trade: fd.get('trade'),
         failure_mode: fd.get('failure_mode'),
-        total_buyers: Number(fd.get('total_buyers')),
-        multi_site: Number(fd.get('multi_site')),
-        competitor_exposed: Number(fd.get('competitor_exposed')),
+        total_buyers: fd.get('total_buyers'),
+        multi_site: fd.get('multi_site'),
+        competitor_exposed: fd.get('competitor_exposed'),
       }),
     }).catch(() => {});
 
