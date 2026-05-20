@@ -949,7 +949,7 @@ window.addEventListener('beforeprint', (e) => {
 .prob-enemy-text {
   font-size: 15px;
   line-height: 1.6;
-  color: var(--mid-gray);
+  color: var(--graphite);
   letter-spacing: -0.018em;
 }
 
@@ -965,7 +965,7 @@ window.addEventListener('beforeprint', (e) => {
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.005em;
-  color: var(--mid-gray);
+  color: var(--graphite);
   max-width: 700px;
   margin-bottom: 4px;
 }
@@ -975,7 +975,7 @@ window.addEventListener('beforeprint', (e) => {
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.005em;
-  color: var(--graphite);
+  color: var(--blue);
   max-width: 700px;
   margin-bottom: 52px;
 }
@@ -1030,9 +1030,10 @@ window.addEventListener('beforeprint', (e) => {
 }
 .sol-explain p {
   font-size: 17px;
+  font-weight: 500;
   line-height: 1.6;
   letter-spacing: -0.022em;
-  color: var(--mid-gray);
+  color: var(--graphite);
   text-align: center;
 }
 .sol-profiles { text-align: center; margin-top: 40px; }
@@ -1041,7 +1042,7 @@ window.addEventListener('beforeprint', (e) => {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--light-gray);
+  color: var(--mid-gray);
   margin-bottom: 16px;
 }
 .profiles-row {
@@ -1647,7 +1648,9 @@ window.addEventListener('beforeprint', (e) => {
 }
 @media (max-width: 640px) {
   .proof-grid { grid-template-columns: 1fr; }
-  .sol-gates { grid-template-columns: 1fr; }
+  .sol-gates { grid-template-columns: repeat(2, 1fr); }
+  .gate-desc { display: none; }
+  .gate { padding: 20px 16px; }
   .s-hook { padding: 60px 16px 52px; }
   .banner-inner { flex-direction: column; }
   .unlock-ctas { flex-direction: column; }
