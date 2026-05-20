@@ -196,20 +196,17 @@ import Footer from '../../components/Footer.astro'
               <li><span class="fv-check">✓</span> Head-to-head competitor comparison</li>
               <li><span class="fv-check">✓</span> Four-gate breakdown + your highest-leverage gap</li>
             </ul>
-            <div class="form-scarcity" data-animate data-delay="0.15">
-              <strong>One diagnostic per business.</strong> AI citations are local — once a competitor earns them in your market, they're theirs. Run yours first.
-            </div>
           </div>
 
           <div class="form-right" data-animate data-delay="0.1">
             <form id="dvs-form" novalidate>
               <div class="field-group">
                 <label class="field-label" for="f-name">Business Name</label>
-                <input type="text" id="f-name" name="businessName" class="field-input" placeholder="The Guttermen" required autocomplete="organization" />
+                <input type="text" id="f-name" name="businessName" class="field-input" placeholder="" required autocomplete="organization" />
               </div>
               <div class="field-group">
                 <label class="field-label" for="f-url">Website URL</label>
-                <input type="url" id="f-url" name="url" class="field-input" placeholder="https://theguttermen.com" required autocomplete="url" />
+                <input type="url" id="f-url" name="url" class="field-input" placeholder="https://" required autocomplete="url" />
               </div>
               <div class="field-group">
                 <label class="field-label" for="f-niche">Service Category</label>
@@ -236,7 +233,7 @@ import Footer from '../../components/Footer.astro'
               </div>
               <div class="field-group">
                 <label class="field-label" for="f-location">Service Area</label>
-                <input type="text" id="f-location" name="location" class="field-input" placeholder="Charleston, SC" required autocomplete="off" />
+                <input type="text" id="f-location" name="location" class="field-input" placeholder="" required autocomplete="off" />
               </div>
               <div id="form-error" class="form-error" hidden></div>
               <button type="submit" class="btn btn-blue form-cta" id="form-submit">
@@ -1177,17 +1174,6 @@ window.addEventListener('beforeprint', (e) => {
   line-height: 1.4;
 }
 .fv-check { color: var(--blue); font-weight: 700; flex-shrink: 0; }
-.form-scarcity {
-  background: rgba(192,57,43,0.05);
-  border: 1px solid rgba(192,57,43,0.18);
-  border-radius: 10px;
-  padding: 14px 18px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #7a2b20;
-}
-.form-scarcity strong { color: #c0392b; }
-
 /* Field styles (reuse snap patterns) */
 .field-group { margin-bottom: 14px; }
 .field-label {
