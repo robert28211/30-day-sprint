@@ -1,5 +1,5 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { e as createComponent, r as renderTemplate, l as renderScript, q as renderSlot, o as renderHead, m as maybeRenderHead, g as addAttribute, h as createAstro } from './astro/server_t-hg7iZv.mjs';
+import { e as createComponent, r as renderTemplate, l as renderScript, q as renderSlot, o as renderHead, m as maybeRenderHead, g as addAttribute, h as createAstro } from './astro/server_CiTxi7Ly.mjs';
 /* empty css                       */
 
 var __freeze = Object.freeze;
