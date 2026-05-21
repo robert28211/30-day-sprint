@@ -271,9 +271,9 @@ const refId      = id && id !== 'preview' ? id.split('-')[0].toUpperCase() : 'PR
         <input type="hidden" name="multi_site" value={data.multi_site} />
         <input type="hidden" name="competitor_exposed" value={data.competitor_exposed} />
         <div class="claim-fields">
-          <input type="text" name="name" placeholder="Your name" required class="claim-input" />
-          <input type="email" name="email" placeholder="Email address" required class="claim-input" />
-          <input type="tel" name="phone" placeholder="Phone number" class="claim-input" />
+          <input type="text" name="name"  required class="claim-input" />
+          <input type="email" name="email"  required class="claim-input" />
+          <input type="tel" name="phone"  class="claim-input" />
         </div>
         <button type="submit" class="claim-btn" id="claim-submit">
           {isHomeService ? 'Add Me to the Waitlist →' : 'Claim My Market →'}

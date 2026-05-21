@@ -1,0 +1,5 @@
+/score/
+  Cache-Control: no-store, must-revalidate
+
+/score/index.html
+  Cache-Control: no-store, must-revalidate
