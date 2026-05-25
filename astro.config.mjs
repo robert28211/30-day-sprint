@@ -5,7 +5,4 @@ export default defineConfig({
   output: 'static',
   adapter: cloudflare(),
   integrations: [],
-  redirects: {
-    '/snapshot': '/',
-  },
 })
