@@ -15,6 +15,8 @@
     "/ee-logo.png",
     "/ee-spin.mp4",
     "/mp-logo.png",
+    "/img/intelligence-layer.png",
+    "/img/intent-snapshot-hvac.png",
     "/img/robbie-butt.jpg",
     "/reports/*",
     "/b2b",
@@ -30,6 +32,7 @@
     "/snapshot/booked",
     "/snapshot/plastic-surgery",
     "/the-build",
-    "/toolkit"
+    "/toolkit",
+    "/v2"
   ]
 }

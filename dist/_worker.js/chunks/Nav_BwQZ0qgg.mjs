@@ -1,5 +1,5 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { e as createComponent, m as maybeRenderHead, r as renderTemplate } from './astro/server_BfPsWbN8.mjs';
+import { e as createComponent, m as maybeRenderHead, r as renderTemplate } from './astro/server_CdzYR9DH.mjs';
 /* empty css                       */
 
 const $$Nav = createComponent(($$result, $$props, $$slots) => {

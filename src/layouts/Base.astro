@@ -34,13 +34,22 @@ const {
     <!-- Identity Resolution Pixel -->
     <script src="https://cdn.idpixel.app/v1/idp-analytics-6990fa8981c12e22bc596313.min.js" defer></script>
 
-    <!-- Meta Pixel — 1362717861424529 -->
+    <!-- Meta Pixel stub — queue only, no network call in <head> -->
+    <script is:inline>
+      window.fbq=window.fbq||function(){(window._fbq=window._fbq||[]).push(arguments)};
+      window._fbq=window._fbq||[];
+    </script>
+  </head>
+  <body>
+    <slot />
+
+    <!-- Meta Pixel load — deferred to after LCP to avoid render-blocking -->
     <script is:inline>
       !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      {if(f.fbq&&f.fbq.loaded)return;n=f.fbq=function(){n.callMethod?
       n.callMethod.apply(n,arguments):n.queue.push(arguments)};
       if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
+      n.queue=(window._fbq||[]);t=b.createElement(e);t.async=!0;
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
@@ -50,9 +59,6 @@ const {
     <noscript><img height="1" width="1" style="display:none"
       src="https://www.facebook.com/tr?id=1362717861424529&ev=PageView&noscript=1"
     /></noscript>
-  </head>
-  <body>
-    <slot />
   </body>
 </html>
 

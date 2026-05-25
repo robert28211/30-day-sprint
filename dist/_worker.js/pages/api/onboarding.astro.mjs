@@ -139,7 +139,7 @@ const POST = async ({ request, locals }) => {
       });
     }
   }
-  const resendKey = env?.RESEND_KEY;
+  const resendKey = env?.RESEND_KEY ?? env?.Resend;
   console.log("RESEND_KEY present:", !!resendKey);
   if (resendKey) {
     const emailBody = buildTeamEmail(data, fileKeys);
@@ -151,7 +151,7 @@ const POST = async ({ request, locals }) => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          from: "EngageEngine Onboarding <onboarding@resend.dev>",
+          from: "Marketing Performance Group <onboarding@send.marketingperformance.net>",
           to: TEAM_EMAILS,
           subject: `New Onboarding: ${data.businessName}`,
           text: emailBody
