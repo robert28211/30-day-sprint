@@ -268,11 +268,11 @@ import Footer from '../components/Footer.astro'
           <p class="v2-guarantee-body">If EngageEngine™ doesn't deliver at least <strong>2X our fee in closed revenue within 90 days</strong> — we keep working until it does. Free. No refund and disappear. We stay. We fix. We run it until the number is there.</p>
           <p class="v2-guarantee-closer">Because if we can't find the buyers, we don't deserve to get paid.</p>
 
-          <!-- Price anchor placeholder — needs real $ to ship -->
+          <!-- Price anchor -->
           <div class="v2-price-anchor">
-            <span class="v2-price-tag">PRICING</span>
-            <p>Starting at <strong>$[X]/month</strong> — guaranteed to return $2X or we keep working free.</p>
-            <p class="v2-price-note">[ Placeholder — fee number needed before ship. "2X our fee" only lands if the fee is shown. ]</p>
+            <span class="v2-price-tag">Pricing</span>
+            <p class="v2-price-headline"><strong>$3,500/month</strong> <span class="v2-price-plus">+ ad spend</span></p>
+            <p class="v2-price-body">Guaranteed to return at least <strong>$7,000/month</strong> in closed revenue within 90 days — or we keep working until it does. Free.</p>
           </div>
         </div>
       </div>
@@ -728,27 +728,31 @@ import Footer from '../components/Footer.astro'
     padding-top: 16px; border-top: 1px solid var(--border);
   }
 
-  /* ─── Price anchor placeholder ─── */
+  /* ─── Price anchor ─── */
   .v2-price-anchor {
-    margin-top: 22px; padding: 18px 20px;
-    background: var(--canvas); border: 1px dashed var(--border);
-    border-radius: 8px;
+    margin-top: 24px; padding: 22px 24px;
+    background: var(--canvas); border: 1px solid var(--border);
+    border-radius: 10px;
   }
   .v2-price-tag {
-    display: inline-block; font-size: 10px; font-weight: 700;
+    display: inline-block; font-size: 11px; font-weight: 700;
     letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--blue); margin-bottom: 8px;
-    padding: 3px 8px; background: rgba(0,113,227,0.1);
-    border-radius: 4px;
+    color: var(--mid-gray); margin-bottom: 10px;
   }
-  .v2-price-anchor p {
-    font-size: 15px; color: var(--graphite); line-height: 1.4;
+  .v2-price-headline {
+    font-family: var(--font-d);
+    font-size: 26px; line-height: 1.2;
+    color: var(--graphite); margin-bottom: 10px;
   }
-  .v2-price-anchor p strong { color: var(--blue); font-weight: 600; }
-  .v2-price-note {
-    margin-top: 6px; font-size: 11px !important;
-    color: var(--light-gray) !important; font-style: italic;
+  .v2-price-headline strong { color: var(--blue); font-weight: 600; }
+  .v2-price-plus {
+    font-size: 16px; font-weight: 400;
+    color: var(--mid-gray); margin-left: 6px;
   }
+  .v2-price-body {
+    font-size: 15px; line-height: 1.55; color: var(--mid-gray);
+  }
+  .v2-price-body strong { color: var(--graphite); font-weight: 600; }
 
   /* ─── Close ─── */
   .v2-close {
