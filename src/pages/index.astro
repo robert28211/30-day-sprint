@@ -1,214 +1,292 @@
 ---
 import Base from '../layouts/Base.astro'
-import Nav from '../components/Nav.astro'
 import Footer from '../components/Footer.astro'
 ---
 <Base
-  title="Find Your Profit Leak — EngageEngine™"
-  description="You're losing the demand you already paid for before it becomes revenue. Free diagnostic finds exactly where. 2,401 businesses diagnosed. $529M+ in profit leaks found."
+  title="Marketing Performance Group — Find the Buyers Already In Your Market"
+  description="Right now, buyers in your market are calling your competitors. We already know who's searching for your services — by name and address. A free 30-second snapshot shows you exactly how many. $3,500/month + ad spend. 2X revenue guarantee or we keep working free."
 >
-  <Nav />
-  <main>
-
-    <!-- ═══ HERO ═══ -->
-    <section class="hero">
-      <h1>
-        <span class="hero-word">The </span>
-        <span class="hero-word">in-market </span>
-        <span class="hero-word">buyers </span>
-        <span class="hero-word">in </span>
-        <span class="hero-word">your </span>
-        <span class="hero-word">backyard </span>
-        <span class="hero-word">are </span>
-        <span class="hero-word">being </span>
-        <span class="hero-word">served </span>
-        <span class="hero-word">ads </span>
-        <span class="hero-word">right </span>
-        <span class="hero-word">now.</span>
-      </h1>
-      <p class="hero-punch hero-sub">None of them are yours.</p>
-      <p class="hero-sub">We already know who's searching for your services in your market. Find out how many — and whether a competitor has already pulled this data.</p>
-      <div class="hero-cta">
-        <a href="https://marketingperformance.net/snapshot" class="btn btn-blue">See Who's Searching →</a>
-        <p class="hero-micro">Free · No email required · Results in seconds</p>
-      </div>
-    </section>
-
-    <!-- ═══ PRODUCT VIDEO ═══ -->
-    <div class="product-reveal">
-      <p class="product-reveal-eyebrow">The System</p>
-      <h2 class="product-reveal-headline">Inside the engine.</h2>
-      <video autoplay muted loop playsinline>
-        <source src="/ee-spin.mp4" type="video/mp4">
-        <img src="/ee-explode.png" alt="EngageEngine">
-      </video>
+  <!-- Minimal top nav — logo only; everything else moved to footer -->
+  <nav class="mp-nav">
+    <div class="mp-nav-inner">
+      <a href="/" class="mp-logo">
+        Marketing Performance Group
+        <span class="mp-logo-sub">Powered by EngageEngine™</span>
+      </a>
     </div>
+  </nav>
 
-    <!-- ═══ PROOF BAR ═══ -->
-    <div class="proof-bar">
-      <div class="proof-grid">
-        <div class="proof-item" data-animate>
-          <div class="proof-label">Audience Segments</div>
-          <div class="proof-value">45,000+</div>
-          <div class="proof-unit">Intent signals, daily refresh</div>
+  <main class="mp">
+
+    <!-- ═══ 1. HERO ═══ -->
+    <section class="mp-hero">
+      <div class="mp-hero-grid">
+        <div class="mp-hero-copy">
+          <h1 class="mp-h1">
+            <span class="hero-word">Right </span>
+            <span class="hero-word">now, </span>
+            <span class="hero-word">buyers </span>
+            <span class="hero-word">in </span>
+            <span class="hero-word">your </span>
+            <span class="hero-word">market </span>
+            <span class="hero-word">are </span>
+            <span class="hero-word">calling </span>
+            <span class="hero-word">your </span>
+            <span class="hero-word">competitors.</span>
+          </h1>
+          <p class="mp-hero-punch hero-sub">Not because your service is worse. Because they found them first.</p>
+          <p class="mp-hero-sub hero-sub">We already know who's searching for your services in your market — by name and address. See how many, and whether a competitor has already claimed this data.</p>
+
+          <div class="hero-cta mp-hero-cta-block">
+            <a href="/snapshot" class="mp-btn-primary">Show Me Who's Searching in My Market</a>
+            <p class="mp-micro">No email required</p>
+          </div>
+
+          <div class="mp-hero-trust">
+            <div class="mp-guarantee-chip">
+              <span class="mp-chip-check">✓</span>
+              <span>Backed by our <strong>2X Revenue Guarantee</strong> — or we keep working. Free.</span>
+            </div>
+            <p class="mp-cred-line"><strong>31 years in business. Zero refunds.</strong> Not because we don't offer them — because we don't need to.</p>
+          </div>
         </div>
-        <div class="proof-item" data-animate data-delay="0.1">
-          <div class="proof-label">Audience Refresh</div>
-          <div class="proof-value">Daily</div>
-          <div class="proof-unit">New segments every 24 hours</div>
-        </div>
-        <div class="proof-item" data-animate data-delay="0.2">
-          <div class="proof-label">Wasted Ad Spend</div>
-          <div class="proof-value">67–90%</div>
-          <div class="proof-unit">Less vs. platform-native targeting</div>
-        </div>
-        <div class="proof-item" data-animate data-delay="0.3">
-          <div class="proof-label">Attribution</div>
-          <div class="proof-value">Closed<br>Loop</div>
-          <div class="proof-unit">Conversion data feeds back in</div>
-        </div>
+
+        <!-- Snapshot artifact — actual buyer intent pull -->
+        <figure class="mp-artifact">
+          <img
+            src="/img/intent-snapshot-hvac.png"
+            alt="Buyer intent pull — Columbia, SC HVAC, May 25 2026: 233 active searchers identified, 85 multi-site visitors, 85 uncaptured (no contact made), competitor exposure locked until activation. Contact data preview blurred."
+            class="mp-artifact-img"
+            loading="eager"
+          />
+          <figcaption class="mp-artifact-cap">Actual buyer intent pull · Columbia, SC HVAC · Last 72 hours</figcaption>
+        </figure>
       </div>
-    </div>
-
-    <!-- ═══ HOW IT WORKS ═══ -->
-    <section class="engine">
-      <div class="engine-header" data-animate>
-        <span class="engine-eyebrow">How It Works</span>
-        <h2 class="engine-h2-gray">We don't guess who might buy from you.</h2>
-        <p class="engine-h2-blue">We already know who's looking.</p>
-        <div class="engine-prose">
-          <p>Every day, homeowners in your market are searching for exactly what you do. Most of them haven't called anyone yet. They're still in the window.</p>
-          <p>EngageEngine™ identifies those buyers by name and address while they're still deciding — and routes your ad spend directly to them across every channel before your competitors know they exist.</p>
-        </div>
-      </div>
-
-      <p class="engine-bridge" data-animate data-delay="0.1">The system runs five layers. Each one feeds the next.<br>The longer it runs, the harder it is to beat.</p>
-
-      <img src="/ee-explode.png" alt="EngageEngine — Exploded View" class="engine-explode" data-animate data-delay="0.15">
-
-      <div class="modules" data-animate data-delay="0.2">
-        <div class="module">
-          <div class="module-num">01</div>
-          <div class="module-name">Intent Signal Engine</div>
-          <div class="module-desc">45,000+ audience segments. We identify in-market buyers before they raise their hand.</div>
-        </div>
-        <div class="module">
-          <div class="module-num">02</div>
-          <div class="module-name">Audience Modeling</div>
-          <div class="module-desc">Custom segments built daily. Matched to your service, geography, and buyer profile.</div>
-        </div>
-        <div class="module">
-          <div class="module-num">03</div>
-          <div class="module-name">Campaign Execution</div>
-          <div class="module-desc">Google. Meta. Programmatic. Your ads in front of the right people across every channel simultaneously.</div>
-        </div>
-        <div class="module">
-          <div class="module-num">04</div>
-          <div class="module-name">Conversion Append</div>
-          <div class="module-desc">Every closed job feeds back in. The system learns what a real customer looks like and gets sharper every week.</div>
-        </div>
-        <div class="module">
-          <div class="module-num">05</div>
-          <div class="module-name">Attribution Layer</div>
-          <div class="module-desc">Full-funnel visibility. Every lead traced from first intent signal to closed job. You always know exactly what's working.</div>
-        </div>
-      </div>
-
-      <div class="status-panel" data-animate data-delay="0.1">
-        <div class="status-head">// engageengine · system status</div>
-        <div class="status-row">
-          <span class="status-k">System Status</span>
-          <span class="status-v">ACTIVE</span>
-        </div>
-        <div class="status-row">
-          <span class="status-k">Cost Reduction</span>
-          <span class="status-v">67–90%</span>
-        </div>
-        <div class="status-row">
-          <span class="status-k">Attribution</span>
-          <span class="status-v">CLOSED LOOP</span>
-        </div>
-        <div class="status-row">
-          <span class="status-k">Audiences</span>
-          <span class="status-v">REFRESHED DAILY</span>
-        </div>
-        <div class="status-row">
-          <span class="status-k">Network</span>
-          <span class="status-v status-v-accent">SYNCED</span>
-        </div>
-      </div>
-
-      <p class="engine-stat-line" data-animate data-delay="0.15">
-        <strong>67–90% reduction</strong> in wasted ad spend &nbsp;·&nbsp;
-        <strong>Closed-loop</strong> attribution &nbsp;·&nbsp;
-        Audiences <strong>refreshed daily</strong>
-      </p>
     </section>
 
-    <!-- ═══ RESULTS ═══ -->
-    <section class="results">
-      <div class="wrap-wide">
-        <div class="results-header" data-animate>
-          <h2 class="results-h2-line1">Six businesses. Six different problems.</h2>
-          <p class="results-h2-line2">One system. Same result.</p>
-        </div>
-        <div class="results-grid">
-          <div class="result-card" data-animate>
-            <p class="result-headline">$440K in sales. One week.</p>
-            <p class="result-quote">"We diagnosed the problem — buyers found us but didn't trust what they saw. We tightened the trust signals. A hundred and twenty days later, we did $440,000 in sales in one week. Same traffic. Different result."</p>
-            <p class="result-attr">— <strong>Bob Farnsworth</strong>, Landscape Charleston · Charleston, SC</p>
-          </div>
-          <div class="result-card" data-animate data-delay="0.1">
-            <p class="result-headline">170% more booked appointments. Same ad budget.</p>
-            <p class="result-quote">"We were running ads, getting clicks, and losing people. They found the problem. Appointments jumped 170%. I haven't touched the budget since."</p>
-            <p class="result-attr">— <strong>George Rogerson</strong>, McClintock HVAC · Charlotte, NC</p>
-          </div>
-          <div class="result-card" data-animate data-delay="0.2">
-            <p class="result-headline">Monthly sales tripled. Ad spend cut 60%.</p>
-            <p class="result-quote">"We fixed the right problem. Monthly sales tripled. We're spending 60% less than before."</p>
-            <p class="result-attr">— <strong>Bobby Wood</strong>, King's Fencing · Nashville, TN</p>
-          </div>
-          <div class="result-card" data-animate data-delay="0.1">
-            <p class="result-headline">No more seasonal slowdowns.</p>
-            <p class="result-quote">"The phones ring. The jobs book. We don't have seasonal slowdowns anymore. And we're not spending any more than we were."</p>
-            <p class="result-attr">— <strong>Ethan Del Priore</strong>, Carolina Stone Craftsman · Columbia, SC</p>
-          </div>
-          <div class="result-card" data-animate data-delay="0.2">
-            <p class="result-headline">Call volume down. Sales actually up.</p>
-            <p class="result-quote">"Our call volume went down. Our sales went up. We're getting better customers — people who are actually ready to buy."</p>
-            <p class="result-attr">— <strong>Larry Gates</strong>, Floor Pro · Columbia, SC</p>
-          </div>
-          <div class="result-card" data-animate data-delay="0.3">
-            <p class="result-headline">Close rates up. Price objections gone.</p>
-            <p class="result-quote">"Our close rates jumped. The price conversations got easier. Buyers just stopped pushing back."</p>
-            <p class="result-attr">— <strong>John Raz</strong>, Orange County Garage Doors · Tustin, CA</p>
+    <!-- ═══ 2. HERO-ANCHOR TESTIMONIAL ═══ -->
+    <section class="mp-anchor">
+      <div class="mp-anchor-inner" data-animate>
+        <div class="mp-anchor-photo">RG</div>
+        <div class="mp-anchor-body">
+          <p class="mp-anchor-quote">"We were running ads, getting clicks, and watching people disappear. They found the problem. Booked appointments jumped 170%. I haven't touched the budget since."</p>
+          <p class="mp-anchor-attr"><strong>George Rogerson</strong> · McClintock HVAC · Charlotte, NC</p>
+          <div class="mp-anchor-stats">
+            <span><strong>170%</strong> more booked appointments</span>
+            <span class="mp-dot">·</span>
+            <span>same ad budget</span>
+            <span class="mp-dot">·</span>
+            <span>90 days</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ═══ GUARANTEE ═══ -->
-    <section class="guarantee">
-      <div class="guarantee-inner">
-        <span class="guarantee-eyebrow" data-animate>The Guarantee</span>
-        <h2 data-animate data-delay="0.05">The guarantee nobody else in this industry will make.</h2>
-        <div class="guarantee-body" data-animate data-delay="0.1">
-          <p>If EngageEngine™ doesn't deliver at least 2X our fee in closed revenue within 90 days — we keep working until it does. Free.</p>
-          <p>We don't refund you and disappear. We stay. We fix. We run it until it works. Because if we can't find the buyers, we don't deserve to get paid.</p>
+    <!-- ═══ 3. FOUNDER — moved up per revisions ═══ -->
+    <section class="mp-founder">
+      <div class="mp-founder-inner" data-animate>
+        <img src="/img/robbie-butt.jpg" alt="Robbie Butt, Founder of EngageEngine™" class="mp-founder-photo" />
+        <div class="mp-founder-body">
+          <p class="mp-founder-eye">The Founder</p>
+          <h2 class="mp-founder-name">Robbie Butt</h2>
+          <p class="mp-founder-title">Founder, EngageEngine™ · 41 years in this industry</p>
+          <p class="mp-founder-quote">"I personally sign every client. If it doesn't work, I keep working. That's been the deal for 31 years."</p>
+          <p class="mp-founder-cred"><strong>31 years in business. Zero refunds.</strong> Not because we don't offer them — because we don't need to.</p>
         </div>
-        <p class="guarantee-track" data-animate data-delay="0.15">31 years. Zero refunds.<br>That's not a pitch. That's a track record.</p>
-        <a href="https://marketingperformance.net/snapshot" class="btn btn-blue" data-animate data-delay="0.2">See Who's Searching in Your Market →</a>
       </div>
     </section>
 
-    <!-- ═══ THE CLOSE ═══ -->
-    <section class="close-section">
-      <h2 class="close-h2-line1" data-animate>The buyers are already in your market.</h2>
-      <p class="close-h2-line2" data-animate data-delay="0.05">The only question is who gets to them first.</p>
-      <p class="close-body" data-animate data-delay="0.1">Every day this runs without you, a competitor is capturing demand that should be yours. The snapshot takes ten seconds. No email. No sales call. Just your data.</p>
-      <div data-animate data-delay="0.2">
-        <a href="https://marketingperformance.net/snapshot" class="btn btn-blue">See Who's Searching →</a>
-        <p class="close-micro">Free · No email required · Results in seconds</p>
+    <!-- ═══ 4. PRODUCT CLARITY ═══ -->
+    <section class="mp-clarity">
+      <div class="mp-section-head">
+        <p class="mp-eye" data-animate>What This Is</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">EngageEngine™ is a fully managed service.</h2>
+        <p class="mp-lede" data-animate data-delay="0.1">Not software. Not a dashboard. Not another platform to learn. We do the work. You tell us your market and your service — we handle audience building, ad placement, optimization, and reporting.</p>
+      </div>
+
+      <!-- The Intelligence Layer — the system visualized -->
+      <div class="mp-intel-wrap" data-animate data-delay="0.15">
+        <img src="/img/intelligence-layer.png" alt="The Intelligence Layer — input data, the engine, and the outputs that find buyers before they call" class="mp-intel" />
+      </div>
+
+      <div class="mp-do-grid" data-animate data-delay="0.2">
+        <div class="mp-do-col mp-do-yes">
+          <p class="mp-do-h">Here's what you do</p>
+          <ul>
+            <li><span class="mp-do-mark">✓</span> Tell us your service area</li>
+            <li><span class="mp-do-mark">✓</span> Tell us what a good job looks like</li>
+            <li><span class="mp-do-mark">✓</span> Answer the calls</li>
+          </ul>
+        </div>
+        <div class="mp-do-col mp-do-no">
+          <p class="mp-do-h">Here's what you don't</p>
+          <ul>
+            <li><span class="mp-do-mark mp-mark-x">✕</span> Manage campaigns</li>
+            <li><span class="mp-do-mark mp-mark-x">✕</span> Build audiences</li>
+            <li><span class="mp-do-mark mp-mark-x">✕</span> Touch the platform</li>
+            <li><span class="mp-do-mark mp-mark-x">✕</span> Learn another dashboard</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="mp-fit-line" data-animate data-delay="0.25">Built for service businesses doing <strong>$500K–$5M/year in revenue</strong>.</p>
+    </section>
+
+    <!-- ═══ 5. HOW IT WORKS ═══ -->
+    <section class="mp-engine">
+      <div class="mp-section-head">
+        <p class="mp-eye" data-animate>How It Works</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">We find buyers before they call anyone.</h2>
+      </div>
+
+      <div class="mp-mechanism" data-animate data-delay="0.1">
+        <p>Before a homeowner calls anyone, they're already searching. Reading reviews. Comparing options. Looking at maps.</p>
+        <p>We identify those <strong>specific people</strong> — by name and address — and put your ads in front of them, and only them, across Google, Facebook, YouTube, and every other platform they use.</p>
+        <p>No wasted spend on people who'll never call. No guessing who's in market. Just the buyers who are actually deciding right now.</p>
+      </div>
+
+      <!-- Exploded diagram — the system architecture -->
+      <img src="/ee-explode.png" alt="EngageEngine — five-layer system" class="mp-explode" data-animate data-delay="0.15" />
+
+      <div class="mp-modules" data-animate data-delay="0.2">
+        <div class="mp-mod">
+          <div class="mp-mod-num">01</div>
+          <div class="mp-mod-name">We find them</div>
+          <div class="mp-mod-desc">45,000+ data sources tell us who in your market is searching for your service this week.</div>
+        </div>
+        <div class="mp-mod">
+          <div class="mp-mod-num">02</div>
+          <div class="mp-mod-name">We match them</div>
+          <div class="mp-mod-desc">Custom audiences built daily — matched to your service, geography, and the kind of job you want.</div>
+        </div>
+        <div class="mp-mod">
+          <div class="mp-mod-num">03</div>
+          <div class="mp-mod-name">We reach them</div>
+          <div class="mp-mod-desc">Your ads run on Google, Meta, and programmatic — in front of the same people, across every channel.</div>
+        </div>
+        <div class="mp-mod">
+          <div class="mp-mod-num">04</div>
+          <div class="mp-mod-name">We learn from them</div>
+          <div class="mp-mod-desc">Every closed job feeds back in. The system gets sharper every week about what a real customer looks like.</div>
+        </div>
+        <div class="mp-mod">
+          <div class="mp-mod-num">05</div>
+          <div class="mp-mod-name">We prove it</div>
+          <div class="mp-mod-desc">Every lead traced from first signal to closed job. You always see exactly what's working — and what it cost.</div>
+        </div>
+      </div>
+
+      <p class="mp-timeline" data-animate data-delay="0.25"><strong>Most clients are live within 72 hours of the diagnostic.</strong></p>
+
+      <div class="mp-status" data-animate data-delay="0.3">
+        <p class="mp-status-cap">Live system performance — across all active client accounts</p>
+        <div class="mp-status-rows">
+          <div class="mp-status-row"><span>System Status</span><span class="mp-status-v">ACTIVE</span></div>
+          <div class="mp-status-row"><span>Cost Reduction vs. Platform-Native</span><span class="mp-status-v">67–90%</span></div>
+          <div class="mp-status-row"><span>Attribution</span><span class="mp-status-v">CLOSED LOOP</span></div>
+          <div class="mp-status-row"><span>Audiences</span><span class="mp-status-v">REFRESHED DAILY</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 6. MECHANISM TESTIMONIAL ═══ -->
+    <section class="mp-anchor mp-anchor-alt">
+      <div class="mp-anchor-inner" data-animate>
+        <div class="mp-anchor-photo">LG</div>
+        <div class="mp-anchor-body">
+          <p class="mp-anchor-quote">"Our call volume went down. Our sales went up. We're getting better customers — people who are actually ready to buy."</p>
+          <p class="mp-anchor-attr"><strong>Larry Gates</strong> · Floor Pro · Columbia, SC</p>
+          <div class="mp-anchor-stats">
+            <span>Same ad budget</span>
+            <span class="mp-dot">·</span>
+            <span>fewer junk calls</span>
+            <span class="mp-dot">·</span>
+            <span><strong>higher close rate</strong></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 7. RESULTS ═══ -->
+    <section class="mp-results">
+      <div class="mp-section-head mp-center">
+        <p class="mp-eye" data-animate>Results</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">Four service businesses. Same system. Different verticals.</h2>
+        <p class="mp-lede" data-animate data-delay="0.1">These are working businesses you can verify. Ask us for contact info — they've agreed to talk to qualified prospects.</p>
+      </div>
+
+      <div class="mp-results-grid">
+        <article class="mp-result" data-animate>
+          <p class="mp-result-headline">$440K in sales. One week.</p>
+          <p class="mp-result-quote">"We diagnosed the problem — buyers found us but didn't trust what they saw. We tightened the trust signals. A hundred and twenty days later, we did $440,000 in sales in one week. Same traffic. Different result."</p>
+          <p class="mp-result-attr"><strong>Bob Farnsworth</strong> · Landscape Charleston · Charleston, SC</p>
+        </article>
+        <article class="mp-result" data-animate data-delay="0.1">
+          <p class="mp-result-headline">Monthly sales tripled. Ad spend cut 60%.</p>
+          <p class="mp-result-quote">"We fixed the right problem. Monthly sales tripled. We're spending 60% less than before."</p>
+          <p class="mp-result-attr"><strong>Bobby Wood</strong> · King's Fencing · Nashville, TN</p>
+        </article>
+        <article class="mp-result" data-animate data-delay="0.2">
+          <p class="mp-result-headline">Phones ring year-round. Zero extra spend.</p>
+          <p class="mp-result-quote">"The phones ring. The jobs book. We don't have seasonal slowdowns anymore. And we're not spending any more than we were."</p>
+          <p class="mp-result-attr"><strong>Ethan Del Priore</strong> · Carolina Stone Craftsman · Columbia, SC</p>
+        </article>
+        <article class="mp-result" data-animate data-delay="0.1">
+          <p class="mp-result-headline">Close rate jumped. Price resistance disappeared.</p>
+          <p class="mp-result-quote">"Our close rates jumped. The price conversations got easier. Buyers just stopped pushing back."</p>
+          <p class="mp-result-attr"><strong>John Raz</strong> · Orange County Garage Doors · Tustin, CA</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ═══ 8. MARKET EXCLUSIVITY ═══ -->
+    <section class="mp-exclusivity">
+      <div class="mp-exclusivity-inner" data-animate>
+        <p class="mp-excl-eye">Market Exclusivity</p>
+        <h2 class="mp-excl-h">One business per service category per market.</h2>
+        <p class="mp-excl-body">We only take one roofing company in Columbia. One HVAC company. One landscaper. One fencing company. When that slot closes, it closes — until the current client leaves or the market is reopened.</p>
+        <div class="mp-excl-warn">
+          <p class="mp-excl-warn-h">Your competitor may have already pulled this snapshot.</p>
+          <p>If they did, they're already running ads to the buyers who were supposed to call you. The snapshot takes 30 seconds. No email. No call.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 9. GUARANTEE + PRICING ═══ -->
+    <section class="mp-guarantee">
+      <div class="mp-section-head mp-center">
+        <p class="mp-eye" data-animate>The Guarantee</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">The guarantee nobody else in this industry will make.</h2>
+      </div>
+
+      <div class="mp-guarantee-card" data-animate data-delay="0.1">
+        <div class="mp-guarantee-badge">
+          <span class="mp-badge-check">✓</span>
+          <span>2X Revenue Guarantee</span>
+        </div>
+        <p class="mp-guarantee-lead">We stay until it works. That's the deal.</p>
+        <p class="mp-guarantee-body">If EngageEngine™ doesn't deliver at least <strong>2X our fee in closed revenue within 90 days</strong> — we keep working until it does. Free. No refund and disappear. We stay. We fix. We run it until the number is there.</p>
+        <p class="mp-guarantee-closer">Because if we can't find the buyers, we don't deserve to get paid.</p>
+
+        <div class="mp-pricing">
+          <p class="mp-pricing-eye">Pricing</p>
+          <p class="mp-pricing-headline">
+            <span class="mp-pricing-num">$3,500</span><span class="mp-pricing-per">/month</span>
+            <span class="mp-pricing-plus">+ ad spend</span>
+          </p>
+          <p class="mp-pricing-body">The guarantee is on our fee — not your ad spend. <strong>$3,500 in → at least $7,000/month in closed revenue within 90 days</strong>, or we keep working until it does. Free.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 10. CLOSE ═══ -->
+    <section class="mp-close">
+      <h2 class="mp-close-h1" data-animate>The buyers are already in your market.</h2>
+      <p class="mp-close-h2" data-animate data-delay="0.05">The only question is who gets to them first.</p>
+      <p class="mp-close-body" data-animate data-delay="0.1">Every day this runs without you, a competitor is capturing demand that should be yours. Your slot may already be gone. Pull the snapshot now — 30 seconds, no email, just your data.</p>
+      <div class="mp-close-cta" data-animate data-delay="0.2">
+        <a href="/snapshot" class="mp-btn-primary">Show Me Who's Searching in My Market</a>
+        <p class="mp-micro">No email required</p>
       </div>
     </section>
 
@@ -217,354 +295,715 @@ import Footer from '../components/Footer.astro'
 </Base>
 
 <style>
-  /* ─── Hero ─── */
-  .hero {
+  /* ═══════════════════════════════════════════════════════
+     APPLE-FIDELITY HOMEPAGE
+     Tokens used:
+       • Canvas White #f5f5f7        — page background (Surface 0)
+       • Pure White #ffffff           — elevated surfaces (Surface 1)
+       • Lightest Gray #e2e2e5        — recessed/grouped blocks (Surface 2)
+       • Pale Blue #9fc6f4            — accent surface (Surface 3)
+       • Midnight Graphite #1d1d1f    — primary text
+       • Deep Gray #333333            — secondary text
+       • Medium Gray #707070          — tertiary text
+       • Light Gray #858585           — muted labels
+       • Border Silver #d6d6d6        — divider lines
+       • Interactive Blue #0071e3     — primary CTA
+       • Action Blue #0066cc          — links/outline
+       • Cards: 0px radius (per spec)
+       • Images: 8px radius
+       • Buttons: 980px pill
+       • Shadow XL: rgba(0,0,0,0.22) 3px 5px 30px 0px
+     ═══════════════════════════════════════════════════════ */
+
+  /* ─── Top nav (logo only) ─── */
+  .mp-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .mp-nav-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 0 32px; height: 56px;
+    display: flex; align-items: center;
+  }
+  .mp-logo {
+    font-family: var(--font-t);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: -0.01em; color: var(--graphite);
+    text-decoration: none;
+    display: flex; flex-direction: column; gap: 1px;
+    min-height: 44px; justify-content: center;
+  }
+  .mp-logo:hover { color: var(--graphite); text-decoration: none; }
+  .mp-logo-sub {
+    font-size: 10px; font-weight: 400;
+    letter-spacing: 0.02em; color: var(--mid-gray);
+  }
+
+  /* ─── Page base ─── */
+  .mp { background: var(--canvas); color: var(--graphite); }
+  .mp h1, .mp h2 { font-family: var(--font-d); color: var(--graphite); }
+  .mp p { color: var(--graphite); }
+
+  /* ─── Primary button (Apple Interactive Blue pill) ─── */
+  .mp-btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue); color: #fff;
+    font-family: var(--font-t); font-size: 17px;
+    font-weight: 400; letter-spacing: -0.022em;
+    padding: 12px 24px; border-radius: 980px;
+    text-decoration: none; transition: background 0.2s;
+    line-height: 1;
+  }
+  .mp-btn-primary:hover { background: var(--blue-link); text-decoration: none; color: #fff; }
+  .mp-btn-primary::after {
+    content: "→"; font-size: 17px; line-height: 1;
+    transition: transform 0.2s;
+  }
+  .mp-btn-primary:hover::after { transform: translateX(3px); }
+
+  /* ─── Eyebrows + headings ─── */
+  .mp-eye {
+    font-family: var(--font-t);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--blue); margin-bottom: 16px;
+  }
+  .mp-h1 {
+    font-family: var(--font-d);
+    font-size: clamp(36px, 4.2vw, 52px);
+    font-weight: 600; line-height: 1.05;
+    letter-spacing: -0.022em; color: var(--graphite);
+    margin-bottom: 14px;
+  }
+  .mp-h2 {
+    font-family: var(--font-d);
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 600; line-height: 1.07;
+    letter-spacing: -0.018em; color: var(--graphite);
+    margin-bottom: 20px;
+    max-width: 760px;
+  }
+  .mp-lede {
+    font-family: var(--font-t);
+    font-size: 21px; line-height: 1.4;
+    letter-spacing: -0.022em; color: var(--mid-gray);
+    max-width: 680px;
+  }
+  .mp-micro {
+    font-family: var(--font-t);
+    font-size: 13px; color: var(--light-gray);
+    letter-spacing: -0.015em;
+  }
+  .mp-section-head { margin-bottom: 48px; }
+  .mp-section-head.mp-center { text-align: center; }
+  .mp-section-head.mp-center .mp-h2,
+  .mp-section-head.mp-center .mp-lede { margin-left: auto; margin-right: auto; }
+
+  /* ─── 1. HERO ─── */
+  .mp-hero {
+    padding: 80px 32px 100px;
     background: var(--canvas);
-    padding: 80px 22px 72px;
-    text-align: center;
   }
-  .hero h1 {
+  .mp-hero-grid {
+    max-width: 1320px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr; gap: 56px;
+    align-items: center;
+  }
+  @media (min-width: 1024px) {
+    .mp-hero-grid {
+      grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+      gap: 64px;
+    }
+  }
+  .mp-hero-copy { max-width: 460px; }
+  .mp-hero-punch {
     font-family: var(--font-d);
-    font-size: clamp(36px, 5.5vw, 52px);
-    font-weight: 600;
-    line-height: 1.07;
-    letter-spacing: -0.005em;
-    color: var(--graphite);
-    max-width: 680px;
-    margin: 0 auto 6px;
+    font-size: clamp(20px, 2.4vw, 26px);
+    font-weight: 500; line-height: 1.3;
+    letter-spacing: -0.015em;
+    color: var(--blue); margin-bottom: 24px;
   }
-  .hero-punch {
-    font-family: var(--font-d);
-    font-size: clamp(36px, 5.5vw, 52px);
-    font-weight: 600;
-    line-height: 1.07;
-    letter-spacing: -0.005em;
-    color: var(--blue);
-    max-width: 680px;
-    margin: 0 auto 28px;
-  }
-  .hero-sub {
-    font-size: 19px;
-    font-weight: 400;
-    line-height: 1.47;
+  .mp-hero-sub {
+    font-family: var(--font-t);
+    font-size: 19px; line-height: 1.5;
     letter-spacing: -0.022em;
     color: var(--mid-gray);
-    max-width: 500px;
-    margin: 0 auto 36px;
+    max-width: 540px; margin-bottom: 36px;
   }
-  .hero-micro {
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.5;
+  .mp-hero-cta-block {
+    display: flex; flex-direction: column;
+    gap: 10px; align-items: flex-start;
+    margin-bottom: 28px;
+  }
+  .mp-hero-trust {
+    display: flex; flex-direction: column; gap: 14px;
+    padding-top: 24px; border-top: 1px solid var(--border);
+  }
+  .mp-guarantee-chip {
+    display: inline-flex; align-items: center; gap: 10px;
+    align-self: flex-start;
+    padding: 8px 14px;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 999px;
+    font-family: var(--font-t);
+    font-size: 13px; color: var(--graphite);
+    letter-spacing: -0.01em;
+  }
+  .mp-guarantee-chip strong { font-weight: 600; }
+  .mp-chip-check {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .mp-cred-line {
+    font-family: var(--font-t);
+    font-size: 14px; line-height: 1.5;
+    letter-spacing: -0.015em;
+    color: var(--mid-gray); max-width: 500px;
+  }
+  .mp-cred-line strong { color: var(--graphite); font-weight: 600; }
+
+  /* Snapshot artifact — actual product screenshot, framed Apple-style */
+  .mp-artifact {
+    margin: 0;
+    justify-self: stretch; width: 100%;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .mp-artifact-img {
+    width: 100%; height: auto; display: block;
+    border-radius: 8px;
+    box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
+    background: var(--white);
+  }
+  .mp-artifact-cap {
+    font-family: var(--font-t);
+    font-size: 12px; font-weight: 400;
     letter-spacing: -0.015em;
     color: var(--light-gray);
-    margin-top: 14px;
+    text-align: center;
+  }
+  @media (max-width: 1023px) {
+    .mp-artifact { max-width: 100%; }
   }
 
-  /* ─── Product reveal ─── */
-  .product-reveal {
+  /* ─── 2 & 6. ANCHOR TESTIMONIALS ─── */
+  .mp-anchor {
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 32px;
+  }
+  .mp-anchor-alt { background: var(--canvas); }
+  .mp-anchor-inner {
+    max-width: 960px; margin: 0 auto;
+    display: flex; align-items: center; gap: 32px;
+  }
+  .mp-anchor-photo {
+    width: 80px; height: 80px;
+    border-radius: 50%;
     background: var(--canvas);
-    padding: 52px 22px 70px;
-    text-align: center;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-d);
+    font-size: 22px; font-weight: 600;
+    color: var(--mid-gray);
+    flex-shrink: 0;
   }
-  .product-reveal-eyebrow {
-    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--blue);
-    margin-bottom: 10px;
+  .mp-anchor-quote {
+    font-family: var(--font-d);
+    font-size: 22px; line-height: 1.36;
+    letter-spacing: -0.022em;
+    color: var(--graphite);
+    font-weight: 400;
+    margin-bottom: 12px;
   }
-  .product-reveal-headline {
-    font-family: var(--font-d); font-size: clamp(28px, 3.5vw, 40px);
-    font-weight: 600; letter-spacing: -0.005em; line-height: 1.1;
-    color: var(--graphite); margin-bottom: 36px;
+  .mp-anchor-attr {
+    font-family: var(--font-t);
+    font-size: 14px; color: var(--mid-gray);
+    margin-bottom: 8px; letter-spacing: -0.018em;
   }
-  .product-reveal video,
-  .product-reveal img {
-    width: 100%; max-width: 860px; margin: 0 auto;
-    border-radius: var(--r-img);
+  .mp-anchor-attr strong { color: var(--graphite); font-weight: 600; }
+  .mp-anchor-stats {
+    font-family: var(--font-t);
+    font-size: 13px; color: var(--blue-link);
+    letter-spacing: -0.015em;
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .mp-anchor-stats strong { font-weight: 600; }
+  .mp-dot { color: var(--light-gray); }
+  @media (max-width: 640px) {
+    .mp-anchor-inner { flex-direction: column; align-items: flex-start; }
   }
 
-  /* ─── Proof bar ─── */
-  .proof-bar {
-    background: var(--white);
-    border-top: 1px solid var(--silver);
-    border-bottom: 1px solid var(--silver);
-    padding: 40px 22px;
+  /* ─── 3. FOUNDER ─── */
+  .mp-founder {
+    padding: 96px 32px;
+    background: var(--canvas);
   }
-  .proof-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--silver);
-    max-width: 980px;
-    margin: 0 auto;
+  .mp-founder-inner {
+    max-width: 960px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr; gap: 36px;
+    align-items: center;
   }
-  .proof-item {
-    background: var(--white);
-    padding: 28px 22px;
-    text-align: center;
+  @media (min-width: 768px) {
+    .mp-founder-inner {
+      grid-template-columns: 280px 1fr;
+      gap: 56px;
+    }
   }
-  .proof-label {
-    font-size: 11px; font-weight: 600;
+  .mp-founder-photo {
+    width: 100%; max-width: 280px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover; object-position: top;
+    border-radius: 8px;
+    box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
+  }
+  .mp-founder-eye {
+    font-family: var(--font-t);
+    font-size: 12px; font-weight: 600;
     letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--mid-gray); margin-bottom: 10px;
+    color: var(--blue); margin-bottom: 12px;
   }
-  .proof-value {
+  .mp-founder-name {
     font-family: var(--font-d);
-    font-size: 32px; font-weight: 600;
-    letter-spacing: -0.005em; line-height: 1.1;
-    color: var(--blue);
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 600; line-height: 1.1;
+    letter-spacing: -0.018em;
+    color: var(--graphite); margin-bottom: 6px;
   }
-  .proof-unit {
-    font-size: 13px; font-weight: 400;
-    letter-spacing: -0.015em; color: var(--mid-gray);
-    margin-top: 8px; line-height: 1.4;
+  .mp-founder-title {
+    font-family: var(--font-t);
+    font-size: 15px; color: var(--mid-gray);
+    letter-spacing: -0.018em; margin-bottom: 24px;
   }
-
-  /* ─── Engine / How it works ─── */
-  .engine {
-    background: var(--canvas);
-    padding: 120px 22px;
-    border-top: 1px solid var(--silver);
-  }
-  .engine-header { text-align: center; margin-bottom: 72px; }
-  .engine-eyebrow {
-    font-size: 17px; font-weight: 600;
-    letter-spacing: -0.022em; color: var(--blue);
-    display: block; margin-bottom: 8px;
-  }
-  .engine-h2-gray {
+  .mp-founder-quote {
     font-family: var(--font-d);
-    font-size: clamp(32px, 4.5vw, 48px);
-    font-weight: 600; line-height: 1.08;
-    letter-spacing: -0.005em;
-    color: var(--mid-gray); margin-bottom: 4px;
+    font-size: 21px; line-height: 1.36;
+    letter-spacing: -0.022em;
+    color: var(--graphite);
+    padding-left: 18px;
+    border-left: 2px solid var(--blue);
+    margin-bottom: 24px;
   }
-  .engine-h2-blue {
-    font-family: var(--font-d);
-    font-size: clamp(32px, 4.5vw, 48px);
-    font-weight: 600; line-height: 1.08;
-    letter-spacing: -0.005em;
-    color: var(--graphite); margin-bottom: 40px;
-  }
-  .engine-prose {
-    max-width: 620px; margin: 0 auto;
-    display: flex; flex-direction: column; gap: 20px;
-  }
-  .engine-prose p {
-    font-size: 17px; font-weight: 400;
-    line-height: 1.6; letter-spacing: -0.022em;
+  .mp-founder-cred {
+    font-family: var(--font-t);
+    font-size: 14px; line-height: 1.55;
+    letter-spacing: -0.018em;
     color: var(--mid-gray);
   }
-  .engine-bridge {
-    font-family: var(--font-d);
-    font-size: 24px; font-weight: 600;
-    line-height: 1.19; letter-spacing: -0.01em;
-    color: var(--graphite);
-    max-width: 620px; margin: 0 auto 64px;
-    text-align: center;
-  }
-  .engine-explode {
-    width: 100%;
-    max-width: 900px; margin: 0 auto 64px;
-    border-radius: var(--r-img);
-  }
-  .modules {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1px; background: var(--silver);
-    max-width: 980px; margin: 0 auto 64px;
-  }
-  .module {
-    background: var(--white);
-    padding: 32px 22px; text-align: left;
-  }
-  .module-num {
-    font-size: 11px; font-weight: 700;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--blue); margin-bottom: 10px;
-  }
-  .module-name {
-    font-size: 14px; font-weight: 600;
-    letter-spacing: -0.018em; color: var(--graphite);
-    margin-bottom: 8px; line-height: 1.3;
-  }
-  .module-desc {
-    font-size: 13px; font-weight: 400;
-    letter-spacing: -0.015em; color: var(--mid-gray);
-    line-height: 1.5;
-  }
-  .status-panel {
-    background: var(--white);
-    border: 1px solid var(--silver);
-    border-radius: 16px;
-    padding: 36px 44px;
-    max-width: 480px; margin: 0 auto 52px;
-    text-align: left; font-family: var(--font-m);
-  }
-  .status-head {
-    font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
-    color: var(--light-gray);
-    margin-bottom: 20px; padding-bottom: 16px;
-    border-bottom: 1px solid var(--silver);
-  }
-  .status-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 11px 0; border-bottom: 1px solid var(--silver);
-  }
-  .status-row:last-child { border-bottom: none; }
-  .status-k {
-    font-size: 11px; letter-spacing: 0.08em;
-    color: var(--mid-gray); text-transform: uppercase;
-  }
-  .status-v {
-    font-size: 13px; font-weight: 600;
-    color: var(--blue); letter-spacing: 0.06em;
-  }
-  .status-v-accent { color: #ec893c; }
-  .engine-stat-line {
-    font-size: 17px; font-weight: 400;
-    letter-spacing: -0.022em; color: var(--mid-gray);
-    text-align: center; max-width: 560px; margin: 0 auto;
-  }
-  .engine-stat-line strong { font-weight: 600; color: var(--graphite); }
+  .mp-founder-cred strong { color: var(--graphite); font-weight: 600; }
 
-  /* ─── Results ─── */
-  .results {
+  /* ─── 4. PRODUCT CLARITY ─── */
+  .mp-clarity {
+    padding: 120px 32px;
     background: var(--white);
-    padding: var(--gap) 22px;
-    border-top: 1px solid var(--silver);
+    border-top: 1px solid var(--border);
   }
-  .results-header {
-    margin-bottom: 60px;
+  .mp-clarity .mp-section-head {
+    max-width: 720px; text-align: center;
+    margin: 0 auto 64px;
+  }
+  .mp-clarity .mp-h2,
+  .mp-clarity .mp-lede { margin-left: auto; margin-right: auto; }
+
+  .mp-intel-wrap {
+    max-width: 1080px; margin: 0 auto 64px;
+    border-radius: 8px; overflow: hidden;
+    box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
+    background: #0a0a0a;
+  }
+  .mp-intel {
+    width: 100%; height: auto; display: block;
+  }
+
+  .mp-do-grid {
+    max-width: 880px; margin: 0 auto 40px;
+    display: grid; grid-template-columns: 1fr; gap: 24px;
+  }
+  @media (min-width: 720px) {
+    .mp-do-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+  }
+  .mp-do-col {
+    padding: 32px 28px;
+    background: var(--canvas);
+  }
+  .mp-do-yes { border-top: 2px solid var(--blue); }
+  .mp-do-no { border-top: 2px solid var(--light-gray); }
+  .mp-do-h {
+    font-family: var(--font-t);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--mid-gray); margin-bottom: 18px;
+  }
+  .mp-do-col ul {
+    list-style: none; padding: 0;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .mp-do-col li {
+    font-family: var(--font-t);
+    font-size: 17px; line-height: 1.4;
+    letter-spacing: -0.022em;
+    color: var(--graphite);
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .mp-do-mark {
+    font-weight: 600; color: var(--blue); flex-shrink: 0;
+    width: 18px; display: inline-block;
+  }
+  .mp-mark-x { color: var(--light-gray); }
+  .mp-fit-line {
+    max-width: 720px; margin: 0 auto;
+    text-align: center; padding: 20px 28px;
+    background: var(--canvas);
+    font-family: var(--font-t);
+    font-size: 16px; line-height: 1.5;
+    letter-spacing: -0.018em;
+    color: var(--mid-gray);
+  }
+  .mp-fit-line strong { color: var(--graphite); font-weight: 600; }
+
+  /* ─── 5. HOW IT WORKS ─── */
+  .mp-engine {
+    padding: 120px 32px;
+    background: var(--canvas);
+    border-top: 1px solid var(--border);
+  }
+  .mp-engine .mp-section-head {
+    max-width: 720px; text-align: center;
+    margin: 0 auto 48px;
+  }
+  .mp-engine .mp-h2,
+  .mp-engine .mp-lede { margin-left: auto; margin-right: auto; }
+
+  .mp-mechanism {
+    max-width: 720px; margin: 0 auto 64px;
+    display: flex; flex-direction: column; gap: 18px;
+    padding: 32px 36px;
+    background: var(--white);
+    border-left: 2px solid var(--blue);
+    border-radius: 0;
+  }
+  .mp-mechanism p {
+    font-family: var(--font-t);
+    font-size: 18px; line-height: 1.55;
+    letter-spacing: -0.022em;
+    color: var(--graphite);
+  }
+  .mp-mechanism strong { color: var(--blue); font-weight: 600; }
+
+  .mp-explode {
+    display: block; width: 100%; max-width: 900px;
+    margin: 0 auto 64px;
+    border-radius: 8px;
+  }
+
+  .mp-modules {
+    max-width: 1080px; margin: 0 auto 56px;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 1px; background: var(--border);
+  }
+  @media (max-width: 960px) {
+    .mp-modules { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .mp-modules { grid-template-columns: 1fr; }
+  }
+  .mp-mod { background: var(--white); padding: 28px 22px; }
+  .mp-mod-num {
+    font-family: var(--font-t);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; color: var(--blue);
+    margin-bottom: 12px;
+  }
+  .mp-mod-name {
+    font-family: var(--font-d);
+    font-size: 17px; font-weight: 600;
+    letter-spacing: -0.022em;
+    color: var(--graphite); margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .mp-mod-desc {
+    font-family: var(--font-t);
+    font-size: 13px; line-height: 1.55;
+    letter-spacing: -0.015em;
+    color: var(--mid-gray);
+  }
+
+  .mp-timeline {
+    max-width: 600px; margin: 0 auto 48px;
     text-align: center;
+    padding: 16px 24px;
+    background: rgba(0,113,227,0.05);
+    border: 1px solid rgba(0,113,227,0.2);
+    font-family: var(--font-t);
+    font-size: 16px; letter-spacing: -0.018em;
+    color: var(--graphite);
   }
-  .results-h2-line1 {
-    font-family: var(--font-d);
-    font-size: clamp(32px, 4.5vw, 48px);
-    font-weight: 600; line-height: 1.08;
-    letter-spacing: -0.005em;
-    color: var(--graphite); margin-bottom: 4px;
+  .mp-timeline strong { color: var(--blue); font-weight: 600; }
+
+  .mp-status {
+    max-width: 560px; margin: 0 auto;
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 28px 32px;
   }
-  .results-h2-line2 {
-    font-family: var(--font-d);
-    font-size: clamp(32px, 4.5vw, 48px);
-    font-weight: 600; line-height: 1.08;
-    letter-spacing: -0.005em;
-    color: var(--blue);
+  .mp-status-cap {
+    font-family: var(--font-t);
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--mid-gray); margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
   }
-  .results-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px; background: var(--silver);
+  .mp-status-rows { display: flex; flex-direction: column; }
+  .mp-status-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--canvas);
+    font-family: var(--font-t);
+    font-size: 13px; color: var(--mid-gray);
+    letter-spacing: -0.015em;
   }
-  .result-card {
+  .mp-status-row:last-child { border-bottom: none; }
+  .mp-status-v {
+    font-family: var(--font-t);
+    color: var(--blue); font-weight: 600;
+    letter-spacing: 0.04em; font-size: 12px;
+  }
+
+  /* ─── 7. RESULTS ─── */
+  .mp-results {
+    padding: 120px 32px;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+  }
+  .mp-results-grid {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 720px) {
+    .mp-results-grid { grid-template-columns: 1fr; }
+  }
+  .mp-result {
     background: var(--white);
     padding: 40px 36px;
     display: flex; flex-direction: column;
   }
-  .result-headline {
+  .mp-result-headline {
+    font-family: var(--font-d);
+    font-size: 22px; font-weight: 600;
+    line-height: 1.25; letter-spacing: -0.022em;
+    color: var(--graphite); margin-bottom: 16px;
+  }
+  .mp-result-quote {
+    font-family: var(--font-t);
+    font-size: 15px; line-height: 1.55;
+    letter-spacing: -0.018em;
+    color: var(--mid-gray);
+    margin-bottom: 16px; flex: 1;
+  }
+  .mp-result-attr {
+    font-family: var(--font-t);
+    font-size: 13px; color: var(--light-gray);
+    letter-spacing: -0.015em;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .mp-result-attr strong { color: var(--graphite); font-weight: 600; }
+
+  /* ─── 8. EXCLUSIVITY ─── */
+  .mp-exclusivity {
+    padding: 80px 32px;
+    background: var(--canvas);
+    border-top: 1px solid var(--border);
+  }
+  .mp-exclusivity-inner {
+    max-width: 880px; margin: 0 auto;
+    padding: 40px 44px;
+    background: rgba(214,40,40,0.04);
+    border-top: 2px solid #d62828;
+  }
+  .mp-excl-eye {
+    font-family: var(--font-t);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: #d62828; margin-bottom: 14px;
+  }
+  .mp-excl-h {
+    font-family: var(--font-d);
+    font-size: clamp(24px, 2.8vw, 32px);
+    font-weight: 600; line-height: 1.15;
+    letter-spacing: -0.018em;
+    color: var(--graphite); margin-bottom: 16px;
+  }
+  .mp-excl-body {
+    font-family: var(--font-t);
+    font-size: 17px; line-height: 1.5;
+    letter-spacing: -0.022em;
+    color: var(--mid-gray); margin-bottom: 24px;
+  }
+  .mp-excl-warn {
+    padding-top: 22px;
+    border-top: 1px solid rgba(214,40,40,0.25);
+  }
+  .mp-excl-warn-h {
     font-family: var(--font-d);
     font-size: 19px; font-weight: 600;
-    line-height: 1.19; letter-spacing: -0.022em;
-    color: var(--graphite); margin-bottom: 18px;
+    letter-spacing: -0.022em;
+    color: #d62828; margin-bottom: 10px;
+    line-height: 1.3;
   }
-  .result-quote {
-    font-size: 15px; font-weight: 400;
-    line-height: 1.53; letter-spacing: -0.018em;
-    color: var(--mid-gray); font-style: italic;
-    flex: 1; margin-bottom: 20px;
-  }
-  .result-attr {
-    font-size: 13px; font-weight: 400;
-    letter-spacing: -0.015em; color: var(--light-gray);
-    border-top: 1px solid var(--silver); padding-top: 16px;
-  }
-  .result-attr strong { font-weight: 600; color: var(--graphite); }
-
-  /* ─── Guarantee ─── */
-  .guarantee {
-    background: #9fc6f4;
-    padding: var(--gap) 22px;
-  }
-  .guarantee-inner { max-width: 680px; margin: 0 auto; }
-  .guarantee-eyebrow {
-    font-size: 17px; font-weight: 600;
-    letter-spacing: -0.022em; color: var(--blue-link);
-    display: block; margin-bottom: 8px;
-  }
-  .guarantee h2 {
-    font-family: var(--font-d);
-    font-size: clamp(28px, 4vw, 48px);
-    font-weight: 600; line-height: 1.08;
-    letter-spacing: -0.005em;
-    color: var(--graphite); margin-bottom: 32px;
-  }
-  .guarantee-body {
-    display: flex; flex-direction: column; gap: 18px;
-    margin-bottom: 36px;
-  }
-  .guarantee-body p {
-    font-size: 17px; font-weight: 400;
-    line-height: 1.6; letter-spacing: -0.022em;
+  .mp-excl-warn p:not(.mp-excl-warn-h) {
+    font-family: var(--font-t);
+    font-size: 15px; line-height: 1.55;
+    letter-spacing: -0.018em;
     color: var(--graphite);
   }
-  .guarantee-track {
+
+  /* ─── 9. GUARANTEE + PRICING ─── */
+  .mp-guarantee {
+    padding: 120px 32px;
+    background: var(--canvas);
+    border-top: 1px solid var(--border);
+  }
+  .mp-guarantee .mp-section-head {
+    max-width: 720px; text-align: center;
+    margin: 0 auto 48px;
+  }
+  .mp-guarantee .mp-h2 { margin-left: auto; margin-right: auto; }
+
+  .mp-guarantee-card {
+    max-width: 720px; margin: 0 auto;
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 48px 52px;
+  }
+  .mp-guarantee-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--blue); color: #fff;
+    padding: 8px 18px; border-radius: 999px;
+    font-family: var(--font-t);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 24px;
+  }
+  .mp-badge-check {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; color: var(--blue);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .mp-guarantee-lead {
     font-family: var(--font-d);
-    font-size: 21px; font-weight: 600;
-    letter-spacing: -0.01em; color: var(--graphite);
-    margin-bottom: 36px;
+    font-size: clamp(22px, 2.6vw, 28px);
+    font-weight: 600; line-height: 1.25;
+    letter-spacing: -0.018em;
+    color: var(--graphite); margin-bottom: 18px;
+  }
+  .mp-guarantee-body {
+    font-family: var(--font-t);
+    font-size: 17px; line-height: 1.55;
+    letter-spacing: -0.022em;
+    color: var(--mid-gray); margin-bottom: 14px;
+  }
+  .mp-guarantee-body strong { color: var(--blue); font-weight: 600; }
+  .mp-guarantee-closer {
+    font-family: var(--font-d);
+    font-size: 17px; font-weight: 500; font-style: italic;
+    line-height: 1.5;
+    color: var(--graphite);
+    padding-top: 20px; margin-top: 8px;
+    border-top: 1px solid var(--border);
   }
 
-  /* ─── The Close ─── */
-  .close-section {
+  /* Pricing block inside guarantee card */
+  .mp-pricing {
+    margin-top: 32px; padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+  .mp-pricing-eye {
+    font-family: var(--font-t);
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--mid-gray); margin-bottom: 12px;
+  }
+  .mp-pricing-headline {
+    display: flex; align-items: baseline; flex-wrap: wrap;
+    gap: 6px; margin-bottom: 14px;
+    font-family: var(--font-d);
+  }
+  .mp-pricing-num {
+    font-size: 44px; font-weight: 600;
+    letter-spacing: -0.022em; color: var(--graphite);
+    line-height: 1;
+  }
+  .mp-pricing-per {
+    font-size: 18px; font-weight: 400;
+    color: var(--mid-gray); margin-right: 8px;
+  }
+  .mp-pricing-plus {
+    font-family: var(--font-t);
+    font-size: 15px; font-weight: 400;
+    color: var(--mid-gray); letter-spacing: -0.018em;
+  }
+  .mp-pricing-body {
+    font-family: var(--font-t);
+    font-size: 15px; line-height: 1.55;
+    letter-spacing: -0.018em;
+    color: var(--mid-gray);
+  }
+  .mp-pricing-body strong { color: var(--graphite); font-weight: 600; }
+
+  /* ─── 10. CLOSE ─── */
+  .mp-close {
+    padding: 160px 32px 140px;
     background: var(--canvas);
-    padding: 120px 22px;
-    border-top: 1px solid var(--silver);
+    border-top: 1px solid var(--border);
     text-align: center;
   }
-  .close-h2-line1 {
+  .mp-close-h1 {
     font-family: var(--font-d);
     font-size: clamp(36px, 5.5vw, 56px);
-    font-weight: 600; line-height: 1.07;
-    letter-spacing: -0.005em;
+    font-weight: 600; line-height: 1.05;
+    letter-spacing: -0.022em;
     color: var(--graphite); margin-bottom: 4px;
   }
-  .close-h2-line2 {
+  .mp-close-h2 {
     font-family: var(--font-d);
     font-size: clamp(36px, 5.5vw, 56px);
-    font-weight: 600; line-height: 1.07;
-    letter-spacing: -0.005em;
-    color: var(--blue); margin-bottom: 28px;
+    font-weight: 600; line-height: 1.05;
+    letter-spacing: -0.022em;
+    color: var(--blue); margin-bottom: 32px;
   }
-  .close-body {
-    font-size: 19px; font-weight: 400;
-    line-height: 1.47; letter-spacing: -0.022em;
+  .mp-close-body {
+    font-family: var(--font-t);
+    font-size: 19px; line-height: 1.5;
+    letter-spacing: -0.022em;
     color: var(--mid-gray);
-    max-width: 500px; margin: 0 auto 44px;
+    max-width: 620px; margin: 0 auto 40px;
   }
-  .close-micro {
-    font-size: 13px; font-weight: 400;
-    letter-spacing: -0.015em; color: var(--light-gray);
-    margin-top: 14px;
+  .mp-close-cta {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 10px;
   }
 
   /* ─── Responsive ─── */
-  @media (max-width: 900px) {
-    .modules { grid-template-columns: repeat(3, 1fr); }
-    .proof-grid { grid-template-columns: repeat(2, 1fr); }
-  }
   @media (max-width: 768px) {
-    .results-grid { grid-template-columns: 1fr; }
-    .engine { padding: 80px 22px; }
-    .status-panel { padding: 28px; }
-  }
-  @media (max-width: 600px) {
-    .modules { grid-template-columns: repeat(2, 1fr); }
-    .proof-grid { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 480px) {
-    .hero { padding: 52px 16px 52px; }
-    .modules { grid-template-columns: 1fr; }
-    .result-card { padding: 28px 20px; }
+    .mp-hero { padding: 56px 22px 72px; }
+    .mp-clarity, .mp-engine, .mp-results, .mp-guarantee { padding: 80px 22px; }
+    .mp-founder { padding: 64px 22px; }
+    .mp-close { padding: 96px 22px 88px; }
+    .mp-exclusivity { padding: 56px 22px; }
+    .mp-exclusivity-inner { padding: 28px 24px; }
+    .mp-guarantee-card { padding: 32px 28px; }
+    .mp-anchor { padding: 36px 22px; }
+    .mp-do-col { padding: 24px 22px; }
+    .mp-result { padding: 28px 24px; }
   }
 </style>
