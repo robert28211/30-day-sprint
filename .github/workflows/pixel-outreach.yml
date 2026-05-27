@@ -1,0 +1,20 @@
+name: Pixel Outreach Pipeline
+
+on:
+  schedule:
+    - cron: '0 15 * * *'   # 11am ET daily (backup trigger — cron also fires from CF at 6am ET)
+  workflow_dispatch:         # manual trigger from GitHub UI
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Trigger pixel outreach pipeline
+        run: |
+          curl -s -X POST \
+            https://command-center.robertlbutt.workers.dev/api/pixel-pipeline \
+            -H "X-Cron-Secret: ${{ secrets.PIXEL_CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 55 \
+            | cat
