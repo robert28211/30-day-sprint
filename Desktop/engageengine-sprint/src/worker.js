@@ -1,119 +1,132 @@
-// EngageEngine Sprint Tracker — Upgraded Worker
-// Features: Auth, Client CRUD, Task edit/delete/undo, Health scoring,
-//           Templates, Client notes, Dynamic team, Morning briefing, 30-Day Sprint
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// ── Auth helpers ──────────────────────────────────────────────────────────────
-
+// src/worker.js
 async function makeToken(secret) {
   const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
   );
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode('ee-sprint-session'));
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode("ee-sprint-session"));
   return btoa(String.fromCharCode(...new Uint8Array(sig)));
 }
-
+__name(makeToken, "makeToken");
 async function isValidToken(secret, token) {
   try {
     const expected = await makeToken(secret);
     return token === expected;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
-
+__name(isValidToken, "isValidToken");
 function getCookie(request, name) {
-  const header = request.headers.get('Cookie') || '';
-  const match = header.split(';').map(s => s.trim()).find(s => s.startsWith(name + '='));
+  const header = request.headers.get("Cookie") || "";
+  const match = header.split(";").map((s) => s.trim()).find((s) => s.startsWith(name + "="));
   return match ? match.slice(name.length + 1) : null;
 }
-
+__name(getCookie, "getCookie");
 async function authMiddleware(request, env) {
-  const token = getCookie(request, 'session');
-  if (!token) return false;
-  try { return await isValidToken(env.APP_PASSWORD, token); }
-  catch { return false; }
+  const token = getCookie(request, "session");
+  if (!token)
+    return false;
+  try {
+    return await isValidToken(env.APP_PASSWORD, token);
+  } catch {
+    return false;
+  }
 }
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
-
+__name(authMiddleware, "authMiddleware");
 function genId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
-
+__name(genId, "genId");
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...extra }
+    headers: { "Content-Type": "application/json", ...extra }
   });
 }
-
+__name(json, "json");
 function redirect(location) {
   return new Response(null, { status: 302, headers: { Location: location } });
 }
-
-// ── Route table ───────────────────────────────────────────────────────────────
-
-const ROUTES = [
-  { method: 'POST', re: /^\/api\/auth\/login$/, handler: handleLogin, public: true },
-  { method: 'GET',  re: /^\/api\/dashboard$/,  handler: handleDashboard },
-  { method: 'GET',  re: /^\/api\/clients$/,    handler: handleClientsList },
-  { method: 'POST', re: /^\/api\/clients$/,    handler: handleClientCreate },
-  { method: 'GET',  re: /^\/api\/clients\/([^/]+)$/, handler: (r, e, m) => handleClientGet(r, e, m[1]) },
-  { method: 'PUT',  re: /^\/api\/clients\/([^/]+)$/, handler: (r, e, m) => handleClientUpdate(r, e, m[1]) },
-  { method: 'POST', re: /^\/api\/clients\/([^/]+)\/archive$/, handler: (r, e, m) => handleClientArchive(r, e, m[1]) },
-  { method: 'PUT',  re: /^\/api\/clients\/([^/]+)\/notes$/, handler: (r, e, m) => handleClientNotes(r, e, m[1]) },
-  { method: 'GET',  re: /^\/api\/team$/, handler: handleTeamList },
-  { method: 'POST', re: /^\/api\/team$/, handler: handleTeamCreate },
-  { method: 'DELETE', re: /^\/api\/team\/([^/]+)$/, handler: (r, e, m) => handleTeamDelete(r, e, m[1]) },
-  { method: 'GET',  re: /^\/api\/team\/([^/]+)$/, handler: (r, e, m) => handleTeamMember(r, e, m[1]) },
-  { method: 'GET',  re: /^\/api\/templates$/, handler: handleTemplatesList },
-  { method: 'POST', re: /^\/api\/jobs$/, handler: handleJobCreate },
-  { method: 'POST', re: /^\/api\/jobs\/([^/]+)\/complete$/, handler: (r, e, m) => handleJobStatus(r, e, m[1], 'Complete') },
-  { method: 'POST', re: /^\/api\/jobs\/([^/]+)\/reopen$/,   handler: (r, e, m) => handleJobStatus(r, e, m[1], 'Active') },
-  { method: 'PUT',  re: /^\/api\/jobs\/([^/]+)$/,           handler: (r, e, m) => handleJobUpdate(r, e, m[1]) },
-  { method: 'POST', re: /^\/api\/tasks$/, handler: handleTaskCreate },
-  { method: 'PUT',  re: /^\/api\/tasks\/([^/]+)$/, handler: (r, e, m) => handleTaskUpdate(r, e, m[1]) },
-  { method: 'DELETE', re: /^\/api\/tasks\/([^/]+)$/, handler: (r, e, m) => handleTaskDelete(r, e, m[1]) },
-  { method: 'POST', re: /^\/api\/tasks\/([^/]+)\/complete$/, handler: (r, e, m) => handleTaskStatus(r, e, m[1], 'Complete') },
-  { method: 'POST', re: /^\/api\/tasks\/([^/]+)\/reopen$/,   handler: (r, e, m) => handleTaskStatus(r, e, m[1], 'Not Started') },
-  { method: 'GET',  re: /^\/api\/sprint\/([^/]+)$/, handler: (r, e, m) => handleSprintGet(r, e, m[1]) },
-  { method: 'POST', re: /^\/api\/sprint\/toggle$/, handler: handleSprintToggle },
-  { method: 'POST', re: /^\/api\/sprint\/activate$/, handler: handleSprintActivate },
+__name(redirect, "redirect");
+var ROUTES = [
+  { method: "POST", re: /^\/api\/auth\/login$/, handler: handleLogin, public: true },
+  { method: "GET", re: /^\/api\/dashboard$/, handler: handleDashboard },
+  { method: "GET", re: /^\/api\/clients$/, handler: handleClientsList },
+  { method: "POST", re: /^\/api\/clients$/, handler: handleClientCreate },
+  { method: "GET", re: /^\/api\/clients\/([^/]+)$/, handler: (r, e, m) => handleClientGet(r, e, m[1]) },
+  { method: "PUT", re: /^\/api\/clients\/([^/]+)$/, handler: (r, e, m) => handleClientUpdate(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/clients\/([^/]+)\/archive$/, handler: (r, e, m) => handleClientArchive(r, e, m[1]) },
+  { method: "PUT", re: /^\/api\/clients\/([^/]+)\/notes$/, handler: (r, e, m) => handleClientNotes(r, e, m[1]) },
+  { method: "GET", re: /^\/api\/team$/, handler: handleTeamList },
+  { method: "POST", re: /^\/api\/team$/, handler: handleTeamCreate },
+  { method: "DELETE", re: /^\/api\/team\/([^/]+)$/, handler: (r, e, m) => handleTeamDelete(r, e, m[1]) },
+  { method: "GET", re: /^\/api\/team\/([^/]+)$/, handler: (r, e, m) => handleTeamMember(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/logs$/, handler: handleLogCreate },
+  { method: "DELETE", re: /^\/api\/logs\/([^/]+)$/, handler: (r, e, m) => handleLogDelete(r, e, m[1]) },
+  { method: "GET", re: /^\/api\/templates$/, handler: handleTemplatesList },
+  { method: "POST", re: /^\/api\/jobs$/, handler: handleJobCreate },
+  { method: "POST", re: /^\/api\/jobs\/([^/]+)\/complete$/, handler: (r, e, m) => handleJobStatus(r, e, m[1], "Complete") },
+  { method: "POST", re: /^\/api\/jobs\/([^/]+)\/reopen$/, handler: (r, e, m) => handleJobStatus(r, e, m[1], "Active") },
+  { method: "POST", re: /^\/api\/jobs\/([^/]+)\/assign$/, handler: (r, e, m) => handleJobAssign(r, e, m[1]) },
+  { method: "PUT", re: /^\/api\/jobs\/([^/]+)$/, handler: (r, e, m) => handleJobUpdate(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/tasks$/, handler: handleTaskCreate },
+  { method: "PUT", re: /^\/api\/tasks\/([^/]+)$/, handler: (r, e, m) => handleTaskUpdate(r, e, m[1]) },
+  { method: "DELETE", re: /^\/api\/tasks\/([^/]+)$/, handler: (r, e, m) => handleTaskDelete(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/tasks\/([^/]+)\/complete$/, handler: (r, e, m) => handleTaskStatus(r, e, m[1], "Complete") },
+  { method: "POST", re: /^\/api\/tasks\/([^/]+)\/reopen$/, handler: (r, e, m) => handleTaskStatus(r, e, m[1], "Not Started") },
+  { method: "GET", re: /^\/api\/sprint\/([^/]+)$/, handler: (r, e, m) => handleSprintGet(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/sprint\/toggle$/, handler: handleSprintToggle },
+  { method: "POST", re: /^\/api\/sprint\/activate$/, handler: handleSprintActivate },
   // Gmail OAuth
-  { method: 'GET',  re: /^\/api\/gmail\/auth$/, handler: handleGmailAuth },
-  { method: 'GET',  re: /^\/api\/gmail\/callback$/, handler: handleGmailCallback, public: true },
-  { method: 'GET',  re: /^\/api\/gmail\/status$/, handler: handleGmailStatus },
-  { method: 'POST', re: /^\/api\/gmail\/poll$/, handler: handleGmailPollNow },
+  { method: "GET", re: /^\/api\/gmail\/auth$/, handler: handleGmailAuth },
+  { method: "GET", re: /^\/api\/gmail\/callback$/, handler: handleGmailCallback, public: true },
+  { method: "GET", re: /^\/api\/gmail\/status$/, handler: handleGmailStatus },
+  { method: "POST", re: /^\/api\/gmail\/poll$/, handler: handleGmailPollNow },
   // AI Intake
-  { method: 'GET',  re: /^\/api\/intake$/, handler: handleIntakeList },
-  { method: 'POST', re: /^\/api\/intake\/upload$/, handler: handleIntakeUpload },
-  { method: 'POST', re: /^\/api\/intake\/chat$/, handler: handleIntakeChat },
-  { method: 'POST', re: /^\/api\/intake\/([^/]+)\/confirm$/, handler: (r, e, m) => handleIntakeConfirm(r, e, m[1]) },
-  { method: 'POST', re: /^\/api\/intake\/([^/]+)\/dismiss$/, handler: (r, e, m) => handleIntakeDismiss(r, e, m[1]) },
-  { method: 'POST', re: /^\/api\/intake\/([^/]+)\/save-as-note$/, handler: (r, e, m) => handleIntakeSaveAsNote(r, e, m[1]) },
-  { method: 'POST', re: /^\/api\/intake\/bulk-dismiss$/, handler: handleIntakeBulkDismiss },
-  { method: 'POST', re: /^\/api\/assistant$/, handler: handleAssistant },
+  { method: "GET", re: /^\/api\/intake$/, handler: handleIntakeList },
+  { method: "POST", re: /^\/api\/intake\/upload$/, handler: handleIntakeUpload },
+  { method: "POST", re: /^\/api\/intake\/chat$/, handler: handleIntakeChat },
+  { method: "POST", re: /^\/api\/intake\/([^/]+)\/confirm$/, handler: (r, e, m) => handleIntakeConfirm(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/intake\/([^/]+)\/dismiss$/, handler: (r, e, m) => handleIntakeDismiss(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/intake\/([^/]+)\/save-as-note$/, handler: (r, e, m) => handleIntakeSaveAsNote(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/intake\/bulk-dismiss$/, handler: handleIntakeBulkDismiss },
+  { method: "POST", re: /^\/api\/assistant$/, handler: handleAssistant },
   // All Work
-  { method: 'GET',  re: /^\/api\/allwork$/, handler: handleAllWork },
+  { method: "GET", re: /^\/api\/allwork$/, handler: handleAllWork },
   // Client Ad Portal — public (token-authenticated)
-  { method: 'GET',    re: /^\/api\/portal\/([a-zA-Z0-9-]+)\/data$/,  handler: (r,e,m) => handlePortalData(r,e,m[1]),    public: true },
-  { method: 'GET',    re: /^\/api\/clients\/([^/]+)\/portal-token$/,  handler: (r,e,m) => handlePortalTokenGet(r,e,m[1]) },
-  { method: 'POST',   re: /^\/api\/clients\/([^/]+)\/portal-token$/,  handler: (r,e,m) => handlePortalTokenCreate(r,e,m[1]) },
-  { method: 'DELETE', re: /^\/api\/clients\/([^/]+)\/portal-token$/,  handler: (r,e,m) => handlePortalTokenRevoke(r,e,m[1]) },
-  { method: 'POST',   re: /^\/api\/internal\/push-ad-data$/,          handler: handlePushAdData,                          public: true },
+  { method: "GET", re: /^\/api\/portal\/([a-zA-Z0-9-]+)\/data$/, handler: (r, e, m) => handlePortalData(r, e, m[1]), public: true },
+  { method: "GET", re: /^\/api\/clients\/([^/]+)\/portal-token$/, handler: (r, e, m) => handlePortalTokenGet(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/clients\/([^/]+)\/portal-token$/, handler: (r, e, m) => handlePortalTokenCreate(r, e, m[1]) },
+  { method: "DELETE", re: /^\/api\/clients\/([^/]+)\/portal-token$/, handler: (r, e, m) => handlePortalTokenRevoke(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/internal\/push-ad-data$/, handler: handlePushAdData, public: true },
+  // Services & Maintenance
+  { method: "GET", re: /^\/api\/services$/, handler: handleServicesList },
+  { method: "PATCH", re: /^\/api\/services\/([^/]+)\/([^/]+)$/, handler: (r, e, m) => handleServiceUpdate(r, e, m[1], m[2]) },
+  { method: "GET", re: /^\/api\/maintenance$/, handler: handleMaintenanceList },
+  { method: "GET", re: /^\/api\/maintenance\/wp\/([^/]+)$/, handler: (r, e, m) => handleMaintenanceWp(r, e, m[1]) },
+  { method: "GET", re: /^\/api\/maintenance\/seo\/([^/]+)$/, handler: (r, e, m) => handleMaintenanceSeo(r, e, m[1]) },
+  { method: "PATCH", re: /^\/api\/clients\/([^/]+)\/maintenance$/, handler: (r, e, m) => handleClientMaintenance(r, e, m[1]) },
+  { method: "PATCH", re: /^\/api\/clients\/([^/]+)\/domain$/, handler: (r, e, m) => handleClientDomain(r, e, m[1]) },
+  // Client Health
+  { method: "GET", re: /^\/api\/client-health$/, handler: handleClientHealth }
 ];
-
-// ── API handlers ──────────────────────────────────────────────────────────────
-
 async function handleLogin(request, env) {
   const body = await request.json().catch(() => ({}));
   if (!env.APP_PASSWORD || body.password !== env.APP_PASSWORD) {
-    return json({ error: 'Incorrect password' }, 401);
+    return json({ error: "Incorrect password" }, 401);
   }
   const token = await makeToken(env.APP_PASSWORD);
   const cookie = `session=${token}; HttpOnly; SameSite=Lax; Max-Age=604800; Path=/`;
-  return json({ ok: true }, 200, { 'Set-Cookie': cookie });
+  return json({ ok: true }, 200, { "Set-Cookie": cookie });
 }
-
+__name(handleLogin, "handleLogin");
 async function handleDashboard(request, env) {
   const clients = await env.DB.prepare(`
     SELECT c.id, c.name, c.status, c.has_sprint, c.archived,
@@ -146,7 +159,6 @@ async function handleDashboard(request, env) {
     GROUP BY tm.id
     ORDER BY tm.name
   `).all();
-  // Morning briefing counts
   const briefing = await env.DB.prepare(`
     SELECT
       COUNT(DISTINCT CASE WHEN t.status='Not Started' AND t.due_date < date('now') THEN t.id END) +
@@ -164,10 +176,11 @@ async function handleDashboard(request, env) {
       `SELECT COUNT(*) as cnt FROM sprint_intake WHERE status='pending'`
     ).first();
     intake_pending = ip?.cnt || 0;
-  } catch { /* table not yet migrated */ }
+  } catch {
+  }
   return json({ clients: clients.results, stats, team: team.results, briefing, intake_pending });
 }
-
+__name(handleDashboard, "handleDashboard");
 async function handleAllWork(request, env) {
   const jobs = await env.DB.prepare(`
     SELECT j.id, j.name, j.status, j.created_at, j.assigned_to, j.due_date,
@@ -194,17 +207,18 @@ async function handleAllWork(request, env) {
   `).all();
   return json({ jobs: jobs.results, tasks: tasks.results });
 }
-
+__name(handleAllWork, "handleAllWork");
 async function handleClientsList(request, env) {
   const clients = await env.DB.prepare(
     `SELECT * FROM sprint_clients WHERE archived=0 ORDER BY name`
   ).all();
   return json(clients.results);
 }
-
+__name(handleClientsList, "handleClientsList");
 async function handleClientGet(request, env, clientId) {
-  const client = await env.DB.prepare('SELECT * FROM sprint_clients WHERE id=?').bind(clientId).first();
-  if (!client) return json({ error: 'Not found' }, 404);
+  const client = await env.DB.prepare("SELECT * FROM sprint_clients WHERE id=?").bind(clientId).first();
+  if (!client)
+    return json({ error: "Not found" }, 404);
   const jobs = await env.DB.prepare(`
     SELECT j.*,
       COUNT(DISTINCT CASE WHEN t.status='Not Started' THEN t.id END) as open_tasks,
@@ -225,71 +239,77 @@ async function handleClientGet(request, env, clientId) {
   `).bind(clientId).all();
   return json({ client, jobs: jobs.results, tasks: tasks.results });
 }
-
+__name(handleClientGet, "handleClientGet");
 async function handleClientCreate(request, env) {
   const body = await request.json().catch(() => ({}));
-  const name = (body.name || '').trim();
-  if (!name) return json({ error: 'Name required' }, 400);
+  const name = (body.name || "").trim();
+  if (!name)
+    return json({ error: "Name required" }, 400);
   const exists = await env.DB.prepare(
     `SELECT 1 FROM sprint_clients WHERE name=? AND archived=0`
   ).bind(name).first();
-  if (exists) return json({ error: 'Name already exists' }, 409);
-  const id = genId('client');
+  if (exists)
+    return json({ error: "Name already exists" }, 409);
+  const id = genId("client");
   await env.DB.prepare(
     `INSERT INTO sprint_clients (id, name, status, has_sprint, archived, notes, created_at, updated_at)
      VALUES (?, ?, 'Active', 0, 0, '', date('now'), date('now'))`
   ).bind(id, name).run();
   return json({ success: true, id });
 }
-
+__name(handleClientCreate, "handleClientCreate");
 async function handleClientUpdate(request, env, clientId) {
   const body = await request.json().catch(() => ({}));
-  const name = (body.name || '').trim();
-  if (!name) return json({ error: 'Name required' }, 400);
+  const name = (body.name || "").trim();
+  if (!name)
+    return json({ error: "Name required" }, 400);
   const exists = await env.DB.prepare(
     `SELECT 1 FROM sprint_clients WHERE name=? AND archived=0 AND id!=?`
   ).bind(name, clientId).first();
-  if (exists) return json({ error: 'Name already exists' }, 409);
+  if (exists)
+    return json({ error: "Name already exists" }, 409);
   await env.DB.prepare(
     `UPDATE sprint_clients SET name=?, updated_at=date('now') WHERE id=?`
   ).bind(name, clientId).run();
   return json({ success: true });
 }
-
+__name(handleClientUpdate, "handleClientUpdate");
 async function handleClientArchive(request, env, clientId) {
   await env.DB.prepare(
     `UPDATE sprint_clients SET archived=1, updated_at=date('now') WHERE id=?`
   ).bind(clientId).run();
   return json({ success: true });
 }
-
+__name(handleClientArchive, "handleClientArchive");
 async function handleClientNotes(request, env, clientId) {
   const body = await request.json().catch(() => ({}));
-  const notes = body.notes || '';
+  const notes = body.notes || "";
   await env.DB.prepare(
     `UPDATE sprint_clients SET notes=?, updated_at=date('now') WHERE id=?`
   ).bind(notes, clientId).run();
   return json({ success: true });
 }
-
+__name(handleClientNotes, "handleClientNotes");
 async function handleTeamList(request, env) {
   const team = await env.DB.prepare(`SELECT * FROM sprint_team ORDER BY name`).all();
   return json(team.results);
 }
-
+__name(handleTeamList, "handleTeamList");
 async function handleTeamCreate(request, env) {
   const body = await request.json().catch(() => ({}));
-  const name = (body.name || '').trim();
-  if (!name) return json({ error: 'Name required' }, 400);
+  const name = (body.name || "").trim();
+  if (!name)
+    return json({ error: "Name required" }, 400);
   const exists = await env.DB.prepare(`SELECT 1 FROM sprint_team WHERE name=?`).bind(name).first();
-  if (exists) return json({ error: 'Name already exists' }, 409);
-  const id = genId('tm');
+  if (exists)
+    return json({ error: "Name already exists" }, 409);
+  const id = genId("tm");
   await env.DB.prepare(
     `INSERT INTO sprint_team (id, name, role, created_at) VALUES (?, ?, ?, date('now'))`
-  ).bind(id, name, body.role || '').run();
+  ).bind(id, name, body.role || "").run();
   return json({ success: true, id });
 }
-
+__name(handleTeamCreate, "handleTeamCreate");
 async function handleTeamDelete(request, env, id) {
   await env.DB.batch([
     env.DB.prepare(`UPDATE sprint_tasks SET assigned_to=NULL WHERE assigned_to=(SELECT name FROM sprint_team WHERE id=?)`).bind(id),
@@ -297,7 +317,7 @@ async function handleTeamDelete(request, env, id) {
   ]);
   return json({ success: true });
 }
-
+__name(handleTeamDelete, "handleTeamDelete");
 async function handleTeamMember(request, env, encodedName) {
   const name = decodeURIComponent(encodedName);
   const tasks = await env.DB.prepare(`
@@ -308,36 +328,56 @@ async function handleTeamMember(request, env, encodedName) {
     WHERE LOWER(t.assigned_to) = LOWER(?) AND t.status = 'Not Started'
     ORDER BY t.due_date, c.name
   `).bind(name).all();
-  return json({ name, tasks: tasks.results });
+  const logs = await env.DB.prepare(
+    `SELECT * FROM sprint_logs WHERE LOWER(team_member_name) = LOWER(?) ORDER BY log_date DESC`
+  ).bind(name).all();
+  return json({ name, tasks: tasks.results, logs: logs.results });
 }
-
+__name(handleTeamMember, "handleTeamMember");
+async function handleLogCreate(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const { team_member_name, log_date, notes } = body;
+  if (!team_member_name || !log_date) return json({ error: "Missing fields" }, { status: 400 });
+  const id = genId("log");
+  await env.DB.prepare(`
+    INSERT INTO sprint_logs (id, team_member_name, log_date, notes)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(team_member_name, log_date) DO UPDATE SET notes = excluded.notes
+  `).bind(id, team_member_name, log_date, notes || "").run();
+  return json({ ok: true });
+}
+__name(handleLogCreate, "handleLogCreate");
+async function handleLogDelete(request, env, logId) {
+  await env.DB.prepare(`DELETE FROM sprint_logs WHERE id = ?`).bind(logId).run();
+  return json({ ok: true });
+}
+__name(handleLogDelete, "handleLogDelete");
 async function handleTemplatesList(request, env) {
   const templates = await env.DB.prepare(`SELECT * FROM sprint_templates ORDER BY sort_order, name`).all();
   const taskRows = await env.DB.prepare(`SELECT * FROM sprint_template_tasks ORDER BY sort_order`).all();
   const byTemplate = {};
   for (const t of taskRows.results) {
-    if (!byTemplate[t.template_id]) byTemplate[t.template_id] = [];
+    if (!byTemplate[t.template_id])
+      byTemplate[t.template_id] = [];
     byTemplate[t.template_id].push(t);
   }
-  return json(templates.results.map(t => ({ ...t, tasks: byTemplate[t.id] || [] })));
+  return json(templates.results.map((t) => ({ ...t, tasks: byTemplate[t.id] || [] })));
 }
-
+__name(handleTemplatesList, "handleTemplatesList");
 async function handleJobCreate(request, env) {
   const body = await request.json().catch(() => ({}));
-  const jobId = genId('job');
+  const jobId = genId("job");
   const stmts = [
-    env.DB.prepare(`INSERT INTO sprint_jobs (id, client_id, name, status, assigned_to, due_date, created_at, updated_at) VALUES (?, ?, ?, 'Active', ?, ?, date('now'), date('now'))`)
-      .bind(jobId, body.client_id, body.name, body.assigned_to || '', body.due_date || '')
+    env.DB.prepare(`INSERT INTO sprint_jobs (id, client_id, name, status, assigned_to, due_date, created_at, updated_at) VALUES (?, ?, ?, 'Active', ?, ?, date('now'), date('now'))`).bind(jobId, body.client_id, body.name, body.assigned_to || "", body.due_date || "")
   ];
   if (body.template_id) {
     const tmpl = await env.DB.prepare(`SELECT * FROM sprint_templates WHERE id=?`).bind(body.template_id).first();
     if (tmpl) {
       const tasks = await env.DB.prepare(`SELECT * FROM sprint_template_tasks WHERE template_id=? ORDER BY sort_order`).bind(body.template_id).all();
       for (const t of tasks.results) {
-        const taskId = genId('task');
+        const taskId = genId("task");
         stmts.push(
-          env.DB.prepare(`INSERT INTO sprint_tasks (id, job_id, client_id, task_id, notes, status, assigned_to, due_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Not Started', ?, '', date('now'), date('now'))`)
-            .bind(taskId, jobId, body.client_id, `tmpl-${t.id}`, t.notes, t.assigned_to_role || '')
+          env.DB.prepare(`INSERT INTO sprint_tasks (id, job_id, client_id, task_id, notes, status, assigned_to, due_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Not Started', ?, '', date('now'), date('now'))`).bind(taskId, jobId, body.client_id, `tmpl-${t.id}`, t.notes, t.assigned_to_role || "")
         );
       }
     }
@@ -345,54 +385,59 @@ async function handleJobCreate(request, env) {
   await env.DB.batch(stmts);
   return json({ success: true, id: jobId });
 }
-
+__name(handleJobCreate, "handleJobCreate");
 async function handleJobStatus(request, env, jobId, status) {
   await env.DB.prepare(`UPDATE sprint_jobs SET status=?, updated_at=date('now') WHERE id=?`).bind(status, jobId).run();
   return json({ success: true });
 }
-
+__name(handleJobStatus, "handleJobStatus");
+async function handleJobAssign(request, env, jobId) {
+  const body = await request.json().catch(() => ({}));
+  await env.DB.prepare(`UPDATE sprint_jobs SET assigned_to=?, updated_at=date('now') WHERE id=?`).bind(body.assigned_to || "", jobId).run();
+  return json({ success: true });
+}
+__name(handleJobAssign, "handleJobAssign");
 async function handleJobUpdate(request, env, jobId) {
   const body = await request.json().catch(() => ({}));
-  const name = (body.name || '').trim();
-  // Only update name if a non-empty value was provided; otherwise preserve existing
+  const name = (body.name || "").trim();
   if (name) {
     await env.DB.prepare(
       `UPDATE sprint_jobs SET name=?, assigned_to=?, due_date=?, updated_at=date('now') WHERE id=?`
-    ).bind(name, body.assigned_to || '', body.due_date || '', jobId).run();
+    ).bind(name, body.assigned_to || "", body.due_date || "", jobId).run();
   } else {
     await env.DB.prepare(
       `UPDATE sprint_jobs SET assigned_to=?, due_date=?, updated_at=date('now') WHERE id=?`
-    ).bind(body.assigned_to || '', body.due_date || '', jobId).run();
+    ).bind(body.assigned_to || "", body.due_date || "", jobId).run();
   }
   return json({ success: true });
 }
-
+__name(handleJobUpdate, "handleJobUpdate");
 async function handleTaskCreate(request, env) {
   const body = await request.json().catch(() => ({}));
-  const id = genId('task');
+  const id = genId("task");
   const taskId = `manual-${body.job_id}-${Date.now()}`;
   await env.DB.prepare(
     `INSERT INTO sprint_tasks (id, job_id, client_id, task_id, notes, status, assigned_to, due_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Not Started', ?, ?, date('now'), date('now'))`
-  ).bind(id, body.job_id, body.client_id, taskId, body.notes, body.assigned_to || '', body.due_date || '').run();
+  ).bind(id, body.job_id, body.client_id, taskId, body.notes, body.assigned_to || "", body.due_date || "").run();
   return json({ success: true, id });
 }
-
+__name(handleTaskCreate, "handleTaskCreate");
 async function handleTaskUpdate(request, env, taskId) {
   const body = await request.json().catch(() => ({}));
   await env.DB.prepare(
     `UPDATE sprint_tasks SET notes=?, assigned_to=?, due_date=?, updated_at=date('now') WHERE id=?`
-  ).bind(body.notes || '', body.assigned_to || '', body.due_date || '', taskId).run();
+  ).bind(body.notes || "", body.assigned_to || "", body.due_date || "", taskId).run();
   return json({ success: true });
 }
-
+__name(handleTaskUpdate, "handleTaskUpdate");
 async function handleTaskDelete(request, env, taskId) {
   await env.DB.prepare(`DELETE FROM sprint_tasks WHERE id=?`).bind(taskId).run();
   return json({ success: true });
 }
-
+__name(handleTaskDelete, "handleTaskDelete");
 async function handleTaskStatus(request, env, taskId, status) {
-  const now = new Date().toISOString().split('T')[0];
-  if (status === 'Complete') {
+  const now = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+  if (status === "Complete") {
     await env.DB.prepare(
       `UPDATE sprint_tasks SET status='Complete', completed_date=?, updated_at=date('now') WHERE id=?`
     ).bind(now, taskId).run();
@@ -403,63 +448,63 @@ async function handleTaskStatus(request, env, taskId, status) {
   }
   return json({ success: true });
 }
-
+__name(handleTaskStatus, "handleTaskStatus");
 async function handleSprintGet(request, env, clientId) {
   const items = await env.DB.prepare(
     `SELECT * FROM sprint_checklist WHERE client_id=?`
   ).bind(clientId).all();
   return json({ items: items.results });
 }
-
+__name(handleSprintGet, "handleSprintGet");
 async function handleSprintToggle(request, env) {
   const body = await request.json().catch(() => ({}));
   const { client_id, task_id, completed_by } = body;
   const existing = await env.DB.prepare(
     `SELECT * FROM sprint_checklist WHERE client_id=? AND task_id=?`
   ).bind(client_id, task_id).first();
-  const now = new Date().toISOString().split('T')[0];
+  const now = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   if (existing) {
     const newVal = existing.completed ? 0 : 1;
     await env.DB.prepare(
       `UPDATE sprint_checklist SET completed=?, completed_by=?, completed_date=? WHERE client_id=? AND task_id=?`
-    ).bind(newVal, newVal ? (completed_by || '') : '', newVal ? now : '', client_id, task_id).run();
+    ).bind(newVal, newVal ? completed_by || "" : "", newVal ? now : "", client_id, task_id).run();
   } else {
-    const id = genId('sc');
+    const id = genId("sc");
     await env.DB.prepare(
       `INSERT INTO sprint_checklist (id, client_id, task_id, completed, completed_by, completed_date) VALUES (?, ?, ?, 1, ?, ?)`
-    ).bind(id, client_id, task_id, completed_by || '', now).run();
+    ).bind(id, client_id, task_id, completed_by || "", now).run();
   }
   return json({ success: true });
 }
-
+__name(handleSprintToggle, "handleSprintToggle");
 async function handleSprintActivate(request, env) {
   const body = await request.json().catch(() => ({}));
   const { client_id, start_date } = body;
-  // Duplicate enrollment check
   const exists = await env.DB.prepare(
     `SELECT 1 FROM sprint_clients WHERE id=? AND has_sprint=1`
   ).bind(client_id).first();
-  if (exists) return json({ error: 'Already enrolled' }, 409);
+  if (exists)
+    return json({ error: "Already enrolled" }, 409);
   await env.DB.prepare(
     `UPDATE sprint_clients SET has_sprint=1, start_date=?, updated_at=date('now') WHERE id=?`
-  ).bind(start_date || new Date().toISOString().split('T')[0], client_id).run();
+  ).bind(start_date || (/* @__PURE__ */ new Date()).toISOString().split("T")[0], client_id).run();
   return json({ success: true });
 }
-
-// ── AI intake helpers ──────────────────────────────────────────────────────────
-
-async function callClaude(env, messages, model = 'claude-sonnet-4-6', system = null) {
-  if (!env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
+__name(handleSprintActivate, "handleSprintActivate");
+async function callClaude(env, messages, model = "claude-sonnet-4-6", system = null) {
+  if (!env.ANTHROPIC_API_KEY)
+    throw new Error("ANTHROPIC_API_KEY not set");
   const body = { model, max_tokens: 2048, messages };
-  if (system) body.system = system;
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
+  if (system)
+    body.system = system;
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
+      "Content-Type": "application/json",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   });
   if (!res.ok) {
     const err = await res.text();
@@ -468,90 +513,91 @@ async function callClaude(env, messages, model = 'claude-sonnet-4-6', system = n
   const data = await res.json();
   return data.content[0].text;
 }
-
+__name(callClaude, "callClaude");
 function validateExtraction(parsed) {
-  if (!parsed || !Array.isArray(parsed.jobs)) return false;
-  return parsed.jobs.every(j => typeof j.name === 'string' && Array.isArray(j.tasks));
+  if (!parsed || !Array.isArray(parsed.jobs))
+    return false;
+  return parsed.jobs.every((j) => typeof j.name === "string" && Array.isArray(j.tasks));
 }
-
+__name(validateExtraction, "validateExtraction");
 function matchClient(extractedName, clients) {
-  const normalize = s => s.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\b(llc|inc|co|corp|ltd|group|solutions|services)\b/g, '')
-    .trim();
-  const t = normalize(extractedName || '');
-  if (!t) return null;
-  return clients.find(c => {
+  const normalize = /* @__PURE__ */ __name((s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\b(llc|inc|co|corp|ltd|group|solutions|services)\b/g, "").trim(), "normalize");
+  const t = normalize(extractedName || "");
+  if (!t)
+    return null;
+  return clients.find((c) => {
     const cn = normalize(c.name);
     return cn.includes(t) || t.includes(cn);
   }) || null;
 }
-
-// ── Gmail OAuth helpers ────────────────────────────────────────────────────────
-
+__name(matchClient, "matchClient");
 async function getValidGmailToken(env) {
   const row = await env.DB.prepare(
-    'SELECT * FROM sprint_gmail_tokens WHERE id=?'
-  ).bind('main').first();
-  if (!row) return null;
+    "SELECT * FROM sprint_gmail_tokens WHERE id=?"
+  ).bind("main").first();
+  if (!row)
+    return null;
   const expiry = new Date(row.token_expiry);
-  const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1000);
+  const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1e3);
   if (expiry <= fiveMinFromNow) {
-    const res = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: env.GOOGLE_CLIENT_ID,
         client_secret: env.GOOGLE_CLIENT_SECRET,
         refresh_token: row.refresh_token,
-        grant_type: 'refresh_token',
-      }),
+        grant_type: "refresh_token"
+      })
     });
-    if (!res.ok) return null;
+    if (!res.ok)
+      return null;
     const data = await res.json();
-    const newExpiry = new Date(Date.now() + data.expires_in * 1000).toISOString();
+    const newExpiry = new Date(Date.now() + data.expires_in * 1e3).toISOString();
     await env.DB.prepare(
-      'UPDATE sprint_gmail_tokens SET access_token=?, token_expiry=? WHERE id=?'
-    ).bind(data.access_token, newExpiry, 'main').run();
+      "UPDATE sprint_gmail_tokens SET access_token=?, token_expiry=? WHERE id=?"
+    ).bind(data.access_token, newExpiry, "main").run();
     return data.access_token;
   }
   return row.access_token;
 }
-
+__name(getValidGmailToken, "getValidGmailToken");
 async function handleGmailAuth(request, env) {
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_REDIRECT_URI) {
-    return json({ error: 'GOOGLE_CLIENT_ID or GOOGLE_REDIRECT_URI not configured' }, 500);
+    return json({ error: "GOOGLE_CLIENT_ID or GOOGLE_REDIRECT_URI not configured" }, 500);
   }
   const params = new URLSearchParams({
     client_id: env.GOOGLE_CLIENT_ID,
     redirect_uri: env.GOOGLE_REDIRECT_URI,
-    response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/gmail.readonly',
-    access_type: 'offline',
-    prompt: 'consent',
+    response_type: "code",
+    scope: "https://www.googleapis.com/auth/gmail.readonly",
+    access_type: "offline",
+    prompt: "consent"
   });
   return redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 }
-
+__name(handleGmailAuth, "handleGmailAuth");
 async function handleGmailCallback(request, env) {
   const url = new URL(request.url);
-  const code = url.searchParams.get('code');
-  const error = url.searchParams.get('error');
-  if (error || !code) return redirect('/?gmail_error=access_denied');
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  const code = url.searchParams.get("code");
+  const error = url.searchParams.get("error");
+  if (error || !code)
+    return redirect("/?gmail_error=access_denied");
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       code,
       client_id: env.GOOGLE_CLIENT_ID,
       client_secret: env.GOOGLE_CLIENT_SECRET,
       redirect_uri: env.GOOGLE_REDIRECT_URI,
-      grant_type: 'authorization_code',
-    }),
+      grant_type: "authorization_code"
+    })
   });
-  if (!res.ok) return redirect('/?gmail_error=token_exchange_failed');
+  if (!res.ok)
+    return redirect("/?gmail_error=token_exchange_failed");
   const data = await res.json();
-  const expiry = new Date(Date.now() + data.expires_in * 1000).toISOString();
+  const expiry = new Date(Date.now() + data.expires_in * 1e3).toISOString();
   await env.DB.prepare(`
     INSERT INTO sprint_gmail_tokens (id, access_token, refresh_token, token_expiry, last_checked)
     VALUES ('main', ?, ?, ?, NULL)
@@ -560,158 +606,159 @@ async function handleGmailCallback(request, env) {
       refresh_token=excluded.refresh_token,
       token_expiry=excluded.token_expiry
   `).bind(data.access_token, data.refresh_token, expiry).run();
-  return redirect('/?gmail_connected=1');
+  return redirect("/?gmail_connected=1");
 }
-
+__name(handleGmailCallback, "handleGmailCallback");
 async function handleGmailStatus(request, env) {
   try {
     const row = await env.DB.prepare(
-      'SELECT last_checked, cron_last_run, cron_last_error FROM sprint_gmail_tokens WHERE id=?'
-    ).bind('main').first();
+      "SELECT last_checked, cron_last_run, cron_last_error FROM sprint_gmail_tokens WHERE id=?"
+    ).bind("main").first();
     return json({
       connected: !!row,
       last_checked: row?.last_checked || null,
       cron_last_run: row?.cron_last_run || null,
-      cron_last_error: row?.cron_last_error || null,
+      cron_last_error: row?.cron_last_error || null
     });
   } catch {
     return json({ connected: false, last_checked: null, cron_last_run: null, cron_last_error: null });
   }
 }
-
+__name(handleGmailStatus, "handleGmailStatus");
 async function handleGmailPollNow(request, env) {
   try {
     const result = await runGmailPoll(env, true);
-    if (result.error) return json({ ok: false, error: result.error, debug: result.debug });
+    if (result.error)
+      return json({ ok: false, error: result.error, debug: result.debug });
     return json({ ok: true, processed: result.processed || 0, debug: result.debug });
   } catch (err) {
     return json({ ok: false, error: err.message }, 500);
   }
 }
-
-// ── Gmail cron poll ────────────────────────────────────────────────────────────
-
-const GMAIL_BATCH_LIMIT = 20;
-
+__name(handleGmailPollNow, "handleGmailPollNow");
+var GMAIL_BATCH_LIMIT = 20;
 async function runGmailPoll(env, debug = false) {
   const dbg = [];
   const token = await getValidGmailToken(env);
-  if (!token) return { processed: 0, error: 'Gmail not connected or token refresh failed' };
-
+  if (!token)
+    return { processed: 0, error: "Gmail not connected or token refresh failed" };
   const row = await env.DB.prepare(
-    'SELECT last_checked FROM sprint_gmail_tokens WHERE id=?'
-  ).bind('main').first();
+    "SELECT last_checked FROM sprint_gmail_tokens WHERE id=?"
+  ).bind("main").first();
   const since = row?.last_checked;
-  dbg.push(`last_checked: ${since || 'none'}`);
-
-  // No is:unread — sent copies are auto-marked read by Gmail. Dedup via after: timestamp.
-  let q = '-in:spam -in:trash -in:drafts';
+  dbg.push(`last_checked: ${since || "none"}`);
+  let q = "-in:spam -in:trash -in:drafts";
   if (since) {
-    q += ` after:${Math.floor(new Date(since).getTime() / 1000)}`;
+    q += ` after:${Math.floor(new Date(since).getTime() / 1e3)}`;
   } else {
-    // First run: only look back 24 hours to avoid flooding intake
-    q += ` after:${Math.floor((Date.now() - 86400000) / 1000)}`;
+    q += ` after:${Math.floor((Date.now() - 864e5) / 1e3)}`;
   }
   dbg.push(`query: ${q}`);
-
   const listRes = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${GMAIL_BATCH_LIMIT}&q=${encodeURIComponent(q)}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   if (!listRes.ok) {
     const errBody = await listRes.text();
-    return { processed: 0, error: `Gmail list error: ${listRes.status}`, debug: dbg.concat([`list response: ${errBody.slice(0,200)}`]) };
+    return { processed: 0, error: `Gmail list error: ${listRes.status}`, debug: dbg.concat([`list response: ${errBody.slice(0, 200)}`]) };
   }
-
   const listData = await listRes.json();
   const messages = listData.messages || [];
   dbg.push(`messages found: ${messages.length}`);
-
   const clientsRes = await env.DB.prepare(
-    'SELECT id, name FROM sprint_clients WHERE archived=0'
+    "SELECT id, name FROM sprint_clients WHERE archived=0"
   ).all();
   const clients = clientsRes.results;
-
   let processed = 0;
   for (const msg of messages) {
     const msgRes = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!msgRes.ok) { dbg.push(`msg fetch failed: ${msgRes.status}`); continue; }
+    if (!msgRes.ok) {
+      dbg.push(`msg fetch failed: ${msgRes.status}`);
+      continue;
+    }
     const msgData = await msgRes.json();
-
     const headers = msgData.payload?.headers || [];
-    const subject = headers.find(h => h.name === 'Subject')?.value || '(no subject)';
-    const fromHeader = headers.find(h => h.name === 'From')?.value || '';
-    dbg.push(`msg: "${subject}" from: ${fromHeader.slice(0,40)}`);
-
-    let body = '';
-    const extractBody = (part) => {
-      if (part.mimeType === 'text/plain' && part.body?.data) {
+    const subject = headers.find((h) => h.name === "Subject")?.value || "(no subject)";
+    const fromHeader = headers.find((h) => h.name === "From")?.value || "";
+    dbg.push(`msg: "${subject}" from: ${fromHeader.slice(0, 40)}`);
+    let body = "";
+    const extractBody = /* @__PURE__ */ __name((part) => {
+      if (part.mimeType === "text/plain" && part.body?.data) {
         try {
-          body += atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-        } catch { /* invalid base64 */ }
+          body += atob(part.body.data.replace(/-/g, "+").replace(/_/g, "/"));
+        } catch {
+        }
       }
-      if (part.parts) part.parts.forEach(extractBody);
-    };
+      if (part.parts)
+        part.parts.forEach(extractBody);
+    }, "extractBody");
     extractBody(msgData.payload || {});
-    if (!body.trim()) { dbg.push(`  → skipped: no text body`); continue; }
+    if (!body.trim()) {
+      dbg.push(`  \u2192 skipped: no text body`);
+      continue;
+    }
+    const rawText = `Subject: ${subject}
+From: ${fromHeader}
 
-    const rawText = `Subject: ${subject}\nFrom: ${fromHeader}\n\n${body.slice(0, 3000)}`;
-
-    // Step 1: classify — cheap haiku call
+${body.slice(0, 3e3)}`;
     let isWorkRequest = false;
     try {
       const classText = await callClaude(env, [{
-        role: 'user',
-        content: `Is this email a client work request, project inquiry, or action item that needs project tracking? Reply with only "yes" or "no".\n\n${rawText}`,
-      }], 'claude-haiku-4-5-20251001');
-      isWorkRequest = classText.trim().toLowerCase().startsWith('yes');
-      dbg.push(`  → classified: ${isWorkRequest ? 'YES' : 'no'}`);
-    } catch (e) { dbg.push(`  → classify error: ${e.message}`); continue; }
+        role: "user",
+        content: `Is this email a client work request, project inquiry, or action item that needs project tracking? Reply with only "yes" or "no".
 
-    if (!isWorkRequest) continue;
-
-    // Step 2: extract structure
+${rawText}`
+      }], "claude-haiku-4-5-20251001");
+      isWorkRequest = classText.trim().toLowerCase().startsWith("yes");
+      dbg.push(`  \u2192 classified: ${isWorkRequest ? "YES" : "no"}`);
+    } catch (e) {
+      dbg.push(`  \u2192 classify error: ${e.message}`);
+      continue;
+    }
+    if (!isWorkRequest)
+      continue;
     let extracted = null;
     try {
       const extractText = await callClaude(env, [{
-        role: 'user',
-        content: `Extract the client work request from this email. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string"}]}]}. If you cannot extract structured data, return {"client_name": "", "jobs": []}.\n\n${rawText}`,
-      }], 'claude-sonnet-4-6');
+        role: "user",
+        content: `Extract the client work request from this email. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string"}]}]}. If you cannot extract structured data, return {"client_name": "", "jobs": []}.
+
+${rawText}`
+      }], "claude-sonnet-4-6");
       const jsonMatch = extractText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) extracted = JSON.parse(jsonMatch[0]);
-    } catch { extracted = null; }
-
-    if (!extracted || !validateExtraction(extracted)) {
-      extracted = { client_name: '', jobs: [] };
+      if (jsonMatch)
+        extracted = JSON.parse(jsonMatch[0]);
+    } catch {
+      extracted = null;
     }
-
-    const matched = matchClient(extracted.client_name || '', clients);
-    const id = genId('intake');
+    if (!extracted || !validateExtraction(extracted)) {
+      extracted = { client_name: "", jobs: [] };
+    }
+    const matched = matchClient(extracted.client_name || "", clients);
+    const id = genId("intake");
     await env.DB.prepare(`
       INSERT INTO sprint_intake (id, source, subject, raw_text, extracted_json, suggested_client_id, suggested_client_name, status)
       VALUES (?, 'email', ?, ?, ?, ?, ?, 'pending')
     `).bind(
-      id, subject, rawText,
+      id,
+      subject,
+      rawText,
       JSON.stringify(extracted),
       matched?.id || null,
       extracted.client_name || fromHeader
     ).run();
     processed++;
   }
-
-  const now = new Date().toISOString();
+  const now = (/* @__PURE__ */ new Date()).toISOString();
   await env.DB.prepare(
-    'UPDATE sprint_gmail_tokens SET last_checked=?, cron_last_run=?, cron_last_error=NULL WHERE id=?'
-  ).bind(now, now, 'main').run();
-
+    "UPDATE sprint_gmail_tokens SET last_checked=?, cron_last_run=?, cron_last_error=NULL WHERE id=?"
+  ).bind(now, now, "main").run();
   return { processed, debug: dbg };
 }
-
-// ── Intake API handlers ────────────────────────────────────────────────────────
-
+__name(runGmailPoll, "runGmailPoll");
 async function handleIntakeList(request, env) {
   try {
     const items = await env.DB.prepare(
@@ -722,23 +769,23 @@ async function handleIntakeList(request, env) {
     return json([]);
   }
 }
-
+__name(handleIntakeList, "handleIntakeList");
 async function extractDocxText(bytes) {
-  // DOCX is a ZIP file — parse local file headers and decompress word/document.xml
   const view = new DataView(bytes);
   let offset = 0;
   while (offset < bytes.byteLength - 30) {
-    if (view.getUint32(offset, true) !== 0x04034b50) break;
+    if (view.getUint32(offset, true) !== 67324752)
+      break;
     const compression = view.getUint16(offset + 8, true);
     const compressedSize = view.getUint32(offset + 18, true);
     const filenameLen = view.getUint16(offset + 26, true);
     const extraLen = view.getUint16(offset + 28, true);
     const filename = new TextDecoder().decode(new Uint8Array(bytes, offset + 30, filenameLen));
     const dataOffset = offset + 30 + filenameLen + extraLen;
-    if (filename === 'word/document.xml') {
+    if (filename === "word/document.xml") {
       let data = new Uint8Array(bytes, dataOffset, compressedSize);
       if (compression === 8) {
-        const ds = new DecompressionStream('deflate-raw');
+        const ds = new DecompressionStream("deflate-raw");
         const writer = ds.writable.getWriter();
         const reader = ds.readable.getReader();
         writer.write(data);
@@ -746,171 +793,179 @@ async function extractDocxText(bytes) {
         const chunks = [];
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done)
+            break;
           chunks.push(value);
         }
         const out = new Uint8Array(chunks.reduce((a, b) => a + b.length, 0));
         let pos = 0;
-        for (const chunk of chunks) { out.set(chunk, pos); pos += chunk.length; }
+        for (const chunk of chunks) {
+          out.set(chunk, pos);
+          pos += chunk.length;
+        }
         data = out;
       }
       const xml = new TextDecoder().decode(data);
-      return xml.replace(/<w:t[^>]*>/g, '').replace(/<\/w:t>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 10000);
+      return xml.replace(/<w:t[^>]*>/g, "").replace(/<\/w:t>/g, " ").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 1e4);
     }
     offset = dataOffset + compressedSize;
   }
-  return '';
+  return "";
 }
-
+__name(extractDocxText, "extractDocxText");
 async function handleIntakeUpload(request, env) {
   let fileBytes, filename, mimeType;
   try {
     const formData = await request.formData();
-    const file = formData.get('file');
-    if (!file) return json({ error: 'No file provided' }, 400);
-    filename = file.name || 'document';
-    mimeType = file.type || 'application/octet-stream';
+    const file = formData.get("file");
+    if (!file)
+      return json({ error: "No file provided" }, 400);
+    filename = file.name || "document";
+    mimeType = file.type || "application/octet-stream";
     fileBytes = await file.arrayBuffer();
   } catch {
-    return json({ error: 'Invalid file upload' }, 400);
+    return json({ error: "Invalid file upload" }, 400);
   }
   if (fileBytes.byteLength > 10 * 1024 * 1024) {
-    return json({ error: 'File too large (max 10MB)' }, 413);
+    return json({ error: "File too large (max 10MB)" }, 413);
   }
-
-  const ext = filename.toLowerCase().split('.').pop();
-  const supported = ['pdf', 'txt', 'doc', 'docx'];
+  const ext = filename.toLowerCase().split(".").pop();
+  const supported = ["pdf", "txt", "doc", "docx"];
   if (!supported.includes(ext)) {
-    return json({ error: 'Unsupported file type. Please upload a PDF, DOCX, DOC, or TXT file.' }, 400);
+    return json({ error: "Unsupported file type. Please upload a PDF, DOCX, DOC, or TXT file." }, 400);
   }
-
   let extractText;
-  const isPdf = ext === 'pdf' || mimeType === 'application/pdf';
-  const isDocx = ext === 'docx' || ext === 'doc';
+  const isPdf = ext === "pdf" || mimeType === "application/pdf";
+  const isDocx = ext === "docx" || ext === "doc";
   if (isPdf) {
     const b64 = btoa(String.fromCharCode(...new Uint8Array(fileBytes)));
     try {
       extractText = await callClaude(env, [{
-        role: 'user',
+        role: "user",
         content: [
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
-          { type: 'text', text: 'Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}. Be thorough — capture every deliverable, phase, and task mentioned.' },
-        ],
-      }], 'claude-sonnet-4-6');
+          { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } },
+          { type: "text", text: 'Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}. Be thorough \u2014 capture every deliverable, phase, and task mentioned.' }
+        ]
+      }], "claude-sonnet-4-6");
     } catch (err) {
       return json({ error: `Extraction failed: ${err.message}` }, 500);
     }
   } else if (isDocx) {
-    let rawText = '';
-    try { rawText = await extractDocxText(fileBytes); } catch { /* fall through to empty */ }
-    if (!rawText) return json({ error: 'Could not read DOCX file. Try saving as PDF or TXT.' }, 422);
+    let rawText = "";
+    try {
+      rawText = await extractDocxText(fileBytes);
+    } catch {
+    }
+    if (!rawText)
+      return json({ error: "Could not read DOCX file. Try saving as PDF or TXT." }, 422);
     try {
       extractText = await callClaude(env, [{
-        role: 'user',
-        content: `Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}.\n\n${rawText}`,
-      }], 'claude-sonnet-4-6');
+        role: "user",
+        content: `Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}.
+
+${rawText}`
+      }], "claude-sonnet-4-6");
     } catch (err) {
       return json({ error: `Extraction failed: ${err.message}` }, 500);
     }
   } else {
-    const decoder = new TextDecoder('utf-8', { fatal: false });
-    const rawText = decoder.decode(fileBytes).slice(0, 10000);
+    const decoder = new TextDecoder("utf-8", { fatal: false });
+    const rawText = decoder.decode(fileBytes).slice(0, 1e4);
     try {
       extractText = await callClaude(env, [{
-        role: 'user',
-        content: `Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}.\n\n${rawText}`,
-      }], 'claude-sonnet-4-6');
+        role: "user",
+        content: `Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}.
+
+${rawText}`
+      }], "claude-sonnet-4-6");
     } catch (err) {
       return json({ error: `Extraction failed: ${err.message}` }, 500);
     }
   }
-
   let extracted = null;
   try {
     const jsonMatch = extractText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) extracted = JSON.parse(jsonMatch[0]);
-  } catch { extracted = null; }
-
-  if (!extracted || !validateExtraction(extracted)) {
-    extracted = { client_name: '', jobs: [] };
+    if (jsonMatch)
+      extracted = JSON.parse(jsonMatch[0]);
+  } catch {
+    extracted = null;
   }
-
+  if (!extracted || !validateExtraction(extracted)) {
+    extracted = { client_name: "", jobs: [] };
+  }
   const clientsRes = await env.DB.prepare(
-    'SELECT id, name FROM sprint_clients WHERE archived=0'
+    "SELECT id, name FROM sprint_clients WHERE archived=0"
   ).all();
-  const matched = matchClient(extracted.client_name || '', clientsRes.results);
-
-  const id = genId('intake');
-  const rawTextForDb = isPdf
-    ? `[PDF: ${filename}]`
-    : new TextDecoder('utf-8', { fatal: false }).decode(fileBytes).slice(0, 5000);
-
+  const matched = matchClient(extracted.client_name || "", clientsRes.results);
+  const id = genId("intake");
+  const rawTextForDb = isPdf ? `[PDF: ${filename}]` : new TextDecoder("utf-8", { fatal: false }).decode(fileBytes).slice(0, 5e3);
   await env.DB.prepare(`
     INSERT INTO sprint_intake (id, source, subject, raw_text, extracted_json, suggested_client_id, suggested_client_name, status)
     VALUES (?, 'proposal', ?, ?, ?, ?, ?, 'pending')
   `).bind(
-    id, filename, rawTextForDb,
+    id,
+    filename,
+    rawTextForDb,
     JSON.stringify(extracted),
     matched?.id || null,
     extracted.client_name || filename
   ).run();
+  const openingMsg = `I've analyzed **${filename}** and extracted the following structure:
 
-  const openingMsg = `I've analyzed **${filename}** and extracted the following structure:\n\n${
-    (extracted.jobs || []).map(j =>
-      `**${j.name}**\n${(j.tasks || []).map(t => `  - ${t.name}`).join('\n')}`
-    ).join('\n\n') || '_(No structured content found — try uploading a cleaner version)_'
-  }\n\nYou can ask me to add, remove, rename, or split any jobs or tasks. When you're happy with the structure, click **Add to Client**.`;
+${(extracted.jobs || []).map(
+    (j) => `**${j.name}**
+${(j.tasks || []).map((t) => `  - ${t.name}`).join("\n")}`
+  ).join("\n\n") || "_(No structured content found \u2014 try uploading a cleaner version)_"}
 
-  const chatId = genId('chat');
+You can ask me to add, remove, rename, or split any jobs or tasks. When you're happy with the structure, click **Add to Client**.`;
+  const chatId = genId("chat");
   await env.DB.prepare(
-    'INSERT INTO sprint_intake_chat (id, intake_id, role, content) VALUES (?, ?, ?, ?)'
-  ).bind(chatId, id, 'assistant', openingMsg).run();
-
+    "INSERT INTO sprint_intake_chat (id, intake_id, role, content) VALUES (?, ?, ?, ?)"
+  ).bind(chatId, id, "assistant", openingMsg).run();
   return json({ intake_id: id, extracted, suggested_client: matched, opening_message: openingMsg });
 }
-
+__name(handleIntakeUpload, "handleIntakeUpload");
 async function handleIntakeChat(request, env) {
   const body = await request.json().catch(() => ({}));
   const { intake_id, message } = body;
-  if (!intake_id || !message) return json({ error: 'intake_id and message required' }, 400);
-
+  if (!intake_id || !message)
+    return json({ error: "intake_id and message required" }, 400);
   const intake = await env.DB.prepare(
-    'SELECT * FROM sprint_intake WHERE id=?'
+    "SELECT * FROM sprint_intake WHERE id=?"
   ).bind(intake_id).first();
-  if (!intake) return json({ error: 'Intake item not found' }, 404);
-
-  // Load last 10 turns (20 messages), oldest-first
+  if (!intake)
+    return json({ error: "Intake item not found" }, 404);
   const historyRes = await env.DB.prepare(
-    'SELECT role, content FROM sprint_intake_chat WHERE intake_id=? ORDER BY created_at DESC LIMIT 20'
+    "SELECT role, content FROM sprint_intake_chat WHERE intake_id=? ORDER BY created_at DESC LIMIT 20"
   ).bind(intake_id).all();
   const history = historyRes.results.reverse();
-
-  // Save user message
   await env.DB.prepare(
-    'INSERT INTO sprint_intake_chat (id, intake_id, role, content) VALUES (?, ?, ?, ?)'
-  ).bind(genId('chat'), intake_id, 'user', message).run();
+    "INSERT INTO sprint_intake_chat (id, intake_id, role, content) VALUES (?, ?, ?, ?)"
+  ).bind(genId("chat"), intake_id, "user", message).run();
+  const systemContext = `You are helping refine a project structure extracted from a proposal. Current extraction:
+${intake.extracted_json}
 
-  const systemContext = `You are helping refine a project structure extracted from a proposal. Current extraction:\n${intake.extracted_json}\n\nWhen you modify the structure, include the full updated JSON in a markdown code block:\n\`\`\`json\n{"client_name": "...", "jobs": [...]}\n\`\`\`\n\nBe concise and helpful.`;
+When you modify the structure, include the full updated JSON in a markdown code block:
+\`\`\`json
+{"client_name": "...", "jobs": [...]}
+\`\`\`
 
+Be concise and helpful.`;
   const messages = [
-    { role: 'user', content: systemContext },
-    { role: 'assistant', content: 'Understood. I\'ll help refine the extraction.' },
-    ...history.map(h => ({ role: h.role, content: h.content })),
-    { role: 'user', content: message },
+    { role: "user", content: systemContext },
+    { role: "assistant", content: "Understood. I'll help refine the extraction." },
+    ...history.map((h) => ({ role: h.role, content: h.content })),
+    { role: "user", content: message }
   ];
-
   let reply;
   try {
-    reply = await callClaude(env, messages, 'claude-sonnet-4-6');
+    reply = await callClaude(env, messages, "claude-sonnet-4-6");
   } catch (err) {
     return json({ error: `Claude error: ${err.message}` }, 500);
   }
-
   await env.DB.prepare(
-    'INSERT INTO sprint_intake_chat (id, intake_id, role, content) VALUES (?, ?, ?, ?)'
-  ).bind(genId('chat'), intake_id, 'assistant', reply).run();
-
-  // Extract updated JSON if Claude included one
+    "INSERT INTO sprint_intake_chat (id, intake_id, role, content) VALUES (?, ?, ?, ?)"
+  ).bind(genId("chat"), intake_id, "assistant", reply).run();
   let updatedExtracted = null;
   const jsonBlock = reply.match(/```json\s*([\s\S]*?)```/);
   if (jsonBlock) {
@@ -919,103 +974,101 @@ async function handleIntakeChat(request, env) {
       if (validateExtraction(parsed)) {
         updatedExtracted = parsed;
         await env.DB.prepare(
-          'UPDATE sprint_intake SET extracted_json=? WHERE id=?'
+          "UPDATE sprint_intake SET extracted_json=? WHERE id=?"
         ).bind(JSON.stringify(parsed), intake_id).run();
       }
-    } catch { /* ignore */ }
+    } catch {
+    }
   }
-
   return json({ reply, updated_extraction: updatedExtracted });
 }
-
+__name(handleIntakeChat, "handleIntakeChat");
 async function handleIntakeConfirm(request, env, intakeId) {
   const body = await request.json().catch(() => ({}));
   const { client_id, create_client_name } = body;
-
   const intake = await env.DB.prepare(
-    'SELECT * FROM sprint_intake WHERE id=?'
+    "SELECT * FROM sprint_intake WHERE id=?"
   ).bind(intakeId).first();
-  if (!intake) return json({ error: 'Not found' }, 404);
-
+  if (!intake)
+    return json({ error: "Not found" }, 404);
   let targetClientId = client_id;
   if (!targetClientId && create_client_name) {
     const cname = create_client_name.trim();
     const exists = await env.DB.prepare(
-      'SELECT id FROM sprint_clients WHERE name=? AND archived=0'
+      "SELECT id FROM sprint_clients WHERE name=? AND archived=0"
     ).bind(cname).first();
     if (exists) {
       targetClientId = exists.id;
     } else {
-      targetClientId = genId('client');
+      targetClientId = genId("client");
       await env.DB.prepare(
         `INSERT INTO sprint_clients (id, name, status, archived) VALUES (?, ?, 'Active', 0)`
       ).bind(targetClientId, cname).run();
     }
   }
-  if (!targetClientId) return json({ error: 'client_id or create_client_name required' }, 400);
-
+  if (!targetClientId)
+    return json({ error: "client_id or create_client_name required" }, 400);
   let extracted;
-  try { extracted = JSON.parse(intake.extracted_json); } catch { extracted = { jobs: [] }; }
-  if (!validateExtraction(extracted)) return json({ error: 'Invalid extraction — refine before confirming' }, 400);
-
+  try {
+    extracted = JSON.parse(intake.extracted_json);
+  } catch {
+    extracted = { jobs: [] };
+  }
+  if (!validateExtraction(extracted))
+    return json({ error: "Invalid extraction \u2014 refine before confirming" }, 400);
   const ops = [];
   for (const job of extracted.jobs) {
-    const jobId = genId('job');
+    const jobId = genId("job");
     ops.push(env.DB.prepare(
       `INSERT INTO sprint_jobs (id, client_id, name, status) VALUES (?, ?, ?, 'Active')`
     ).bind(jobId, targetClientId, job.name));
-    for (const task of (job.tasks || [])) {
+    for (const task of job.tasks || []) {
       ops.push(env.DB.prepare(
         `INSERT INTO sprint_tasks (id, job_id, client_id, notes, status) VALUES (?, ?, ?, ?, 'Not Started')`
-      ).bind(genId('task'), jobId, targetClientId, task.name || task.notes || ''));
+      ).bind(genId("task"), jobId, targetClientId, task.name || task.notes || ""));
     }
   }
   ops.push(env.DB.prepare(
     `UPDATE sprint_intake SET status='confirmed' WHERE id=?`
   ).bind(intakeId));
-
   await env.DB.batch(ops);
   return json({ success: true, client_id: targetClientId, jobs_created: extracted.jobs.length });
 }
-
+__name(handleIntakeConfirm, "handleIntakeConfirm");
 async function handleIntakeDismiss(request, env, intakeId) {
   await env.DB.prepare(
     `UPDATE sprint_intake SET status='dismissed' WHERE id=?`
   ).bind(intakeId).run();
   return json({ success: true });
 }
-
+__name(handleIntakeDismiss, "handleIntakeDismiss");
 async function handleIntakeBulkDismiss(request, env) {
   const { ids } = await request.json().catch(() => ({}));
-  if (!Array.isArray(ids) || !ids.length) return json({ error: 'ids required' }, 400);
-  const stmts = ids.map(id =>
-    env.DB.prepare(`UPDATE sprint_intake SET status='dismissed' WHERE id=?`).bind(id)
+  if (!Array.isArray(ids) || !ids.length)
+    return json({ error: "ids required" }, 400);
+  const stmts = ids.map(
+    (id) => env.DB.prepare(`UPDATE sprint_intake SET status='dismissed' WHERE id=?`).bind(id)
   );
   await env.DB.batch(stmts);
   return json({ success: true, dismissed: ids.length });
 }
-
+__name(handleIntakeBulkDismiss, "handleIntakeBulkDismiss");
 async function handleAssistant(request, env) {
   const { message } = await request.json().catch(() => ({}));
-  if (!message || !message.trim()) return json({ error: 'No message' }, 400);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-
-  // Load context: all clients + all jobs (active and complete)
+  if (!message || !message.trim())
+    return json({ error: "No message" }, 400);
+  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
   const clients = await env.DB.prepare(
     `SELECT id, name FROM sprint_clients WHERE archived=0 ORDER BY name`
-  ).all().then(r => r.results || []);
+  ).all().then((r) => r.results || []);
   const allJobs = await env.DB.prepare(
     `SELECT id, client_id, name, status FROM sprint_jobs ORDER BY status='Active' DESC, name`
-  ).all().then(r => r.results || []);
-
-  const clientList = clients.map(c => {
-    const cjobs = allJobs.filter(j => j.client_id === c.id)
-      .map(j => `    - "${j.name}" (id:${j.id}, status:${j.status})`).join('\n');
-    return `- "${c.name}" (id:${c.id})${cjobs ? '\n  Jobs:\n' + cjobs : ' [no jobs]'}`;
-  }).join('\n');
-
+  ).all().then((r) => r.results || []);
+  const clientList = clients.map((c) => {
+    const cjobs = allJobs.filter((j) => j.client_id === c.id).map((j) => `    - "${j.name}" (id:${j.id}, status:${j.status})`).join("\n");
+    return `- "${c.name}" (id:${c.id})${cjobs ? "\n  Jobs:\n" + cjobs : " [no jobs]"}`;
+  }).join("\n");
   const systemPrompt = `You are a project tracker assistant. Today is ${today}.
 
 Clients and their jobs:
@@ -1025,10 +1078,10 @@ Respond with JSON only (no markdown):
 {
   "action": "create_job" | "create_task" | "none",
   "client_id": "<matched client id or null>",
-  "job_id": "<matched job id or null — for create_task, prefer Active jobs>",
+  "job_id": "<matched job id or null \u2014 for create_task, prefer Active jobs>",
   "job_name": "<for create_job: the job name. For create_task with no matching job: a short new job name to create first>",
   "task_text": "<full task description for create_task>",
-  "due_date": "<YYYY-MM-DD or null — compute from relative terms like 'tomorrow' using today=${today}>",
+  "due_date": "<YYYY-MM-DD or null \u2014 compute from relative terms like 'tomorrow' using today=${today}>",
   "auto_create_job": <true if create_task needs a new job first, false otherwise>,
   "response": "<concise confirmation under 10 words>"
 }
@@ -1039,29 +1092,24 @@ Rules:
 - If client has no active jobs and no clear job is specified, set job_name to something sensible (e.g. "Tasks" or infer from the task)
 - Parse due dates: "tomorrow"=${tomorrow}, "next week"=add 7 days, etc.
 - Keep response short and confident`;
-
-  const aiText = await callClaude(env, [{ role: 'user', content: message }], 'claude-haiku-4-5-20251001', systemPrompt);
+  const aiText = await callClaude(env, [{ role: "user", content: message }], "claude-haiku-4-5-20251001", systemPrompt);
   let parsed;
   try {
     const jsonMatch = aiText.match(/\{[\s\S]*\}/);
     parsed = JSON.parse(jsonMatch ? jsonMatch[0] : aiText);
   } catch {
-    return json({ response: aiText.slice(0, 200), action: 'none' });
+    return json({ response: aiText.slice(0, 200), action: "none" });
   }
-
   const { action, client_id, job_name, task_text, due_date, auto_create_job, response: aiResponse } = parsed;
   let { job_id } = parsed;
-
-  if (action === 'create_job' && client_id && job_name) {
+  if (action === "create_job" && client_id && job_name) {
     const jid = crypto.randomUUID();
     await env.DB.prepare(
       `INSERT INTO sprint_jobs (id, client_id, name, status, created_at, updated_at) VALUES (?, ?, ?, 'Active', datetime('now'), datetime('now'))`
     ).bind(jid, client_id, job_name).run();
-    return json({ response: aiResponse || `Created job "${job_name}"`, action: 'job_created', refresh: true });
+    return json({ response: aiResponse || `Created job "${job_name}"`, action: "job_created", refresh: true });
   }
-
-  if (action === 'create_task' && client_id && task_text) {
-    // Auto-create a job if needed
+  if (action === "create_task" && client_id && task_text) {
     if (auto_create_job && job_name) {
       const jid = crypto.randomUUID();
       await env.DB.prepare(
@@ -1069,113 +1117,117 @@ Rules:
       ).bind(jid, client_id, job_name).run();
       job_id = jid;
     }
-    if (!job_id) return json({ response: 'Which job should I add that to?', action: 'none' });
-    const targetJob = allJobs.find(j => j.id === job_id);
+    if (!job_id)
+      return json({ response: "Which job should I add that to?", action: "none" });
+    const targetJob = allJobs.find((j) => j.id === job_id);
     const tid = crypto.randomUUID();
     const dueBind = due_date || null;
     await env.DB.prepare(
       `INSERT INTO sprint_tasks (id, job_id, client_id, notes, status, due_date, created_at, updated_at) VALUES (?, ?, ?, ?, 'Open', ?, datetime('now'), datetime('now'))`
     ).bind(tid, job_id, client_id, task_text, dueBind).run();
-    const dueStr = due_date ? ` (due ${due_date})` : '';
-    return json({ response: aiResponse || `Added task to ${targetJob ? targetJob.name : 'job'}${dueStr}`, action: 'task_created', refresh: true });
+    const dueStr = due_date ? ` (due ${due_date})` : "";
+    return json({ response: aiResponse || `Added task to ${targetJob ? targetJob.name : "job"}${dueStr}`, action: "task_created", refresh: true });
   }
-
-  return json({ response: aiResponse || "Done.", action: 'none' });
+  return json({ response: aiResponse || "Done.", action: "none" });
 }
-
+__name(handleAssistant, "handleAssistant");
 async function handleIntakeSaveAsNote(request, env, intakeId) {
   const body = await request.json().catch(() => ({}));
   const { job_id } = body;
-  if (!job_id) return json({ error: 'job_id required' }, 400);
-  const item = await env.DB.prepare('SELECT * FROM sprint_intake WHERE id=?').bind(intakeId).first();
-  if (!item) return json({ error: 'Not found' }, 404);
-  const job = await env.DB.prepare('SELECT notes FROM sprint_jobs WHERE id=?').bind(job_id).first();
-  if (!job) return json({ error: 'Job not found' }, 404);
-  const timestamp = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const noteText = `[${timestamp}] ${item.subject || 'Email note'}\n${(item.raw_text || '').slice(0, 2000)}`.trim();
-  const existing = job.notes || '';
-  const newNotes = existing ? existing + '\n\n---\n\n' + noteText : noteText;
+  if (!job_id)
+    return json({ error: "job_id required" }, 400);
+  const item = await env.DB.prepare("SELECT * FROM sprint_intake WHERE id=?").bind(intakeId).first();
+  if (!item)
+    return json({ error: "Not found" }, 404);
+  const job = await env.DB.prepare("SELECT notes FROM sprint_jobs WHERE id=?").bind(job_id).first();
+  if (!job)
+    return json({ error: "Job not found" }, 404);
+  const timestamp = (/* @__PURE__ */ new Date()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const noteText = `[${timestamp}] ${item.subject || "Email note"}
+${(item.raw_text || "").slice(0, 2e3)}`.trim();
+  const existing = job.notes || "";
+  const newNotes = existing ? existing + "\n\n---\n\n" + noteText : noteText;
   await env.DB.batch([
     env.DB.prepare('UPDATE sprint_jobs SET notes=?, updated_at=datetime("now") WHERE id=?').bind(newNotes, job_id),
     env.DB.prepare('UPDATE sprint_intake SET status="dismissed" WHERE id=?').bind(intakeId)
   ]);
   return json({ success: true });
 }
-
-// ── Main fetch handler ────────────────────────────────────────────────────────
-
-// ── Floor Pro Client Portal ───────────────────────────────────────────────────
-
+__name(handleIntakeSaveAsNote, "handleIntakeSaveAsNote");
 async function floorProAuth(request, env) {
-  const token = getCookie(request, 'fp_session');
-  if (!token || !env.FLOOR_PRO_PASSWORD) return false;
-  try { return await isValidToken(env.FLOOR_PRO_PASSWORD, token); }
-  catch { return false; }
+  const token = getCookie(request, "fp_session");
+  if (!token || !env.FLOOR_PRO_PASSWORD)
+    return false;
+  try {
+    return await isValidToken(env.FLOOR_PRO_PASSWORD, token);
+  } catch {
+    return false;
+  }
 }
-
+__name(floorProAuth, "floorProAuth");
 async function handleFloorProDomain(request, env, path) {
   try {
-    if (path === '/api/fp-login' && request.method === 'POST') {
+    if (path === "/api/fp-login" && request.method === "POST") {
       const body = await request.json().catch(() => ({}));
       if (!env.FLOOR_PRO_PASSWORD || body.password !== env.FLOOR_PRO_PASSWORD) {
-        return json({ error: 'Incorrect password' }, 401);
+        return json({ error: "Incorrect password" }, 401);
       }
       const token = await makeToken(env.FLOOR_PRO_PASSWORD);
       const cookie = `fp_session=${token}; HttpOnly; SameSite=Lax; Max-Age=604800; Path=/`;
-      return json({ ok: true }, 200, { 'Set-Cookie': cookie });
+      return json({ ok: true }, 200, { "Set-Cookie": cookie });
     }
-
-    if (path === '/api/fp-refresh' && request.method === 'POST') {
-      if (!await floorProAuth(request, env)) return json({ error: 'Unauthorized' }, 401);
+    if (path === "/api/fp-refresh" && request.method === "POST") {
+      if (!await floorProAuth(request, env))
+        return json({ error: "Unauthorized" }, 401);
       return await handleFloorProRefresh(env);
     }
-
-    if (path === '/api/fp-data' && request.method === 'GET') {
-      if (!await floorProAuth(request, env)) return json({ error: 'Unauthorized' }, 401);
+    if (path === "/api/fp-data" && request.method === "GET") {
+      if (!await floorProAuth(request, env))
+        return json({ error: "Unauthorized" }, 401);
       return await handleFloorProData(env);
     }
-
-    // HTML
     const authed = await floorProAuth(request, env);
     return new Response(getFloorProHTML(authed), {
-      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+      headers: { "Content-Type": "text/html; charset=utf-8" }
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
+      status: 500,
+      headers: { "Content-Type": "application/json" }
     });
   }
 }
-
+__name(handleFloorProDomain, "handleFloorProDomain");
 async function getGadsAccessToken(env) {
-  const resp = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       client_id: env.GADS_CLIENT_ID,
       client_secret: env.GADS_CLIENT_SECRET,
       refresh_token: env.GADS_REFRESH_TOKEN,
-      grant_type: 'refresh_token',
-    }),
+      grant_type: "refresh_token"
+    })
   });
   const d = await resp.json();
-  if (!d.access_token) throw new Error(`Token exchange failed: ${d.error_description || d.error}`);
+  if (!d.access_token)
+    throw new Error(`Token exchange failed: ${d.error_description || d.error}`);
   return d.access_token;
 }
-
+__name(getGadsAccessToken, "getGadsAccessToken");
 async function runGAQL(accessToken, env, query) {
-  const custId = '8999197888';
+  const custId = "8999197888";
   const resp = await fetch(
-    `https://googleads.googleapis.com/v20/customers/${custId}/googleAds:search`,
+    `https://googleads.googleapis.com/v24/customers/${custId}/googleAds:search`,
     {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'developer-token': env.GADS_DEVELOPER_TOKEN,
-        'login-customer-id': '7536541386',
-        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${accessToken}`,
+        "developer-token": env.GADS_DEVELOPER_TOKEN,
+        "login-customer-id": "7536541386",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query })
     }
   );
   if (!resp.ok) {
@@ -1185,28 +1237,29 @@ async function runGAQL(accessToken, env, query) {
   const data = await resp.json();
   return data.results || [];
 }
-
+__name(runGAQL, "runGAQL");
 function stripSpend(rows) {
-  const bad = ['cost', 'spend', 'cpc', 'cpm', 'budget', 'revenue', 'value'];
+  const bad = ["cost", "spend", "cpc", "cpm", "budget", "revenue", "value"];
   function clean(obj) {
     const out = {};
     for (const [k, v] of Object.entries(obj || {})) {
-      if (bad.some(b => k.toLowerCase().includes(b))) continue;
-      out[k] = (v && typeof v === 'object' && !Array.isArray(v)) ? clean(v) : v;
+      if (bad.some((b) => k.toLowerCase().includes(b)))
+        continue;
+      out[k] = v && typeof v === "object" && !Array.isArray(v) ? clean(v) : v;
     }
     return out;
   }
+  __name(clean, "clean");
   return rows.map(clean);
 }
-
+__name(stripSpend, "stripSpend");
 async function handleFloorProRefresh(env) {
   const token = await getGadsAccessToken(env);
-  const today = new Date();
-  const fmt = d => d.toISOString().split('T')[0];
-  const yesterday = fmt(new Date(today - 86400000));
-  const sevenAgo  = fmt(new Date(today - 7 * 86400000));
-  const thirtyAgo = fmt(new Date(today - 30 * 86400000));
-
+  const today = /* @__PURE__ */ new Date();
+  const fmt = /* @__PURE__ */ __name((d) => d.toISOString().split("T")[0], "fmt");
+  const yesterday = fmt(new Date(today - 864e5));
+  const sevenAgo = fmt(new Date(today - 7 * 864e5));
+  const thirtyAgo = fmt(new Date(today - 30 * 864e5));
   const queries = {
     summary: `SELECT metrics.impressions, metrics.clicks, metrics.ctr,
         metrics.search_impression_share, metrics.conversions
@@ -1236,17 +1289,14 @@ async function handleFloorProRefresh(env) {
       FROM campaign_criterion
       WHERE campaign_criterion.type = 'KEYWORD'
         AND campaign_criterion.negative = true
-      ORDER BY campaign.name LIMIT 500`,
+      ORDER BY campaign.name LIMIT 500`
   };
-
   const results = {};
   for (const [key, q] of Object.entries(queries)) {
     const rows = await runGAQL(token, env, q);
-    results[key] = key === 'negatives' ? rows : stripSpend(rows);
+    results[key] = key === "negatives" ? rows : stripSpend(rows);
   }
-
-  // Cache each dataset in D1
-  const clientId = 'recWK4ZeH88QQkqhl';
+  const clientId = "recWK4ZeH88QQkqhl";
   for (const [dataType, payload] of Object.entries(results)) {
     await env.DB.prepare(`
       INSERT INTO client_ad_cache (id, client_id, data_type, payload_json, date_range, fetched_at)
@@ -1254,42 +1304,38 @@ async function handleFloorProRefresh(env) {
       ON CONFLICT(client_id, data_type) DO UPDATE SET
         id=excluded.id, payload_json=excluded.payload_json,
         date_range=excluded.date_range, fetched_at=excluded.fetched_at
-    `).bind(genId('cac'), clientId, dataType, JSON.stringify(payload), yesterday).run();
+    `).bind(genId("cac"), clientId, dataType, JSON.stringify(payload), yesterday).run();
   }
-
   return json({ ok: true, data: results, as_of: yesterday });
 }
-
+__name(handleFloorProRefresh, "handleFloorProRefresh");
 async function handleFloorProData(env) {
-  const clientId = 'recWK4ZeH88QQkqhl';
+  const clientId = "recWK4ZeH88QQkqhl";
   const rows = await env.DB.prepare(
-    'SELECT data_type, payload_json, date_range, fetched_at FROM client_ad_cache WHERE client_id=?'
+    "SELECT data_type, payload_json, date_range, fetched_at FROM client_ad_cache WHERE client_id=?"
   ).bind(clientId).all();
-
-  if (!rows.results.length) return json({ ok: true, data: null });
-
+  if (!rows.results.length)
+    return json({ ok: true, data: null });
   const data = {};
   for (const r of rows.results) {
     data[r.data_type] = { payload: JSON.parse(r.payload_json), date_range: r.date_range, fetched_at: r.fetched_at };
   }
   return json({ ok: true, data });
 }
-
-// ── Client Ad Portal handlers ─────────────────────────────────────────────────
-
+__name(handleFloorProData, "handleFloorProData");
 async function handlePushAdData(request, env) {
-  const secret = request.headers.get('X-Internal-Secret');
+  const secret = request.headers.get("X-Internal-Secret");
   if (!secret || secret !== env.INTERNAL_PUSH_SECRET) {
-    return json({ error: 'Forbidden' }, 403);
+    return json({ error: "Forbidden" }, 403);
   }
   const body = await request.json().catch(() => null);
   if (!body || !body.client_id || !body.data_type || !Array.isArray(body.payload)) {
-    return json({ error: 'Missing fields: client_id, data_type, payload required' }, 400);
+    return json({ error: "Missing fields: client_id, data_type, payload required" }, 400);
   }
-  const client = await env.DB.prepare('SELECT id FROM sprint_clients WHERE id=?').bind(body.client_id).first();
-  if (!client) return json({ error: 'Client not found' }, 404);
-
-  const id = genId('cac');
+  const client = await env.DB.prepare("SELECT id FROM sprint_clients WHERE id=?").bind(body.client_id).first();
+  if (!client)
+    return json({ error: "Client not found" }, 404);
+  const id = genId("cac");
   await env.DB.prepare(`
     INSERT INTO client_ad_cache (id, client_id, data_type, payload_json, date_range, fetched_at)
     VALUES (?, ?, ?, ?, ?, datetime('now'))
@@ -1298,14 +1344,13 @@ async function handlePushAdData(request, env) {
       payload_json=excluded.payload_json,
       date_range=excluded.date_range,
       fetched_at=excluded.fetched_at
-  `).bind(id, body.client_id, body.data_type, JSON.stringify(body.payload), body.date_range || '').run();
-
+  `).bind(id, body.client_id, body.data_type, JSON.stringify(body.payload), body.date_range || "").run();
   return json({ success: true, rows: body.payload.length });
 }
-
+__name(handlePushAdData, "handlePushAdData");
 async function handlePortal(request, env, token) {
   if (!token || token.length < 8) {
-    return new Response(getPortalNotFoundHTML(), { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    return new Response(getPortalNotFoundHTML(), { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
   const row = await env.DB.prepare(
     `SELECT cpt.token, sc.name as client_name
@@ -1314,155 +1359,139 @@ async function handlePortal(request, env, token) {
      WHERE cpt.token=? AND cpt.revoked=0`
   ).bind(token).first();
   if (!row) {
-    return new Response(getPortalNotFoundHTML(), { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    return new Response(getPortalNotFoundHTML(), { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
   return new Response(getPortalHTML(token, row.client_name), {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    headers: { "Content-Type": "text/html; charset=utf-8" }
   });
 }
-
+__name(handlePortal, "handlePortal");
 async function handlePortalData(request, env, token) {
   const row = await env.DB.prepare(
-    'SELECT client_id FROM client_portal_tokens WHERE token=? AND revoked=0'
+    "SELECT client_id FROM client_portal_tokens WHERE token=? AND revoked=0"
   ).bind(token).first();
-  if (!row) return json({ error: 'Invalid token' }, 403);
-
+  if (!row)
+    return json({ error: "Invalid token" }, 403);
   const cache = await env.DB.prepare(
-    'SELECT data_type, payload_json, date_range, fetched_at FROM client_ad_cache WHERE client_id=?'
+    "SELECT data_type, payload_json, date_range, fetched_at FROM client_ad_cache WHERE client_id=?"
   ).bind(row.client_id).all();
-
   const data = {};
   for (const r of cache.results) {
     data[r.data_type] = {
       payload: JSON.parse(r.payload_json),
       date_range: r.date_range,
-      fetched_at: r.fetched_at,
+      fetched_at: r.fetched_at
     };
   }
   return json({ ok: true, data });
 }
-
+__name(handlePortalData, "handlePortalData");
 async function handlePortalTokenGet(request, env, clientId) {
   const token = await env.DB.prepare(
-    'SELECT * FROM client_portal_tokens WHERE client_id=? AND revoked=0 ORDER BY created_at DESC LIMIT 1'
+    "SELECT * FROM client_portal_tokens WHERE client_id=? AND revoked=0 ORDER BY created_at DESC LIMIT 1"
   ).bind(clientId).first();
   return json({ token: token || null });
 }
-
+__name(handlePortalTokenGet, "handlePortalTokenGet");
 async function handlePortalTokenCreate(request, env, clientId) {
-  const client = await env.DB.prepare('SELECT * FROM sprint_clients WHERE id=?').bind(clientId).first();
-  if (!client) return json({ error: 'Client not found' }, 404);
-
+  const client = await env.DB.prepare("SELECT * FROM sprint_clients WHERE id=?").bind(clientId).first();
+  if (!client)
+    return json({ error: "Client not found" }, 404);
   await env.DB.prepare(
-    'UPDATE client_portal_tokens SET revoked=1 WHERE client_id=? AND revoked=0'
+    "UPDATE client_portal_tokens SET revoked=1 WHERE client_id=? AND revoked=0"
   ).bind(clientId).run();
-
-  // UUID v4 via Web Crypto
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
-  const token = `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
-
-  const id = genId('cpt');
+  bytes[6] = bytes[6] & 15 | 64;
+  bytes[8] = bytes[8] & 63 | 128;
+  const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const token = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  const id = genId("cpt");
   await env.DB.prepare(
     `INSERT INTO client_portal_tokens (id, client_id, token, label, created_at) VALUES (?, ?, ?, ?, datetime('now'))`
   ).bind(id, clientId, token, client.name).run();
-
   return json({ success: true, token, url: `/portal/${token}` });
 }
-
+__name(handlePortalTokenCreate, "handlePortalTokenCreate");
 async function handlePortalTokenRevoke(request, env, clientId) {
   await env.DB.prepare(
-    'UPDATE client_portal_tokens SET revoked=1 WHERE client_id=? AND revoked=0'
+    "UPDATE client_portal_tokens SET revoked=1 WHERE client_id=? AND revoked=0"
   ).bind(clientId).run();
   return json({ success: true });
 }
-
-export default {
+__name(handlePortalTokenRevoke, "handlePortalTokenRevoke");
+var worker_default = {
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
       try {
         const result = await runGmailPoll(env);
         if (result.error) {
           await env.DB.prepare(
-            'UPDATE sprint_gmail_tokens SET cron_last_error=? WHERE id=?'
-          ).bind(result.error, 'main').run().catch(() => {});
+            "UPDATE sprint_gmail_tokens SET cron_last_error=? WHERE id=?"
+          ).bind(result.error, "main").run().catch(() => {
+          });
         }
       } catch (err) {
         await env.DB.prepare(
-          'UPDATE sprint_gmail_tokens SET cron_last_error=? WHERE id=?'
-        ).bind(err.message, 'main').run().catch(() => {});
+          "UPDATE sprint_gmail_tokens SET cron_last_error=? WHERE id=?"
+        ).bind(err.message, "main").run().catch(() => {
+        });
       }
     })());
   },
-
   async fetch(request, env) {
     if (!env.APP_PASSWORD) {
-      return new Response('APP_PASSWORD not configured. Run: wrangler secret put APP_PASSWORD', {
+      return new Response("APP_PASSWORD not configured. Run: wrangler secret put APP_PASSWORD", {
         status: 500,
-        headers: { 'Content-Type': 'text/plain' }
+        headers: { "Content-Type": "text/plain" }
       });
     }
-
     const url = new URL(request.url);
     const path = url.pathname;
-    const host = request.headers.get('host') || '';
-
-    if (request.method === 'OPTIONS') {
+    const host = request.headers.get("host") || "";
+    if (request.method === "OPTIONS") {
       return new Response(null, { status: 204 });
     }
-
-    // Floor Pro client portal — separate domain, separate auth
-    if (host === 'floorpro.engageengine.ai') {
+    if (host === "floorpro.engageengine.ai") {
       return handleFloorProDomain(request, env, path);
     }
-
     try {
-      if (path.startsWith('/api/')) {
-        // Find matching route
+      if (path.startsWith("/api/")) {
         for (const route of ROUTES) {
-          if (route.method !== request.method) continue;
+          if (route.method !== request.method)
+            continue;
           const m = path.match(route.re);
-          if (!m) continue;
-          // Auth check
+          if (!m)
+            continue;
           if (!route.public) {
-            const authed = await authMiddleware(request, env);
-            if (!authed) return json({ error: 'Unauthorized' }, 401);
+            const authed2 = await authMiddleware(request, env);
+            if (!authed2)
+              return json({ error: "Unauthorized" }, 401);
           }
           return await route.handler(request, env, m);
         }
-        return json({ error: 'Not found' }, 404);
+        return json({ error: "Not found" }, 404);
       }
-
-      // Public client portal — token in URL, no session required
-      if (path.startsWith('/portal/')) {
-        const token = path.slice('/portal/'.length).replace(/\/$/, '');
+      if (path.startsWith("/portal/")) {
+        const token = path.slice("/portal/".length).replace(/\/$/, "");
         return handlePortal(request, env, token);
       }
-
-      // Serve HTML — auth check: redirect to login if not authed
       const authed = await authMiddleware(request, env);
       return new Response(getHTML(authed), {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        headers: { "Content-Type": "text/html; charset=utf-8" }
       });
-
     } catch (err) {
       return new Response(JSON.stringify({ error: err.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { "Content-Type": "application/json" }
       });
     }
   }
 };
-
-// ── Floor Pro Portal HTML ─────────────────────────────────────────────────────
-
 function getFloorProHTML(authed) {
   if (!authed) {
     return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Floor Pro — Ads Dashboard</title>
+<title>Floor Pro \u2014 Ads Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F8F7F4;display:flex;align-items:center;justify-content:center;min-height:100vh}
@@ -1493,14 +1522,13 @@ async function login() {
   if (res.ok) { window.location.reload(); }
   else { document.getElementById('err').style.display='block'; document.getElementById('pw').select(); }
 }
-</script></body></html>`;
+<\/script></body></html>`;
   }
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Floor Pro — Ads Dashboard</title>
+<title>Floor Pro \u2014 Ads Dashboard</title>
 <style>
 :root{--bg:#F8F7F4;--surface:#fff;--border:#E5E2DB;--text:#1A1A18;--dim:#6B6963;--muted:#A8A29E;--accent:#2563EB;--green:#16A34A;--amber:#D97706}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -1546,7 +1574,7 @@ tbody tr:hover{background:#FAFAF8}
 <body>
 <div class="header">
   <div>
-    <h1>Floor Pro — Google Ads Dashboard</h1>
+    <h1>Floor Pro \u2014 Google Ads Dashboard</h1>
     <div class="sub">Performance overview &middot; Read-only</div>
   </div>
   <div style="display:flex;align-items:center;gap:14px">
@@ -1562,12 +1590,12 @@ var data = null;
 var activeTab = 'campaigns';
 
 function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function num(n){ if(n==null||n==='')return'—'; var v=parseFloat(n); return isNaN(v)?'—':Math.round(v).toLocaleString(); }
-function pct(n){ if(n==null||n==='')return'—'; var v=parseFloat(n); return isNaN(v)?'—':(v*100).toFixed(1)+'%'; }
+function num(n){ if(n==null||n==='')return'\u2014'; var v=parseFloat(n); return isNaN(v)?'\u2014':Math.round(v).toLocaleString(); }
+function pct(n){ if(n==null||n==='')return'\u2014'; var v=parseFloat(n); return isNaN(v)?'\u2014':(v*100).toFixed(1)+'%'; }
 function statusBadge(s){ var c=(s||'').toLowerCase(); return '<span class="badge '+c+'">'+h(s)+'</span>'; }
 function matchBadge(t){ var c=(t||'').toLowerCase().replace(/_type$/,''); var m={BROAD:'BROAD',broad:'BROAD',PHRASE:'PHRASE',phrase:'PHRASE',EXACT:'EXACT',exact:'EXACT'}; return '<span class="badge '+c+'">'+(m[t]||h(t))+'</span>'; }
 
-// The Google Ads REST API returns nested objects — extract by dot-path
+// The Google Ads REST API returns nested objects \u2014 extract by dot-path
 function get(obj, path) {
   return path.split('.').reduce(function(o,k){ return o&&o[k]!=null?o[k]:null; }, obj);
 }
@@ -1696,28 +1724,26 @@ async function load() {
 }
 
 load();
-</script>
+<\/script>
 </body>
 </html>`;
 }
-
-// ── Portal HTML ───────────────────────────────────────────────────────────────
-
+__name(getFloorProHTML, "getFloorProHTML");
 function getPortalNotFoundHTML() {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dashboard Not Found</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F8F7F4;display:flex;align-items:center;justify-content:center;min-height:100vh}.card{background:#fff;border:1px solid #E5E2DB;border-radius:12px;padding:40px;text-align:center;max-width:380px}h2{font-size:18px;margin-bottom:8px}p{color:#6B6963;font-size:14px;line-height:1.5}</style>
 </head><body><div class="card"><h2>Dashboard Link Not Found</h2><p>This link is invalid or has been revoked. Please contact your account manager for an updated link.</p></div></body></html>`;
 }
-
+__name(getPortalNotFoundHTML, "getPortalNotFoundHTML");
 function getPortalHTML(token, clientName) {
-  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const esc = /* @__PURE__ */ __name((s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"), "esc");
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(clientName)} — Ads Dashboard</title>
+<title>${esc(clientName)} \u2014 Ads Dashboard</title>
 <style>
 :root{--bg:#F8F7F4;--surface:#FFFFFF;--border:#E5E2DB;--text:#1A1A18;--text-dim:#6B6963;--accent:#2563EB;--green:#16A34A;--amber:#D97706}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -1754,7 +1780,7 @@ tbody tr:hover{background:#FAFAF8}
 <body>
 <div class="header">
   <div class="header-left">
-    <h1>${esc(clientName)} — Google Ads Dashboard</h1>
+    <h1>${esc(clientName)} \u2014 Google Ads Dashboard</h1>
     <div class="sub">Performance overview &middot; Read-only</div>
   </div>
   <div class="freshness" id="freshness">Loading&hellip;</div>
@@ -1767,8 +1793,8 @@ var portalData=null;
 var activeTab='campaigns';
 
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function fmt(n){if(n==null||n==='')return'—';n=parseFloat(n);return isNaN(n)?'—':n.toLocaleString();}
-function pct(n){if(n==null||n==='')return'—';var v=parseFloat(n);return isNaN(v)?'—':(v*100).toFixed(1)+'%';}
+function fmt(n){if(n==null||n==='')return'\u2014';n=parseFloat(n);return isNaN(n)?'\u2014':n.toLocaleString();}
+function pct(n){if(n==null||n==='')return'\u2014';var v=parseFloat(n);return isNaN(v)?'\u2014':(v*100).toFixed(1)+'%';}
 function statusBadge(s){var cls=(s||'').toLowerCase();return '<span class="badge '+cls+'">'+escHtml(s)+'</span>';}
 function matchBadge(t){var cls=(t||'').toLowerCase().replace(/_type$/,'');var labels={broad:'BROAD',phrase:'PHRASE',exact:'EXACT'};return '<span class="badge '+cls+'">'+(labels[cls]||escHtml(t))+'</span>';}
 
@@ -1867,13 +1893,186 @@ async function load(){
 }
 
 load();
-</script>
+<\/script>
 </body>
 </html>`;
 }
-
-// ── HTML ──────────────────────────────────────────────────────────────────────
-
+__name(getPortalHTML, "getPortalHTML");
+async function handleClientHealth(request, env) {
+  const latest = await env.DB.prepare(
+    `SELECT MAX(score_date) AS d FROM client_health_scores`
+  ).first().catch(() => null);
+  if (!latest || !latest.d) return json({ score_date: null, clients: [] });
+  const rows = await env.DB.prepare(
+    `SELECT client_id, client_name, composite_score, trend, signals_json, flags_json
+     FROM client_health_scores WHERE score_date=? ORDER BY composite_score ASC`
+  ).bind(latest.d).all();
+  const clients = rows.results.map((r) => {
+    let signals = {}, flags = [];
+    try { signals = JSON.parse(r.signals_json || "{}"); } catch (e) {}
+    try { flags = JSON.parse(r.flags_json || "[]"); } catch (e) {}
+    return {
+      client_id: r.client_id,
+      client_name: r.client_name,
+      composite_score: r.composite_score,
+      trend: r.trend,
+      signals,
+      flags
+    };
+  });
+  return json({ score_date: latest.d, clients });
+}
+__name(handleClientHealth, "handleClientHealth");
+async function handleServicesList(request, env) {
+  const clients = await env.DB.prepare(
+    `SELECT id, name, domain FROM sprint_clients WHERE archived=0 ORDER BY name`
+  ).all();
+  const services = await env.DB.prepare(
+    `SELECT client_id, service, status, notes, social_scheduled_through FROM client_services`
+  ).all();
+  const svcMap = {};
+  for (const s of services.results) {
+    if (!svcMap[s.client_id])
+      svcMap[s.client_id] = {};
+    svcMap[s.client_id][s.service] = {
+      status: s.status,
+      notes: s.notes,
+      social_scheduled_through: s.social_scheduled_through
+    };
+  }
+  const result = clients.results.map((c) => ({
+    id: c.id,
+    name: c.name,
+    domain: c.domain || "",
+    services: svcMap[c.id] || {}
+  }));
+  return json(result);
+}
+__name(handleServicesList, "handleServicesList");
+async function handleServiceUpdate(request, env, clientId, service) {
+  const body = await request.json().catch(() => ({}));
+  const status = body.status || "none";
+  const notes = body.notes || null;
+  const social_scheduled_through = body.social_scheduled_through || null;
+  const id = `svc-${clientId}-${service}`;
+  await env.DB.prepare(
+    `INSERT INTO client_services (id, client_id, service, status, notes, social_scheduled_through, updated_at)
+     VALUES (?,?,?,?,?,?,datetime('now'))
+     ON CONFLICT(client_id, service) DO UPDATE SET
+       status=excluded.status, notes=excluded.notes,
+       social_scheduled_through=excluded.social_scheduled_through,
+       updated_at=excluded.updated_at`
+  ).bind(id, clientId, service, status, notes, social_scheduled_through).run();
+  return json({ success: true });
+}
+__name(handleServiceUpdate, "handleServiceUpdate");
+async function handleMaintenanceList(request, env) {
+  const clients = await env.DB.prepare(
+    `SELECT c.id, c.name, c.domain, c.last_report_date, c.last_audit_date, c.maint_notes,
+       cs_social.status as social_status,
+       cs_social.social_scheduled_through as social_through,
+       cs_web.status as website_status
+     FROM sprint_clients c
+     LEFT JOIN client_services cs_social ON cs_social.client_id=c.id AND cs_social.service='social'
+     LEFT JOIN client_services cs_web    ON cs_web.client_id=c.id    AND cs_web.service='website'
+     WHERE c.archived=0
+     ORDER BY c.name`
+  ).all();
+  return json(clients.results);
+}
+__name(handleMaintenanceList, "handleMaintenanceList");
+async function handleMaintenanceWp(request, env, clientId) {
+  const client = await env.DB.prepare(
+    `SELECT domain FROM sprint_clients WHERE id=?`
+  ).bind(clientId).first();
+  if (!client || !client.domain)
+    return json({ error: "No domain" }, 404);
+  const domain = client.domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  try {
+    const res = await fetch(`https://${domain}/wp-json/wp/v2/posts?per_page=1&_fields=modified`, {
+      headers: { "User-Agent": "EngageEngine-Maintenance/1.0" },
+      signal: AbortSignal.timeout(8e3)
+    });
+    if (!res.ok)
+      return json({ error: "WP API error", status: res.status });
+    const posts = await res.json();
+    const modified = posts?.[0]?.modified || null;
+    return json({ modified });
+  } catch (e) {
+    return json({ error: String(e) });
+  }
+}
+__name(handleMaintenanceWp, "handleMaintenanceWp");
+async function handleMaintenanceSeo(request, env, clientId) {
+  const client = await env.DB.prepare(
+    `SELECT domain FROM sprint_clients WHERE id=?`
+  ).bind(clientId).first();
+  if (!client || !client.domain)
+    return json({ error: "No domain" }, 404);
+  const domain = client.domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const url = `https://${domain}`;
+  let score = null, hasMeta = null, noindex = false;
+  try {
+    const psiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile&category=performance`;
+    const psiRes = await fetch(psiUrl, { signal: AbortSignal.timeout(15e3) });
+    if (psiRes.ok) {
+      const psiData = await psiRes.json();
+      const cat = psiData?.lighthouseResult?.categories?.performance;
+      if (cat && typeof cat.score === "number")
+        score = Math.round(cat.score * 100);
+    }
+  } catch {
+  }
+  try {
+    const pageRes = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; EngageEngine/1.0)" },
+      signal: AbortSignal.timeout(8e3)
+    });
+    if (pageRes.ok) {
+      const html = await pageRes.text();
+      hasMeta = /<meta\s[^>]*name=["']description["'][^>]*content=["'][^"']{10,}/i.test(html);
+      noindex = /<meta\s[^>]*name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(html);
+    }
+  } catch {
+  }
+  return json({ score, hasMeta, noindex });
+}
+__name(handleMaintenanceSeo, "handleMaintenanceSeo");
+async function handleClientMaintenance(request, env, clientId) {
+  const body = await request.json().catch(() => ({}));
+  const fields = [];
+  const vals = [];
+  if (body.last_report_date !== void 0) {
+    fields.push("last_report_date=?");
+    vals.push(body.last_report_date);
+  }
+  if (body.last_audit_date !== void 0) {
+    fields.push("last_audit_date=?");
+    vals.push(body.last_audit_date);
+  }
+  if (body.maint_notes !== void 0) {
+    fields.push("maint_notes=?");
+    vals.push(body.maint_notes);
+  }
+  if (fields.length === 0)
+    return json({ error: "Nothing to update" }, 400);
+  fields.push(`updated_at=datetime('now')`);
+  vals.push(clientId);
+  await env.DB.prepare(
+    `UPDATE sprint_clients SET ${fields.join(",")} WHERE id=?`
+  ).bind(...vals).run();
+  return json({ success: true });
+}
+__name(handleClientMaintenance, "handleClientMaintenance");
+async function handleClientDomain(request, env, clientId) {
+  const body = await request.json().catch(() => ({}));
+  const domain = (body.domain || "").trim().replace(/^https?:\/\//, "").replace(/\/$/, "");
+  await env.DB.prepare(
+    `UPDATE sprint_clients SET domain=?, updated_at=datetime('now') WHERE id=?`
+  ).bind(domain || null, clientId).run();
+  return json({ success: true, domain });
+}
+__name(handleClientDomain, "handleClientDomain");
 function getHTML(authed) {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1886,7 +2085,7 @@ function getHTML(authed) {
 :root{--bg:#F5F3EE;--surface:#FFFFFF;--surface2:#EDEAE3;--border:#E2DED5;--text:#1C1917;--text-dim:#78716C;--text-muted:#A8A29E;--accent:#CF6344;--accent-glow:rgba(207,99,68,0.08);--green:#16A34A;--green-bg:rgba(22,163,74,0.08);--amber:#D97706;--amber-bg:rgba(217,119,6,0.08);--red:#DC2626;--red-bg:rgba(220,38,38,0.08);--snackbar-bg:#292524}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
-/* ── Login ── */
+/* \u2500\u2500 Login \u2500\u2500 */
 .login-bg{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px 36px;width:360px;max-width:90vw;box-shadow:0 4px 24px rgba(28,25,23,0.10)}
 .login-card h1{font-size:22px;font-weight:700;margin-bottom:6px}.login-card h1 span{color:var(--accent)}
@@ -1898,7 +2097,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .login-btn{width:100%;background:var(--accent);color:#fff;border:none;padding:11px;border-radius:8px;font-family:"DM Sans",sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-top:4px}
 .login-btn:hover{opacity:0.9}
 .login-error{color:var(--red);font-size:13px;margin-top:10px;min-height:18px}
-/* ── App layout ── */
+/* \u2500\u2500 App layout \u2500\u2500 */
 .header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(245,243,238,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:100}
 .header-left{display:flex;align-items:center;gap:16px}
 .header h1{font-size:17px;font-weight:700;letter-spacing:-0.5px}.header h1 span{color:var(--accent)}
@@ -1911,19 +2110,19 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .nav-back{display:none;align-items:center;gap:8px;color:var(--accent);cursor:pointer;font-size:13px;font-weight:500;padding:6px 0}
 .nav-back:hover{text-decoration:underline}
 .container{max-width:1200px;margin:0 auto;padding:24px}
-/* ── Briefing banner ── */
+/* \u2500\u2500 Briefing banner \u2500\u2500 */
 .briefing-banner{border-left:3px solid var(--amber);background:var(--amber-bg);padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;font-size:14px}
 .briefing-clear{border-left:3px solid var(--green);background:var(--green-bg);padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--green)}
 .briefing-dismiss{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:18px;line-height:1;padding:0 4px}
 .briefing-dismiss:hover{color:var(--text)}
-/* ── Stats ── */
+/* \u2500\u2500 Stats \u2500\u2500 */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;box-shadow:0 1px 3px rgba(28,25,23,0.06)}
 .stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:6px}
 .stat-card .value{font-size:28px;font-weight:700;font-family:"JetBrains Mono",monospace}
 .stat-card .value.green{color:var(--green)}.stat-card .value.amber{color:var(--amber)}.stat-card .value.accent{color:var(--accent)}
 .section-title{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-dim);margin-bottom:12px;padding-left:2px}
-/* ── Team ── */
+/* \u2500\u2500 Team \u2500\u2500 */
 .team-section-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .team-section-header .section-title{margin-bottom:0}
 .gear-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px;padding:2px 6px;border-radius:4px;transition:all 0.15s}
@@ -1945,7 +2144,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .gear-add-form input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-family:"DM Sans",sans-serif;font-size:13px;outline:none}
 .gear-add-form input:focus{border-color:var(--accent)}
 .gear-add-form button{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;font-family:"DM Sans",sans-serif}
-/* ── Client grid ── */
+/* \u2500\u2500 Client grid \u2500\u2500 */
 .clients-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .add-client-btn{background:none;border:1px solid var(--border);color:var(--text-dim);padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;transition:all 0.15s}
 .add-client-btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -1965,7 +2164,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .client-name{font-weight:600;font-size:15px}
 .client-meta{display:flex;gap:14px;font-size:12px;font-family:"JetBrains Mono",monospace;color:var(--text-dim)}
 .client-meta .jobs{color:var(--accent)}.client-meta .open{color:var(--amber)}.client-meta .done{color:var(--green)}
-/* ── Client detail ── */
+/* \u2500\u2500 Client detail \u2500\u2500 */
 .detail-header{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between}
 .detail-header h2{font-size:22px;font-weight:700;margin-bottom:4px}
 .detail-header .sub{color:var(--text-dim);font-size:14px}
@@ -1973,7 +2172,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .edit-btn,.archive-btn{background:none;border:1px solid var(--border);color:var(--text-dim);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;transition:all 0.15s}
 .edit-btn:hover{border-color:var(--accent);color:var(--accent)}
 .archive-btn:hover{border-color:var(--red);color:var(--red)}
-/* ── Client notes ── */
+/* \u2500\u2500 Client notes \u2500\u2500 */
 .client-notes-wrap{margin-bottom:20px}
 .client-notes{min-height:40px;padding:10px 14px;border-radius:8px;font-family:"DM Sans",sans-serif;font-size:14px;color:var(--text-dim);line-height:1.6;outline:none;border:1px solid transparent;transition:all 0.2s;cursor:text;white-space:pre-wrap}
 .client-notes:hover{border-color:var(--border)}
@@ -1982,7 +2181,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .notes-saved.show{opacity:1}
 .notes-error{font-size:11px;color:var(--red);margin-top:4px;opacity:0;transition:opacity 0.3s}
 .notes-error.show{opacity:1}
-/* ── Jobs ── */
+/* \u2500\u2500 Jobs \u2500\u2500 */
 .job-section{margin-bottom:24px}
 .job-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px 8px 0 0}
 .job-header.collapsed{border-radius:8px}
@@ -1993,14 +2192,17 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .job-complete-btn{font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--text-dim);cursor:pointer;font-family:"JetBrains Mono",monospace;transition:all 0.15s}
 .job-complete-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-bg)}
 .job-complete-btn.reopen:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
-/* ── Tasks ── */
+.job-assign-select{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);padding:3px 8px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:11px;cursor:pointer;outline:none;transition:border-color 0.15s}
+.job-assign-select:hover,.job-assign-select:focus{border-color:var(--accent)}
+.job-assign-select.has-assignee{color:var(--accent);border-color:var(--accent)}
+/* \u2500\u2500 Tasks \u2500\u2500 */
 .task-list{border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden}
 .task-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:14px;transition:background 0.1s;position:relative}
 .task-item:last-child{border-bottom:none}.task-item:hover{background:var(--surface2)}
 .task-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;role:checkbox;tabindex:0}
 .task-check:hover{border-color:var(--green);background:var(--green-bg)}
 .task-check.done{border-color:var(--green);background:var(--green)}
-.task-check.done::after{content:"✓";color:var(--bg);font-size:11px;font-weight:700}
+.task-check.done::after{content:"\u2713";color:var(--bg);font-size:11px;font-weight:700}
 .task-notes{flex:1;cursor:pointer}.task-notes.completed{text-decoration:line-through;color:var(--text-dim)}
 .task-assignee{font-size:11px;padding:2px 8px;background:var(--surface2);border-radius:4px;color:var(--text-dim);font-family:"JetBrains Mono",monospace}
 .task-due{font-size:11px;font-family:"JetBrains Mono",monospace;color:var(--text-dim)}
@@ -2011,14 +2213,14 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .task-delete-btn{opacity:0;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:14px;padding:2px 6px;transition:all 0.15s;flex-shrink:0}
 .task-item:hover .task-delete-btn{opacity:1}
 .task-delete-btn:hover{color:var(--red)}
-/* ── Task edit row ── */
+/* \u2500\u2500 Task edit row \u2500\u2500 */
 .task-edit-row{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);align-items:center}
 .task-edit-row input,.task-edit-row select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-family:"DM Sans",sans-serif;font-size:13px;outline:none}
 .task-edit-row input:focus,.task-edit-row select:focus{border-color:var(--accent)}
 .task-edit-notes{flex:1;min-width:180px}
 .task-edit-row .save-btn{background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:"DM Sans",sans-serif;font-weight:600;font-size:13px}
 .task-edit-row .cancel-edit-btn{background:none;border:1px solid var(--border);color:var(--text-dim);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px}
-/* ── Add forms ── */
+/* \u2500\u2500 Add forms \u2500\u2500 */
 .add-btn{background:none;border:1px dashed var(--border);color:var(--text-dim);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:"DM Sans",sans-serif;transition:all 0.15s;margin-top:8px}
 .add-btn:hover{border-color:var(--accent);color:var(--accent)}
 .inline-form{display:none;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
@@ -2027,12 +2229,12 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .inline-form input:focus,.inline-form select:focus{border-color:var(--accent)}
 .inline-form input{flex:1}
 .inline-form button{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-family:"DM Sans",sans-serif;font-weight:600;font-size:13px}
-/* ── Template pills ── */
+/* \u2500\u2500 Template pills \u2500\u2500 */
 .template-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .template-pill{background:none;border:1px solid var(--border);color:var(--text-dim);padding:4px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;transition:all 0.15s}
 .template-pill:hover,.template-pill.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
 .template-hint{font-size:12px;color:var(--text-dim);margin-bottom:6px}
-/* ── Assistant bar ── */
+/* \u2500\u2500 Assistant bar \u2500\u2500 */
 .assistant-bar{position:fixed;bottom:0;left:0;right:0;z-index:150;padding:10px 24px 14px;background:rgba(245,243,238,0.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border)}
 .assistant-input-row{display:flex;align-items:center;gap:10px;max-width:860px;margin:0 auto}
 .assistant-icon{font-size:16px;color:var(--accent);flex-shrink:0;line-height:1;padding-bottom:1px}
@@ -2049,11 +2251,11 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .assistant-response.error{color:var(--red)}
 /* push page content above assistant bar */
 body{padding-bottom:80px}
-/* ── Snackbar ── */
+/* \u2500\u2500 Snackbar \u2500\u2500 */
 .snackbar{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--snackbar-bg);border:1px solid var(--border);border-radius:10px;padding:12px 20px;display:flex;align-items:center;gap:14px;z-index:200;font-size:14px;opacity:0;transition:opacity 0.25s;pointer-events:none;width:280px}
 .snackbar.show{opacity:1;pointer-events:auto}
 .snackbar-undo{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-weight:600;padding:0;flex-shrink:0}
-/* ── Sprint ── */
+/* \u2500\u2500 Sprint \u2500\u2500 */
 .sprint-client-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;align-items:center}
 .sprint-client-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);padding:6px 16px;border-radius:20px;cursor:pointer;font-size:13px;font-family:"DM Sans",sans-serif;transition:all 0.15s}
 .sprint-client-btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -2083,12 +2285,12 @@ body{padding-bottom:80px}
 .checklist-item:last-child{border-bottom:none}.checklist-item:hover{background:var(--surface2)}
 .checklist-circle{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
 .checklist-circle.done{border-color:var(--green);background:var(--green)}
-.checklist-circle.done::after{content:"✓";color:var(--bg);font-size:10px;font-weight:700}
+.checklist-circle.done::after{content:"\u2713";color:var(--bg);font-size:10px;font-weight:700}
 .checklist-label{flex:1;font-size:14px}.checklist-label.done{text-decoration:line-through;color:var(--text-dim)}
 .checklist-badge{font-size:10px;padding:1px 6px;border-radius:3px}
 .checklist-badge.critical{background:var(--red-bg);color:var(--red)}
 .checklist-by{font-size:11px;color:var(--text-dim);font-family:"JetBrains Mono",monospace}
-/* ── Sprint Activate Modal ── */
+/* \u2500\u2500 Sprint Activate Modal \u2500\u2500 */
 .activate-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;display:flex;align-items:center;justify-content:center}
 .activate-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:340px;max-width:90vw}
 .activate-modal h3{font-size:18px;font-weight:700;margin-bottom:20px}
@@ -2098,7 +2300,7 @@ body{padding-bottom:80px}
 .activate-modal-actions{display:flex;gap:10px;margin-top:24px}
 .activate-modal-actions .cancel-btn{flex:1;background:none;border:1px solid var(--border);color:var(--text-dim);padding:9px;border-radius:7px;cursor:pointer;font-family:"DM Sans",sans-serif}
 .activate-modal-actions .confirm-btn{flex:1;background:var(--accent);color:#fff;border:none;padding:9px;border-radius:7px;cursor:pointer;font-family:"DM Sans",sans-serif;font-weight:600}
-/* ── Loading / misc ── */
+/* \u2500\u2500 Loading / misc \u2500\u2500 */
 .loading{text-align:center;padding:60px;color:var(--text-dim);font-size:14px}
 .hidden{display:none!important}
 @media(max-width:768px){
@@ -2112,7 +2314,7 @@ body{padding-bottom:80px}
   .task-edit-row{flex-direction:column}
   .task-edit-notes{width:100%}
 }
-/* ── Intake section ── */
+/* \u2500\u2500 Intake section \u2500\u2500 */
 .intake-section{margin-bottom:28px}
 .intake-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .intake-badge{background:var(--amber-bg);color:var(--amber);font-size:11px;padding:2px 8px;border-radius:10px;font-family:"JetBrains Mono",monospace;margin-left:8px;font-weight:700}
@@ -2140,7 +2342,7 @@ body{padding-bottom:80px}
 .intake-bulk-delete-btn{background:var(--red);color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:"DM Sans",sans-serif;font-weight:600;transition:opacity 0.15s}
 .intake-bulk-delete-btn:hover{opacity:0.85}
 .intake-select-all-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);cursor:pointer;user-select:none}
-/* ── Note modal ── */
+/* \u2500\u2500 Note modal \u2500\u2500 */
 .note-modal-overlay{position:fixed;inset:0;background:rgba(28,25,23,0.5);z-index:200;display:flex;align-items:center;justify-content:center}
 .note-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px;width:480px;max-width:92vw;box-shadow:0 8px 32px rgba(28,25,23,0.12)}
 .note-modal h3{font-size:16px;font-weight:700;margin-bottom:4px;color:var(--text)}
@@ -2158,7 +2360,7 @@ body{padding-bottom:80px}
 .intake-upload-row{display:flex;align-items:center;gap:10px;margin-top:6px}
 .intake-upload-btn{background:none;border:1px dashed var(--border);color:var(--text-dim);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:"DM Sans",sans-serif;transition:all 0.15s}
 .intake-upload-btn:hover{border-color:var(--accent);color:var(--accent)}
-/* ── Intake confirm modal ── */
+/* \u2500\u2500 Intake confirm modal \u2500\u2500 */
 .intake-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;display:flex;align-items:center;justify-content:center}
 .intake-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px;width:460px;max-width:92vw;box-shadow:0 8px 32px rgba(28,25,23,0.12)}
 .intake-modal h3{font-size:17px;font-weight:700;margin-bottom:6px}
@@ -2174,7 +2376,7 @@ body{padding-bottom:80px}
 .intake-modal-actions .confirm-btn{background:var(--accent);color:#fff;border:none}
 .intake-modal-actions .confirm-btn:hover{opacity:0.9}
 .intake-modal-actions .cancel-btn{background:none;border:1px solid var(--border);color:var(--text-dim)}
-/* ── Gmail settings ── */
+/* \u2500\u2500 Gmail settings \u2500\u2500 */
 .gmail-settings{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:8px}
 .gmail-settings-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px;font-weight:600}
 .gmail-status-row{display:flex;align-items:center;gap:10px}
@@ -2188,7 +2390,7 @@ body{padding-bottom:80px}
 .gmail-checknow-btn:disabled{opacity:0.5;cursor:default}
 .gmail-last-checked{font-size:11px;color:var(--text-dim);font-family:"JetBrains Mono",monospace;margin-top:6px}
 .gmail-error-msg{font-size:11px;color:var(--red);margin-top:4px}
-/* ── Intake proposal split-panel page ── */
+/* \u2500\u2500 Intake proposal split-panel page \u2500\u2500 */
 .intake-split{display:grid;grid-template-columns:1fr 360px;height:calc(100vh - 90px);overflow:hidden;margin:-24px;border-top:1px solid var(--border)}
 .intake-preview-panel{padding:24px;overflow-y:auto;border-right:1px solid var(--border)}
 .intake-preview-panel h2{font-size:18px;font-weight:700;margin-bottom:4px}
@@ -2221,7 +2423,7 @@ body{padding-bottom:80px}
   .intake-chat-panel{height:50vh}
   .intake-item-actions{flex-direction:column}
 }
-/* ── All Work view ── */
+/* \u2500\u2500 All Work view \u2500\u2500 */
 .allwork-subtabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:20px;width:fit-content}
 .allwork-subtab{padding:5px 18px;border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text-dim);transition:all 0.15s}
 .allwork-subtab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
@@ -2253,12 +2455,37 @@ body{padding-bottom:80px}
 @media(max-width:768px){
   .allwork-table th:nth-child(n+4),.allwork-table td:nth-child(n+4){display:none}
 }
+/* ── Services table ── */
+.services-wrap{overflow:hidden}
+.services-legend{display:flex;gap:16px;align-items:center;margin-bottom:14px;font-size:12px;color:var(--text-dim);flex-wrap:wrap}
+.services-table-wrap{overflow:auto;max-height:calc(100vh - 220px);border:1px solid var(--border);border-radius:10px}
+.services-table{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface)}
+.services-table thead tr{position:sticky;top:0;z-index:4}
+.services-table th{background:var(--surface);padding:8px 10px;text-align:center;font-size:11px;font-weight:600;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:4}
+.services-table th.svc-client-col,.services-table th.svc-domain-col{text-align:left}
+.services-table td{padding:6px 10px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.services-table tbody tr:last-child td{border-bottom:none}
+.svc-client-name{font-weight:600;font-size:13px;white-space:nowrap;text-align:left!important;position:sticky;left:0;background:var(--surface);z-index:2;border-right:1px solid var(--border)}
+.services-table tbody tr:nth-child(even) .svc-client-name{background:rgba(0,0,0,0.015)}
+.svc-domain-cell{text-align:left!important}
+.svc-domain-input{width:100%;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text-dim);font-size:11px;font-family:inherit;padding:2px 4px;outline:none;min-width:120px}
+.svc-domain-input:hover{border-bottom-color:var(--border)}
+.svc-domain-input:focus{border-bottom-color:var(--accent)}
+.svc-cell{cursor:pointer;min-width:52px}
+.svc-cell:hover{background:var(--accent-glow)}
+.svc-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700}
+.svc-active{background:var(--green-bg);color:var(--green)}
+.svc-paused{background:var(--amber-bg);color:var(--amber)}
+.svc-cancelled{background:var(--red-bg);color:var(--red)}
+.svc-website{background:var(--accent-glow);color:var(--accent)}
+.svc-none{color:var(--text-muted);font-size:16px;line-height:1}
+.svc-thru{display:block;font-size:9px;color:var(--text-muted);font-family:"JetBrains Mono",monospace;margin-top:1px;white-space:nowrap}
 </style>
 </head>
 <body>
 
-<!-- ── Login screen (shown when not authed) ── -->
-<div id="loginScreen" class="${authed ? 'hidden' : ''}">
+<!-- \u2500\u2500 Login screen (shown when not authed) \u2500\u2500 -->
+<div id="loginScreen" class="${authed ? "hidden" : ""}">
 <div class="login-bg">
 <div class="login-card">
   <h1>Engage<span>Engine</span> Sprint</h1>
@@ -2273,8 +2500,8 @@ body{padding-bottom:80px}
 </div>
 </div>
 
-<!-- ── App (shown when authed) ── -->
-<div id="appShell" class="${authed ? '' : 'hidden'}">
+<!-- \u2500\u2500 App (shown when authed) \u2500\u2500 -->
+<div id="appShell" class="${authed ? "" : "hidden"}">
 
 <div class="header">
   <div class="header-left">
@@ -2284,6 +2511,9 @@ body{padding-bottom:80px}
       <button class="mode-tab active" id="modeJobBtn" data-action="mode-jobs">Jobs</button>
       <button class="mode-tab" id="modeSprintBtn" data-action="mode-sprint">30-Day Sprint</button>
       <button class="mode-tab" id="modeAllWorkBtn" data-action="mode-allwork">All Work</button>
+      <button class="mode-tab" id="modeServicesBtn" data-action="mode-services">Services</button>
+      <button class="mode-tab" id="modeMaintenanceBtn" data-action="mode-maintenance">Maintenance</button>
+      <button class="mode-tab" id="modeHealthBtn" data-action="mode-health">Health</button>
     </div>
   </div>
   <div class="header-right">
@@ -2340,6 +2570,21 @@ body{padding-bottom:80px}
   <div id="allworkContent"><div class="loading">Loading...</div></div>
 </div>
 
+<!-- Services mode -->
+<div id="servicesMode" class="hidden">
+  <div id="servicesContent"><div class="loading">Loading...</div></div>
+</div>
+
+<!-- Maintenance mode -->
+<div id="maintenanceMode" class="hidden">
+  <div id="maintenanceContent"><div class="loading">Loading...</div></div>
+</div>
+
+<!-- Health mode -->
+<div id="healthMode" class="hidden">
+  <div id="healthContent"><div class="loading">Loading...</div></div>
+</div>
+
 </div><!-- /container -->
 </div><!-- /appShell -->
 
@@ -2350,8 +2595,8 @@ body{padding-bottom:80px}
 <div class="assistant-bar" id="assistantBar">
   <div class="assistant-response" id="assistantResponse"></div>
   <div class="assistant-input-row">
-    <div class="assistant-icon">✦</div>
-    <input type="text" id="assistantInput" class="assistant-input" placeholder="Create a job, add a task, ask anything…" autocomplete="off">
+    <div class="assistant-icon">\u2726</div>
+    <input type="text" id="assistantInput" class="assistant-input" placeholder="Create a job, add a task, ask anything\u2026" autocomplete="off">
     <button class="assistant-send" id="assistantSend" data-action="assistant-send">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L14 8M14 8L9 3M14 8L9 13" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -2387,13 +2632,13 @@ var sprintPhase = 'preSprint';
 var currentIntakeId = null;
 var intakeConfirmData = null;
 
-// ── Utilities ──────────────────────────────────────────────────────────────
+// \u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function esc(s){if(!s)return'';return String(s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;')}
 function formatDate(d){if(!d)return'';var p=d.split('-');return p[1]+'/'+p[2]}
 function daysDiff(a,b){return Math.ceil((new Date(b)-new Date(a))/86400000)}
 
-// ── Login ──────────────────────────────────────────────────────────────────
+// \u2500\u2500 Login \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function doLogin() {
   var pw = document.getElementById('pwInput').value;
@@ -2413,7 +2658,7 @@ async function doLogin() {
   }
 }
 
-// ── Event delegation ───────────────────────────────────────────────────────
+// \u2500\u2500 Event delegation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 document.addEventListener('click', function(e) {
   var el = e.target.closest('[data-action]');
@@ -2424,6 +2669,9 @@ document.addEventListener('click', function(e) {
   if (act === 'mode-jobs') { switchMode('jobs'); }
   else if (act === 'mode-sprint') { switchMode('sprint'); }
   else if (act === 'mode-allwork') { switchMode('allwork'); }
+  else if (act === 'mode-services') { switchMode('services'); }
+  else if (act === 'mode-maintenance') { switchMode('maintenance'); }
+  else if (act === 'mode-health') { switchMode('health'); }
   else if (act === 'allwork-tab') { switchAllWorkTab(val); }
   else if (act === 'allwork-goto-client') { switchMode('jobs'); loadClient(id); }
   else if (act === 'allwork-job-complete') { completeAllWorkJob(id); }
@@ -2448,6 +2696,8 @@ document.addEventListener('click', function(e) {
   else if (act === 'create-job') { createJob(id); }
   else if (act === 'toggle-add-task') { toggleAddTask(id); }
   else if (act === 'create-task') { createTask(id, val); }
+  else if (act === 'log-save-today') { saveLogToday(val); }
+  else if (act === 'log-delete') { deleteLog(id, val); }
   else if (act === 'client-rename') { renameClient(id); }
   else if (act === 'client-archive') { archiveClient(id, val); }
   else if (act === 'team-remove') { removeTeamMember(id); }
@@ -2485,16 +2735,22 @@ document.addEventListener('change', function(e) {
   if (act === 'note-client-change') { loadNoteJobSelect(el.value); }
 });
 
-// ── Mode switching ─────────────────────────────────────────────────────────
+// \u2500\u2500 Mode switching \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function switchMode(mode) {
   currentMode = mode;
   document.getElementById('modeJobBtn').classList.toggle('active', mode === 'jobs');
   document.getElementById('modeSprintBtn').classList.toggle('active', mode === 'sprint');
   document.getElementById('modeAllWorkBtn').classList.toggle('active', mode === 'allwork');
+  document.getElementById('modeServicesBtn').classList.toggle('active', mode === 'services');
+  document.getElementById('modeMaintenanceBtn').classList.toggle('active', mode === 'maintenance');
+  document.getElementById('modeHealthBtn').classList.toggle('active', mode === 'health');
   document.getElementById('jobsMode').classList.toggle('hidden', mode !== 'jobs');
   document.getElementById('sprintMode').classList.toggle('hidden', mode !== 'sprint');
   document.getElementById('allWorkMode').classList.toggle('hidden', mode !== 'allwork');
+  document.getElementById('servicesMode').classList.toggle('hidden', mode !== 'services');
+  document.getElementById('maintenanceMode').classList.toggle('hidden', mode !== 'maintenance');
+  document.getElementById('healthMode').classList.toggle('hidden', mode !== 'health');
   document.getElementById('navBack').style.display = 'none';
   if (mode === 'jobs') {
     document.getElementById('headerStats').style.display = '';
@@ -2505,10 +2761,19 @@ function switchMode(mode) {
   } else if (mode === 'allwork') {
     document.getElementById('headerStats').style.display = 'none';
     loadAllWork();
+  } else if (mode === 'services') {
+    document.getElementById('headerStats').style.display = 'none';
+    loadServices();
+  } else if (mode === 'maintenance') {
+    document.getElementById('headerStats').style.display = 'none';
+    loadMaintenance();
+  } else if (mode === 'health') {
+    document.getElementById('headerStats').style.display = 'none';
+    loadClientHealth();
   }
 }
 
-// ── All Work ───────────────────────────────────────────────────────────────
+// \u2500\u2500 All Work \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 var allWorkData = null;
 var allWorkTab = 'jobs';
@@ -2558,17 +2823,17 @@ function renderAllWork() {
       html += '</tr></thead><tbody>';
       for (var i = 0; i < d.jobs.length; i++) {
         var j = d.jobs[i];
-        var jDueClass = 'ok', jDueLabel = j.due_date ? formatDate(j.due_date) : '—';
+        var jDueClass = 'ok', jDueLabel = j.due_date ? formatDate(j.due_date) : '\u2014';
         if (j.due_date) {
           var jDue = new Date(j.due_date + 'T00:00:00');
-          if (jDue < today) { jDueClass = 'overdue'; jDueLabel = '⚠ ' + formatDate(j.due_date); }
+          if (jDue < today) { jDueClass = 'overdue'; jDueLabel = '\u26A0 ' + formatDate(j.due_date); }
           else if (jDue <= soon) { jDueClass = 'soon'; }
         }
         html += '<tr id="allwork-job-row-' + j.id + '">';
         html += '<td><a class="allwork-client-link" data-action="allwork-goto-client" data-id="' + esc(j.client_id) + '">' + esc(j.client_name) + '</a></td>';
         html += '<td>' + esc(j.name) + '</td>';
         html += '<td><span class="allwork-progress-text">' + j.open_tasks + ' / ' + j.total_tasks + '</span></td>';
-        html += '<td id="allwork-job-assign-' + j.id + '" class="allwork-editable-cell" data-action="allwork-job-edit" data-id="' + j.id + '" title="Click to edit"><span class="allwork-assignee">' + esc(j.assigned_to || '—') + '</span></td>';
+        html += '<td id="allwork-job-assign-' + j.id + '" class="allwork-editable-cell" data-action="allwork-job-edit" data-id="' + j.id + '" title="Click to edit"><span class="allwork-assignee">' + esc(j.assigned_to || '\u2014') + '</span></td>';
         html += '<td id="allwork-job-due-' + j.id + '" class="allwork-editable-cell" data-action="allwork-job-edit" data-id="' + j.id + '" title="Click to edit"><span class="allwork-due ' + jDueClass + '">' + esc(jDueLabel) + '</span></td>';
         html += '<td id="allwork-job-btns-' + j.id + '" style="white-space:nowrap">';
         html += '<button class="job-complete-btn" data-action="allwork-job-complete" data-id="' + j.id + '" style="font-size:11px;padding:3px 8px">Complete</button>';
@@ -2579,24 +2844,24 @@ function renderAllWork() {
     }
   } else {
     if (!d.tasks.length) {
-      html += '<div class="allwork-empty">No open tasks — all caught up!</div>';
+      html += '<div class="allwork-empty">No open tasks \u2014 all caught up!</div>';
     } else {
       html += '<table class="allwork-table"><thead><tr>';
       html += '<th>Client</th><th>Job</th><th>Task</th><th>Assignee</th><th>Due</th>';
       html += '</tr></thead><tbody>';
       for (var k = 0; k < d.tasks.length; k++) {
         var t = d.tasks[k];
-        var dueClass = 'ok', dueLabel = t.due_date ? formatDate(t.due_date) : '—';
+        var dueClass = 'ok', dueLabel = t.due_date ? formatDate(t.due_date) : '\u2014';
         if (t.due_date) {
           var due = new Date(t.due_date + 'T00:00:00');
-          if (due < today) { dueClass = 'overdue'; dueLabel = '⚠ ' + formatDate(t.due_date); }
+          if (due < today) { dueClass = 'overdue'; dueLabel = '\u26A0 ' + formatDate(t.due_date); }
           else if (due <= soon) { dueClass = 'soon'; }
         }
         html += '<tr>';
         html += '<td><a class="allwork-client-link" data-action="allwork-goto-client" data-id="' + esc(t.client_id) + '">' + esc(t.client_name) + '</a></td>';
         html += '<td>' + esc(t.job_name) + '</td>';
         html += '<td>' + esc(t.name) + '</td>';
-        html += '<td><span class="allwork-assignee">' + esc(t.assigned_to || '—') + '</span></td>';
+        html += '<td><span class="allwork-assignee">' + esc(t.assigned_to || '\u2014') + '</span></td>';
         html += '<td><span class="allwork-due ' + dueClass + '">' + esc(dueLabel) + '</span></td>';
         html += '</tr>';
       }
@@ -2611,7 +2876,7 @@ function openAllWorkJobEdit(el) {
   var jobId = el.getAttribute('data-id');
   var assignCell = document.getElementById('allwork-job-assign-' + jobId);
   if (!assignCell) return;
-  // Already in edit mode — don't re-open
+  // Already in edit mode \u2014 don't re-open
   if (assignCell.querySelector('select')) return;
   var jobData = allWorkData ? (allWorkData.jobs || []).find(function(j) { return j.id === jobId; }) : null;
   var currentAssign = jobData ? (jobData.assigned_to || '') : '';
@@ -2634,7 +2899,7 @@ async function saveAllWorkJobEdit(jobId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: name, assigned_to: assign ? assign.value : '', due_date: due ? due.value : '' })
   });
-  if (!res.ok) { alert('Save failed — please try again'); return; }
+  if (!res.ok) { alert('Save failed \u2014 please try again'); return; }
   await loadAllWork();
 }
 
@@ -2643,7 +2908,7 @@ async function completeAllWorkJob(jobId) {
   loadAllWork();
 }
 
-// ── Dashboard ──────────────────────────────────────────────────────────────
+// \u2500\u2500 Dashboard \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function loadDashboard() {
   document.getElementById('clientGrid').innerHTML = '<div class="loading">Loading...</div>';
@@ -2675,9 +2940,9 @@ function renderDashboard() {
     var parts = [];
     if (briefing.overdue > 0) parts.push('<strong>' + briefing.overdue + ' overdue</strong>');
     if (briefing.due_today > 0) parts.push('<strong>' + briefing.due_today + ' due today</strong>');
-    bb.innerHTML = '<div class="briefing-banner"><span>&#9888; ' + parts.join(', ') + ' — check client cards below</span><button class="briefing-dismiss" data-action="dismiss-briefing" title="Dismiss">&times;</button></div>';
+    bb.innerHTML = '<div class="briefing-banner"><span>&#9888; ' + parts.join(', ') + ' \u2014 check client cards below</span><button class="briefing-dismiss" data-action="dismiss-briefing" title="Dismiss">&times;</button></div>';
   } else if (briefing) {
-    bb.innerHTML = '<div class="briefing-clear"><span>&#10003; All clear — no overdue or due-today tasks</span><button class="briefing-dismiss" data-action="dismiss-briefing" title="Dismiss">&times;</button></div>';
+    bb.innerHTML = '<div class="briefing-clear"><span>&#10003; All clear \u2014 no overdue or due-today tasks</span><button class="briefing-dismiss" data-action="dismiss-briefing" title="Dismiss">&times;</button></div>';
   }
   // Header stats
   document.getElementById('headerStats').innerHTML = '<div><span class="sv">' + stats.active_clients + '</span> clients</div><div><span class="sv">' + stats.active_jobs + '</span> jobs</div><div><span class="sv">' + stats.open_tasks + '</span> open</div>';
@@ -2702,7 +2967,7 @@ function renderDashboard() {
       var m = teamMembers[i];
       gmHtml += '<div class="gear-member-row"><span class="gear-member-name">' + esc(m.name) + '</span><button class="remove-btn" data-action="team-remove" data-id="' + m.id + '">Remove</button></div>';
     }
-    if (!teamMembers.length) gmHtml = '<div style="font-size:13px;color:var(--text-dim);padding:8px 0">No team members yet — add one below</div>';
+    if (!teamMembers.length) gmHtml = '<div style="font-size:13px;color:var(--text-dim);padding:8px 0">No team members yet \u2014 add one below</div>';
     gml.innerHTML = gmHtml;
   }
   // Client grid with health scoring
@@ -2735,7 +3000,7 @@ function clientCard(c, inactive) {
   return '<div class="client-card' + health + '"' + inactiveStyle + ' data-action="load-client" data-id="' + c.id + '"><div class="client-name">' + esc(c.name) + '</div><div class="client-meta"><span class="jobs">' + c.active_jobs + ' jobs</span><span class="open">' + c.open_tasks + ' open</span><span class="done">' + c.done_tasks + ' done</span></div></div>';
 }
 
-// ── Client detail ──────────────────────────────────────────────────────────
+// \u2500\u2500 Client detail \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function loadClient(id) {
   currentClientId = id;
@@ -2813,7 +3078,10 @@ function renderJobSection(job, tasks, clientId, today, collapsed) {
   var html = '<div class="job-section" id="job-row-' + job.id + '"><div class="job-header' + (collapsed ? ' collapsed' : '') + '">';
   html += '<div class="job-title" data-action="toggle-tasks">' + esc(job.name) + ' <span style="color:var(--text-dim);font-weight:400;font-size:12px">' + job.open_tasks + '/' + job.total_tasks + '</span></div>';
   html += '<div class="job-actions">';
-  if (job.assigned_to) html += '<span class="task-assignee">' + esc(job.assigned_to) + '</span>';
+  var jaClass = 'job-assign-select' + (job.assigned_to ? ' has-assignee' : '');
+  html += '<select class="' + jaClass + '" onchange="quickAssignJob(this, \\'' + job.id + '\\')">';
+  html += '<option value="">Assign...</option>' + teamOptionsSelected(job.assigned_to || '');
+  html += '</select>';
   if (job.due_date) html += '<span class="task-due ' + dueClass + '">' + formatDate(job.due_date) + '</span>';
   if (isActive) html += '<button class="task-edit-btn" data-action="job-edit" data-id="' + job.id + '" title="Edit job">&#9998;</button>';
   html += btnHtml + '<span class="job-badge ' + (isActive ? 'active' : 'complete') + '">' + job.status + '</span>';
@@ -2825,7 +3093,7 @@ function renderJobSection(job, tasks, clientId, today, collapsed) {
   html += '<div class="task-item" style="padding:6px 16px"><button class="add-btn" style="margin:0;padding:4px 12px;font-size:12px" data-action="toggle-add-task" data-id="' + job.id + '">+ task</button></div>';
   html += '<div id="addTaskForm-' + job.id + '" class="inline-form" style="padding:8px 16px">';
   html += '<input type="text" id="newTaskNotes-' + job.id + '" placeholder="Task description...">';
-  html += '<select id="newTaskAssign-' + job.id + '"><option value="">Assign</option>' + teamOptions() + '</select>';
+  html += '<select id="newTaskAssign-' + job.id + '"><option value="">Assign</option>' + teamOptionsSelected(job.assigned_to || '') + '</select>';
   html += '<input type="date" id="newTaskDue-' + job.id + '" style="width:140px">';
   html += '<button data-action="create-task" data-id="' + job.id + '" data-val="' + clientId + '">Add</button></div>';
   html += '</div></div>';
@@ -2912,7 +3180,7 @@ async function saveClientNotes(clientId, text) {
   }
 }
 
-// ── Task inline edit ───────────────────────────────────────────────────────
+// \u2500\u2500 Task inline edit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function openTaskEdit(taskId) {
   var row = document.getElementById('task-row-' + taskId);
@@ -2970,7 +3238,7 @@ function cancelTaskEdit(taskId) {
   if (taskRow) taskRow.classList.remove('hidden');
 }
 
-// ── Job inline edit ────────────────────────────────────────────────────────
+// \u2500\u2500 Job inline edit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function openJobEdit(jobId) {
   var row = document.getElementById('job-row-' + jobId);
@@ -3028,7 +3296,7 @@ function cancelJobEdit(jobId) {
   if (row) { var header = row.querySelector('.job-header'); if (header) header.classList.remove('hidden'); }
 }
 
-// ── Task delete + undo ────────────────────────────────────────────────────
+// \u2500\u2500 Task delete + undo \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function deleteTask(taskId, jobId) {
   // Clear any previous pending delete
@@ -3089,7 +3357,7 @@ function hideSnackbar() {
   document.getElementById('snackbar').classList.remove('show');
 }
 
-// ── Team ──────────────────────────────────────────────────────────────────
+// \u2500\u2500 Team \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function toggleGearPanel() {
   document.getElementById('gearPanel').classList.toggle('show');
@@ -3145,7 +3413,7 @@ function teamOptionsSelected(selected) {
   return html;
 }
 
-// ── Client management ──────────────────────────────────────────────────────
+// \u2500\u2500 Client management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function toggleAddClientForm() {
   var f = document.getElementById('addClientForm');
@@ -3208,7 +3476,7 @@ async function archiveClient(clientId, activeJobs) {
   showDashboard();
 }
 
-// ── Team detail ────────────────────────────────────────────────────────────
+// \u2500\u2500 Team detail \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function loadTeam(encodedName) {
   var name = decodeURIComponent(encodedName);
@@ -3227,6 +3495,7 @@ async function loadTeam(encodedName) {
 function renderTeamDetail(data) {
   var today = new Date().toISOString().split('T')[0];
   var html = '<div class="detail-header"><div><h2>' + esc(data.name) + '</h2><div class="sub">' + data.tasks.length + ' assigned tasks</div></div></div>';
+  // Tasks by client
   var byClient = {};
   for (var i = 0; i < data.tasks.length; i++) {
     var t = data.tasks[i];
@@ -3234,6 +3503,9 @@ function renderTeamDetail(data) {
     byClient[t.client_name].push(t);
   }
   var keys = Object.keys(byClient).sort();
+  if (keys.length === 0) {
+    html += '<div style="color:var(--text-dim);font-size:14px;margin:16px 0">No open tasks assigned.</div>';
+  }
   for (var k = 0; k < keys.length; k++) {
     var cn = keys[k];
     html += '<div class="section-title" style="margin-top:16px">' + esc(cn) + '</div>';
@@ -3249,10 +3521,39 @@ function renderTeamDetail(data) {
     }
     html += '</div>';
   }
+  // Daily Log section
+  var logs = data.logs || [];
+  var todayLog = logs.find(function(l) { return l.log_date === today; });
+  var todayNotes = todayLog ? todayLog.notes : '';
+  var firstName = esc(data.name.split(' ')[0]);
+  html += '<div class="section-title" style="margin-top:28px">Daily Log</div>';
+  html += '<div style="margin-bottom:20px">';
+  html += '<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">Today — ' + formatDate(today) + '</div>';
+  html += '<textarea id="dailyLogTodayInput" style="width:100%;box-sizing:border-box;min-height:80px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;outline:none" placeholder="What did ' + firstName + ' work on today?">' + esc(todayNotes) + '</textarea>';
+  html += '<div style="display:flex;align-items:center;gap:10px;margin-top:8px">';
+  html += '<button class="save-btn" data-action="log-save-today" data-val="' + esc(data.name) + '" style="padding:6px 16px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save</button>';
+  html += '<span id="dailyLogSaved" style="font-size:13px;color:var(--green,#22c55e);display:none">Saved ✓</span>';
+  html += '</div>';
+  html += '</div>';
+  // Past log entries
+  var pastLogs = logs.filter(function(l) { return l.log_date !== today; });
+  if (pastLogs.length > 0) {
+    html += '<div style="font-size:12px;color:var(--text-dim);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Past Entries</div>';
+    for (var p = 0; p < pastLogs.length; p++) {
+      var pl = pastLogs[p];
+      html += '<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--surface)">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+      html += '<span style="font-size:12px;font-weight:600;color:var(--text-dim)">' + formatDate(pl.log_date) + '</span>';
+      html += '<button class="task-delete-btn" data-action="log-delete" data-id="' + pl.id + '" data-val="' + esc(data.name) + '" title="Delete" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;line-height:1">&times;</button>';
+      html += '</div>';
+      html += '<div style="font-size:14px;white-space:pre-wrap">' + esc(pl.notes || '') + '</div>';
+      html += '</div>';
+    }
+  }
   document.getElementById('teamDetail').innerHTML = html;
 }
 
-// ── Task toggle ────────────────────────────────────────────────────────────
+// \u2500\u2500 Task toggle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function toggleTask(taskId, complete, clientId, teamName) {
   var ep = complete ? '/api/tasks/' + taskId + '/complete' : '/api/tasks/' + taskId + '/reopen';
@@ -3266,7 +3567,32 @@ async function toggleTask(taskId, complete, clientId, teamName) {
   fetch(API + '/api/dashboard').then(function(r) { return r.json(); }).then(function(d) { dashboardData = d; });
 }
 
-// ── Job CRUD ───────────────────────────────────────────────────────────────
+// \u2500\u2500 Daily Log \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+async function saveLogToday(memberName) {
+  var input = document.getElementById('dailyLogTodayInput');
+  if (!input) return;
+  var notes = input.value.trim();
+  var today = new Date().toISOString().split('T')[0];
+  var res = await fetch(API + '/api/logs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ team_member_name: memberName, log_date: today, notes: notes })
+  });
+  if (res.ok) {
+    var saved = document.getElementById('dailyLogSaved');
+    if (saved) { saved.style.display = 'inline'; setTimeout(function() { saved.style.display = 'none'; }, 2500); }
+    loadTeam(encodeURIComponent(memberName));
+  }
+}
+
+async function deleteLog(logId, memberName) {
+  if (!confirm('Delete this log entry?')) return;
+  await fetch(API + '/api/logs/' + logId, { method: 'DELETE' });
+  loadTeam(encodeURIComponent(memberName));
+}
+
+// \u2500\u2500 Job CRUD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function completeJob(jobId, clientId) {
   await fetch(API + '/api/jobs/' + jobId + '/complete', { method: 'POST' });
@@ -3278,6 +3604,16 @@ async function reopenJob(jobId, clientId) {
   await fetch(API + '/api/jobs/' + jobId + '/reopen', { method: 'POST' });
   if (clientId) loadClient(clientId);
   fetch(API + '/api/dashboard').then(function(r) { return r.json(); }).then(function(d) { dashboardData = d; });
+}
+
+async function quickAssignJob(sel, jobId) {
+  var val = sel.value;
+  sel.className = 'job-assign-select' + (val ? ' has-assignee' : '');
+  await fetch(API + '/api/jobs/' + jobId + '/assign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assigned_to: val })
+  });
 }
 
 function toggleAddJob(clientId) {
@@ -3327,7 +3663,7 @@ async function createTask(jobId, clientId) {
   loadClient(clientId);
 }
 
-// ── Assistant bar ─────────────────────────────────────────────────────────
+// \u2500\u2500 Assistant bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 var assistantResponseTimer = null;
 
@@ -3341,7 +3677,7 @@ async function sendAssistantMessage() {
   input.disabled = true;
   btn.disabled = true;
   resp.className = 'assistant-response thinking';
-  resp.textContent = 'Thinking…';
+  resp.textContent = 'Thinking\u2026';
   clearTimeout(assistantResponseTimer);
   try {
     var r = await fetch(API + '/api/assistant', {
@@ -3361,7 +3697,7 @@ async function sendAssistantMessage() {
     }, 6000);
   } catch(e) {
     resp.className = 'assistant-response error';
-    resp.textContent = 'Request failed — try again';
+    resp.textContent = 'Request failed \u2014 try again';
   }
   input.disabled = false;
   btn.disabled = false;
@@ -3377,7 +3713,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// ── Dashboard navigation ──────────────────────────────────────────────────
+// \u2500\u2500 Dashboard navigation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function showDashboard() {
   document.getElementById('dashboard').classList.remove('hidden');
@@ -3396,7 +3732,7 @@ function showLoginScreen() {
   document.getElementById('appShell').classList.add('hidden');
 }
 
-// ── Intake ─────────────────────────────────────────────────────────────────
+// \u2500\u2500 Intake \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function loadIntakeSection() {
   var sec = document.getElementById('intakeSection');
@@ -3440,7 +3776,7 @@ async function loadIntakeSection() {
     listEl.innerHTML = '<div class="intake-empty">No pending intake items.</div>';
   } else {
     listEl.innerHTML = items.map(function(item) {
-      var icon = item.source === 'email' ? '✉️' : '📄';
+      var icon = item.source === 'email' ? '\u2709\uFE0F' : '\u{1F4C4}';
       var extracted = {};
       try { extracted = JSON.parse(item.extracted_json || '{}'); } catch {}
       var clientLabel = item.suggested_client_name ? item.suggested_client_name : 'Unknown client';
@@ -3525,7 +3861,7 @@ function showIntakeConfirmModal(intakeId) {
   try {
     var cached = intakeConfirmData;
     if (!cached || cached.id !== intakeId) {
-      // Will need to re-fetch, but we have the DOM data — build from dashboardData context
+      // Will need to re-fetch, but we have the DOM data \u2014 build from dashboardData context
     }
   } catch {}
 
@@ -3542,13 +3878,13 @@ function showIntakeConfirmModal(intakeId) {
     }).join('');
 
     // Build client select options
-    var clientOpts = '<option value="">— Create new client —</option>';
+    var clientOpts = '<option value="">\u2014 Create new client \u2014</option>';
     if (dashboardData && dashboardData.clients) {
       clientOpts = (dashboardData.clients || []).map(function(c) {
         var sel = (c.id === item.suggested_client_id) ? ' selected' : '';
         return '<option value="' + c.id + '"' + sel + '>' + esc(c.name) + '</option>';
       }).join('');
-      clientOpts = '<option value="">— Create new client —</option>' + clientOpts;
+      clientOpts = '<option value="">\u2014 Create new client \u2014</option>' + clientOpts;
     }
 
     var html = '<div class="intake-modal-overlay" id="intakeModalOverlay">' +
@@ -3627,7 +3963,7 @@ function showIntakeNoteModal(intakeId) {
   var subject = (itemEl.querySelector('.intake-item-subject') || {}).textContent || 'Email note';
 
   // Build client options
-  var clientOpts = '<option value="">— Select client —</option>';
+  var clientOpts = '<option value="">\u2014 Select client \u2014</option>';
   if (dashboardData && dashboardData.clients) {
     clientOpts += (dashboardData.clients || []).map(function(c) {
       return '<option value="' + c.id + '">' + esc(c.name) + '</option>';
@@ -3642,7 +3978,7 @@ function showIntakeNoteModal(intakeId) {
     '<label>Client</label>' +
     '<select id="noteClientSelect" data-action="note-client-change">' + clientOpts + '</select>' +
     '<label>Job</label>' +
-    '<select id="noteJobSelect"><option value="">— Select client first —</option></select>' +
+    '<select id="noteJobSelect"><option value="">\u2014 Select client first \u2014</option></select>' +
     '<div class="note-modal-actions">' +
     '<button class="cancel-btn" data-action="note-modal-cancel">Cancel</button>' +
     '<button class="save-btn" data-action="note-modal-save" data-id="' + intakeId + '">Save note</button>' +
@@ -3654,14 +3990,14 @@ function showIntakeNoteModal(intakeId) {
 async function loadNoteJobSelect(clientId) {
   var sel = document.getElementById('noteJobSelect');
   if (!sel) return;
-  if (!clientId) { sel.innerHTML = '<option value="">— Select client first —</option>'; return; }
+  if (!clientId) { sel.innerHTML = '<option value="">\u2014 Select client first \u2014</option>'; return; }
   sel.innerHTML = '<option value="">Loading...</option>';
   try {
     var r = await fetch(API + '/api/clients/' + clientId);
     var d = await r.json();
     var jobs = (d.jobs || []).filter(function(j) { return j.status === 'Active'; });
     if (!jobs.length) { sel.innerHTML = '<option value="">No active jobs</option>'; return; }
-    sel.innerHTML = '<option value="">— Select job —</option>' +
+    sel.innerHTML = '<option value="">\u2014 Select job \u2014</option>' +
       jobs.map(function(j) { return '<option value="' + j.id + '">' + esc(j.name) + '</option>'; }).join('');
   } catch(e) { sel.innerHTML = '<option value="">Error loading jobs</option>'; }
 }
@@ -3775,7 +4111,7 @@ async function loadIntakeDetail(intakeId) {
   detailEl.innerHTML = '<div class="intake-split">' +
     '<div class="intake-preview-panel">' +
     '<h2>' + esc(item.subject || 'Proposal') + '</h2>' +
-    '<div class="intake-file-meta">📄 ' + esc(item.subject || '') + ' &middot; ' + (item.suggested_client_name ? esc(item.suggested_client_name) : 'No client matched') + '</div>' +
+    '<div class="intake-file-meta">\u{1F4C4} ' + esc(item.subject || '') + ' &middot; ' + (item.suggested_client_name ? esc(item.suggested_client_name) : 'No client matched') + '</div>' +
     '<div class="intake-client-row">' +
     '<select id="intakeDetailClientSelect" onchange="toggleDetailNewClient()">' + clientOpts + '</select>' +
     '<input type="text" id="intakeDetailNewClient" placeholder="New client name..." style="display:none">' +
@@ -3834,7 +4170,7 @@ async function sendIntakeChat() {
   if (thinking) thinking.removeAttribute('id');
 
   if (!res.ok) {
-    if (thinking) thinking.textContent = 'Error — please try again.';
+    if (thinking) thinking.textContent = 'Error \u2014 please try again.';
     return;
   }
 
@@ -3907,7 +4243,7 @@ async function handleProposalFile(file) {
 
   var res = await fetch(API + '/api/intake/upload', { method: 'POST', body: formData });
 
-  if (uploadBtn) { uploadBtn.textContent = '📄 Upload Proposal'; uploadBtn.disabled = false; }
+  if (uploadBtn) { uploadBtn.textContent = '\u{1F4C4} Upload Proposal'; uploadBtn.disabled = false; }
   // Reset file input so the same file can be re-uploaded
   document.getElementById('proposalFileInput').value = '';
 
@@ -3924,9 +4260,9 @@ async function handleProposalFile(file) {
   }
 }
 
-// ══════════════════════════════════════════════
-// ── SPRINT TEMPLATE DATA ──
-// ══════════════════════════════════════════════
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// \u2500\u2500 SPRINT TEMPLATE DATA \u2500\u2500
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 var SPRINT_PHASES = [
   { id: 'preSprint', name: 'Pre-Sprint', subtitle: 'Foundation Setup', sections: ['preSprint_access','preSprint_vendasta','preSprint_oviond','preSprint_assets'] },
@@ -4065,7 +4401,7 @@ var SPRINT_SECTIONS = {
   ]}
 };
 
-// ── Sprint functions ───────────────────────────────────────────────────────
+// \u2500\u2500 Sprint functions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function renderSprintClientBar() {
   if (!dashboardData) {
@@ -4234,7 +4570,7 @@ async function activateSprintClient() {
   loadSprintClient(sel.value);
 }
 
-// ── Google Ads Portal ──────────────────────────────────────────────────────
+// \u2500\u2500 Google Ads Portal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function loadPortalSection(clientId) {
   var el = document.getElementById('portalSection');
@@ -4276,10 +4612,471 @@ async function portalRevoke(clientId) {
   loadPortalSection(clientId);
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
+// \u2500\u2500 Client Services Grid \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-${authed ? 'loadDashboard();' : '// Not authed — wait for login'}
-</script>
+var servicesData = null;
+
+var SERVICE_COLS = [
+  {key:'weekly_email', label:'Email'},
+  {key:'ga4',          label:'GA4'},
+  {key:'gads',         label:'G Ads'},
+  {key:'meta',         label:'Meta'},
+  {key:'clarity',      label:'Clarity'},
+  {key:'audiencelab',  label:'Int. Data'},
+  {key:'pipeline',     label:'Pipeline'},
+  {key:'pixel',        label:'Pixel'},
+  {key:'social',       label:'Social'},
+  {key:'website',      label:'Website'},
+  {key:'seo',          label:'SEO'},
+];
+
+var STATUS_CYCLE   = ['none','active','paused','cancelled'];
+var WEBSITE_CYCLE  = ['none','B','M','O'];
+
+// ── Client Health ──
+var clientHealthData = null;
+var CH_SIGNAL_LABELS = {google_ads_cpl:'CPL',google_ads_impressions:'Impressions',ga4_sessions:'Sessions',clarity_scroll_depth:'Scroll depth',email_open_rate:'Email opens',pixel_visitor_volume:'Pixel visitors',gbp_review_recency_days:'GBP review',meta_ctr:'Meta CTR'};
+var CH_CSS = '.ch-sub{color:var(--text-dim);font-size:13px;margin-bottom:18px}'
++ '.ch-summary{display:flex;gap:12px;margin-bottom:20px}'
++ '.ch-stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}'
++ '.ch-num{font-size:28px;font-weight:700;line-height:1}'
++ '.ch-lbl{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-top:6px;font-weight:600}'
++ '.ch-stat.red .ch-num{color:var(--red)}.ch-stat.amber .ch-num{color:var(--amber)}.ch-stat.green .ch-num{color:var(--green)}'
++ '.ch-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:10px}'
++ '.ch-row-main{display:flex;align-items:center;gap:16px}'
++ '.ch-pill{font-size:20px;font-weight:700;min-width:54px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:10px}'
++ '.ch-s-red{background:var(--red-bg);color:var(--red)}.ch-s-amber{background:var(--amber-bg);color:var(--amber)}.ch-s-green{background:var(--green-bg);color:var(--green)}'
++ '.ch-name{flex:1}.ch-cn{font-size:16px;font-weight:700}'
++ '.ch-flags{margin-top:5px;display:flex;gap:6px;flex-wrap:wrap}'
++ '.ch-flag{font-size:11px;font-weight:600;background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:6px}'
++ '.ch-flag-none{font-size:11px;color:var(--text-muted)}'
++ '.ch-trend{font-size:11px;font-weight:700;padding:5px 13px;border-radius:20px;text-transform:uppercase;letter-spacing:.6px;color:#fff}'
++ '.ch-t-flat{background:#78716C}.ch-t-up{background:var(--green)}.ch-t-down{background:var(--amber)}.ch-t-critical{background:var(--red);box-shadow:0 0 0 3px var(--red-bg)}'
++ '.ch-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}'
++ '.ch-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 9px;border-radius:7px;background:var(--surface2);border:1px solid var(--border)}'
++ '.ch-cl{color:var(--text-dim);font-weight:500}.ch-cv{font-weight:700}.ch-cd{font-size:11px;font-weight:600}'
++ '.ch-g .ch-cv{color:var(--green)}.ch-a .ch-cv{color:var(--amber)}.ch-r .ch-cv{color:var(--red)}'
++ '.ch-r .ch-cd{color:var(--red)}.ch-a .ch-cd{color:var(--amber)}';
+
+async function loadClientHealth() {
+  document.getElementById('healthContent').innerHTML = '<div class="loading">Loading...</div>';
+  var res = await fetch(API + '/api/client-health');
+  if (res.status === 401) { showLoginScreen(); return; }
+  clientHealthData = await res.json();
+  renderClientHealth();
+}
+
+function chScoreClass(score, trend) {
+  if (trend === 'critical' || score < 60) return 'red';
+  if (score < 85) return 'amber';
+  return 'green';
+}
+
+function chFmtSignal(key, d) {
+  var v = d.value, disp = '—';
+  if (v != null) {
+    if (key === 'gbp_review_recency_days') disp = Math.round(v) + 'd ago';
+    else if (key === 'email_open_rate') disp = v.toFixed(1) + '%';
+    else if (key === 'meta_ctr') disp = v.toFixed(2) + '%';
+    else if (key === 'clarity_scroll_depth') disp = Math.round(v) + '%';
+    else if (key === 'google_ads_cpl') disp = '$' + Math.round(v);
+    else disp = Math.round(v).toLocaleString();
+  }
+  var delta = '';
+  if (d.delta_pct != null) {
+    var a = d.delta_pct > 0 ? '▲' : '▼';
+    delta = ' <span class="ch-cd">' + a + Math.abs(d.delta_pct) + '%</span>';
+  }
+  var dot = ({green:'g',yellow:'a',red:'r'})[d.status] || 'n';
+  return '<span class="ch-chip ch-' + dot + '"><span class="ch-cl">' + (CH_SIGNAL_LABELS[key] || key) + '</span><span class="ch-cv">' + disp + '</span>' + delta + '</span>';
+}
+
+function renderClientHealth() {
+  if (!clientHealthData) return;
+  var data = clientHealthData.clients || [];
+  var nr = 0, na = 0, ng = 0;
+  data.forEach(function(c) { var cl = chScoreClass(c.composite_score, c.trend); if (cl === 'red') nr++; else if (cl === 'amber') na++; else ng++; });
+  var html = '<style>' + CH_CSS + '</style>';
+  html += '<div class="ch-sub">Daily composite health score across all clients. Updated 7am ET. Lower = at risk.' + (clientHealthData.score_date ? ' · ' + clientHealthData.score_date : '') + '</div>';
+  html += '<div class="ch-summary">';
+  html += '<div class="ch-stat red"><div class="ch-num">' + nr + '</div><div class="ch-lbl">Critical / At Risk</div></div>';
+  html += '<div class="ch-stat amber"><div class="ch-num">' + na + '</div><div class="ch-lbl">Watch</div></div>';
+  html += '<div class="ch-stat green"><div class="ch-num">' + ng + '</div><div class="ch-lbl">Healthy</div></div>';
+  html += '</div>';
+  if (!data.length) { html += '<div class="loading">No health scores yet. The daily job runs at 7am ET.</div>'; }
+  data.forEach(function(c) {
+    var cl = chScoreClass(c.composite_score, c.trend);
+    var chips = '';
+    for (var k in c.signals) { chips += chFmtSignal(k, c.signals[k]); }
+    var flags = (c.flags && c.flags.length) ? c.flags.map(function(f) { return '<span class="ch-flag">' + esc(f) + '</span>'; }).join('') : '<span class="ch-flag-none">no flags</span>';
+    var ti = ({up:'▲',flat:'—',down:'▼',critical:'⚠'})[c.trend] || '—';
+    html += '<div class="ch-row"><div class="ch-row-main">';
+    html += '<div class="ch-pill ch-s-' + cl + '">' + c.composite_score + '</div>';
+    html += '<div class="ch-name"><div class="ch-cn">' + esc(c.client_name) + '</div><div class="ch-flags">' + flags + '</div></div>';
+    html += '<span class="ch-trend ch-t-' + c.trend + '">' + ti + ' ' + c.trend + '</span>';
+    html += '</div><div class="ch-chips">' + chips + '</div></div>';
+  });
+  document.getElementById('healthContent').innerHTML = html;
+}
+
+async function loadServices() {
+  document.getElementById('servicesContent').innerHTML = '<div class="loading">Loading...</div>';
+  var res = await fetch(API + '/api/services');
+  if (res.status === 401) { showLoginScreen(); return; }
+  servicesData = await res.json();
+  renderServices();
+}
+
+function renderServices() {
+  if (!servicesData) return;
+  var html = '<div class="services-wrap">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html += '<div class="section-title" style="margin-bottom:0">Client Services \u2014 ' + servicesData.length + ' clients</div>';
+  html += '</div>';
+  html += '<div class="services-legend">';
+  html += '<span><span class="svc-badge svc-active" style="width:16px;height:16px;font-size:9px">\u2713</span> Active</span>';
+  html += '<span><span class="svc-badge svc-paused" style="width:16px;height:16px;font-size:10px">\u23F8</span> Paused</span>';
+  html += '<span><span class="svc-badge svc-cancelled" style="width:16px;height:16px;font-size:10px">\u2715</span> Cancelled</span>';
+  html += '<span><span class="svc-none" style="font-size:14px">\u2014</span> Not active</span>';
+  html += '<span style="color:var(--text-muted);font-size:11px">Click any cell to cycle status</span>';
+  html += '</div>';
+  html += '<div class="services-table-wrap"><table class="services-table"><thead><tr>';
+  html += '<th class="svc-client-col">Client</th>';
+  html += '<th class="svc-domain-col">Domain</th>';
+  SERVICE_COLS.forEach(function(col) { html += '<th>' + col.label + '</th>'; });
+  html += '</tr></thead><tbody>';
+  servicesData.forEach(function(client) {
+    html += '<tr><td class="svc-client-name">' + esc(client.name) + '</td>';
+    html += '<td class="svc-domain-cell"><input class="svc-domain-input" type="text" placeholder="example.com" value="' + esc(client.domain || '') + '" data-client="' + client.id + '" data-orig="' + esc(client.domain || '') + '" onblur="saveDomain(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>';
+    SERVICE_COLS.forEach(function(col) {
+      var svc = client.services[col.key] || {status:'none',notes:null,social_scheduled_through:null};
+      html += '<td class="svc-cell" data-client="' + client.id + '" data-svc="' + col.key + '" data-status="' + (svc.status||'none') + '" onclick="cycleServiceStatus(this)">';
+      html += renderSvcBadge(col.key, svc);
+      html += '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  document.getElementById('servicesContent').innerHTML = html;
+}
+
+function renderSvcBadge(key, svc) {
+  var s = svc.status || 'none';
+  if (s === 'none') return '<span class="svc-none">\u2014</span>';
+  if (key === 'website') {
+    var label = s === 'B' ? 'Burt' : s === 'M' ? 'Mktg Perf' : s === 'O' ? 'Other' : s;
+    return '<span class="svc-badge svc-website" title="' + label + '">' + s + '</span>';
+  }
+  if (s === 'active') {
+    var thru = (key === 'social' && svc.social_scheduled_through) ? '<span class="svc-thru">thru ' + svc.social_scheduled_through + '</span>' : '';
+    return '<span class="svc-badge svc-active">\u2713</span>' + thru;
+  }
+  if (s === 'paused') {
+    var info = svc.notes ? '<span class="svc-note-icon" title="' + svc.notes.replace(/"/g,"&quot;") + '">\u2139</span>' : '';
+    return '<span class="svc-badge svc-paused">\u23F8</span>' + info;
+  }
+  if (s === 'cancelled') return '<span class="svc-badge svc-cancelled">\u2715</span>';
+  return '<span class="svc-none">\u2014</span>';
+}
+
+async function cycleServiceStatus(cell) {
+  var clientId = cell.dataset.client;
+  var service = cell.dataset.svc;
+  var current = cell.dataset.status || 'none';
+  var cycle = (service === 'website') ? WEBSITE_CYCLE : STATUS_CYCLE;
+  var idx = cycle.indexOf(current);
+  if (idx === -1) idx = 0;
+  var next = cycle[(idx + 1) % cycle.length];
+
+  var body = {status: next, notes: null, social_scheduled_through: null};
+
+  if ((next === 'paused' || next === 'cancelled') && current === 'active') {
+    var reason = prompt('Reason (optional):');
+    if (reason === null) return;
+    if (reason) body.notes = reason;
+  }
+
+  // Optimistic update
+  cell.dataset.status = next;
+  var client = servicesData.find(function(c) { return c.id === clientId; });
+  if (client) {
+    if (!client.services[service]) client.services[service] = {};
+    client.services[service].status = next;
+    client.services[service].notes = body.notes;
+    client.services[service].social_scheduled_through = body.social_scheduled_through;
+    cell.innerHTML = renderSvcBadge(service, client.services[service]);
+  }
+
+  var res = await fetch(API + '/api/services/' + clientId + '/' + service, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    showSnackbar('Update failed');
+    cell.dataset.status = current;
+    if (client && client.services[service]) {
+      client.services[service].status = current;
+      cell.innerHTML = renderSvcBadge(service, client.services[service]);
+    }
+  }
+}
+
+async function saveDomain(input) {
+  var clientId = input.dataset.client;
+  var orig = input.dataset.orig;
+  var val = input.value.trim();
+  if (val === orig) return;
+  var res = await fetch(API + '/api/clients/' + clientId + '/domain', {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({domain: val})
+  });
+  if (res.ok) {
+    var data = await res.json();
+    input.value = data.domain || '';
+    input.dataset.orig = input.value;
+    var client = servicesData.find(function(c) { return c.id === clientId; });
+    if (client) client.domain = data.domain;
+    showSnackbar('Domain saved');
+  } else {
+    input.value = orig;
+    showSnackbar('Failed to save domain');
+  }
+}
+
+// \u2500\u2500 Maintenance tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+var maintData = null;
+
+async function loadMaintenance() {
+  document.getElementById('maintenanceContent').innerHTML = '<div class="loading">Loading...</div>';
+  var res = await fetch(API + '/api/maintenance');
+  if (res.status === 401) { showLoginScreen(); return; }
+  maintData = await res.json();
+  renderMaintenance();
+}
+
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  var d = new Date(dateStr);
+  var now = new Date();
+  return Math.floor((now - d) / 86400000);
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  var d = new Date(dateStr);
+  var now = new Date();
+  return Math.floor((d - now) / 86400000);
+}
+
+function maintFlag(days, warnAt, redAt) {
+  if (days === null) return '<span class="maint-dim">\u2014</span>';
+  if (days >= redAt) return '<span class="maint-flag-red">\u{1F534} ' + days + 'd ago</span>';
+  if (days >= warnAt) return '<span class="maint-flag-warn">\u26A0\uFE0F ' + days + 'd ago</span>';
+  return '<span class="maint-flag-ok">\u2713 ' + days + 'd ago</span>';
+}
+
+function renderMaintenance() {
+  if (!maintData) return;
+  var today = new Date().toISOString().slice(0, 10);
+  var html = '<div class="services-wrap">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html += '<div class="section-title" style="margin-bottom:0">Maintenance \u2014 ' + maintData.length + ' clients</div>';
+  html += '<button class="seo-check-btn" onclick="checkAllSeo()" style="padding:5px 14px;font-size:12px">Check All SEO</button>';
+  html += '</div>';
+  html += '<div class="maint-table-wrap"><table class="maint-table"><thead><tr>';
+  html += '<th class="maint-client" style="min-width:140px">Client</th>';
+  html += '<th>Website</th>';
+  html += '<th>Social</th>';
+  html += '<th>Last Report</th>';
+  html += '<th>Last Audit</th>';
+  html += '<th>SEO</th>';
+  html += '<th style="min-width:160px">Notes</th>';
+  html += '</tr></thead><tbody>';
+
+  maintData.forEach(function(c) {
+    html += '<tr>';
+    html += '<td class="maint-client">' + esc(c.name) + '</td>';
+
+    // Website column
+    if (c.website_status === 'B' && c.domain) {
+      html += '<td class="maint-wp-age" id="wp-' + c.id + '"><span class="maint-loading">checking...</span></td>';
+    } else if (c.website_status === 'B' && !c.domain) {
+      html += '<td><span class="maint-dim">Burt \u2014 no domain set</span></td>';
+    } else {
+      html += '<td><span class="maint-dim">\u2014</span></td>';
+    }
+
+    // Social column
+    if (c.social_status === 'active') {
+      var du = daysUntil(c.social_through);
+      if (c.social_through === null) {
+        html += '<td><span class="maint-flag-red">\u{1F534} no posts scheduled</span></td>';
+      } else if (du < 0) {
+        html += '<td><span class="maint-flag-red">\u{1F534} expired ' + Math.abs(du) + 'd ago</span></td>';
+      } else if (du < 14) {
+        html += '<td><span class="maint-flag-warn">\u26A0\uFE0F ' + du + 'd remaining</span></td>';
+      } else {
+        html += '<td><span class="maint-flag-ok">\u2713 ' + du + 'd remaining</span></td>';
+      }
+    } else if (c.social_status === 'paused') {
+      html += '<td><span class="maint-dim">\u2014 (paused)</span></td>';
+    } else {
+      html += '<td><span class="maint-dim">\u2014</span></td>';
+    }
+
+    // Last Report
+    var rDays = daysSince(c.last_report_date);
+    html += '<td>';
+    if (rDays !== null) html += maintFlag(rDays, 30, 45) + ' ';
+    html += '<button class="maint-date-btn" data-client="' + c.id + '" data-field="last_report_date" data-value="' + today + '" onclick="setMaintDate(this)" title="Mark today">Today</button>';
+    html += '</td>';
+
+    // Last Audit
+    var aDays = daysSince(c.last_audit_date);
+    html += '<td>';
+    if (aDays !== null) html += maintFlag(aDays, 90, 120) + ' ';
+    html += '<button class="maint-date-btn" data-client="' + c.id + '" data-field="last_audit_date" data-value="' + today + '" onclick="setMaintDate(this)" title="Mark today">Today</button>';
+    html += '</td>';
+
+    // SEO column
+    if (c.domain) {
+      html += '<td id="seo-' + c.id + '"><button class="seo-check-btn" data-client="' + c.id + '" onclick="checkSeo(this)">Check</button></td>';
+    } else {
+      html += '<td><span class="maint-dim">\u2014</span></td>';
+    }
+
+    // Notes
+    html += '<td><input class="maint-notes-input" type="text" placeholder="notes..." value="' + esc(c.maint_notes || '') + '" data-client="' + c.id + '" data-orig="' + esc(c.maint_notes || '') + '" onblur="saveMaintNotes(this)" onkeydown="if(event.keyCode===13)this.blur()"></td>';
+
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div></div>';
+  document.getElementById('maintenanceContent').innerHTML = html;
+
+  // Kick off WP age checks for Burt sites
+  maintData.forEach(function(c) {
+    if (c.website_status === 'B' && c.domain) {
+      fetchWpAge(c.id);
+    }
+  });
+}
+
+async function fetchWpAge(clientId) {
+  var cell = document.getElementById('wp-' + clientId);
+  if (!cell) return;
+  try {
+    var res = await fetch(API + '/api/maintenance/wp/' + clientId);
+    var data = await res.json();
+    if (data.error || !data.modified) {
+      cell.innerHTML = '<span class="maint-flag-warn">\u26A0\uFE0F WP API unavailable</span>';
+      return;
+    }
+    var days = daysSince(data.modified);
+    cell.innerHTML = maintFlag(days, 60, 90);
+  } catch(e) {
+    cell.innerHTML = '<span class="maint-dim">error</span>';
+  }
+}
+
+function checkAllSeo() {
+  if (!maintData) return;
+  maintData.forEach(function(c) {
+    if (!c.domain) return;
+    var cell = document.getElementById('seo-' + c.id);
+    if (!cell) return;
+    var btn = cell.querySelector('button');
+    if (btn) checkSeo(btn);
+  });
+}
+
+async function checkSeo(btn) {
+  var clientId = btn.dataset.client;
+  var cell = document.getElementById('seo-' + clientId);
+  cell.innerHTML = '<span class="maint-loading">checking...</span>';
+  try {
+    var res = await fetch(API + '/api/maintenance/seo/' + clientId);
+    var d = await res.json();
+    if (d.error) { cell.innerHTML = '<span class="maint-dim">\u2014</span>'; return; }
+    var out = '';
+    if (d.score !== null && d.score !== undefined) {
+      var cls = d.score >= 90 ? 'seo-score-g' : d.score >= 50 ? 'seo-score-y' : 'seo-score-r';
+      out += '<span class="' + cls + '">\u{1F4F1}' + d.score + '</span> ';
+    } else {
+      out += '<span class="maint-dim">\u{1F4F1}\u2014</span> ';
+    }
+    if (d.hasMeta === true) {
+      out += '<span class="maint-flag-ok">meta\u2713</span> ';
+    } else if (d.hasMeta === false) {
+      out += '<span class="maint-flag-warn">\u26A0\uFE0Fmeta</span> ';
+    }
+    if (d.noindex) {
+      out += '<span class="maint-flag-red">\u{1F534}noindex</span>';
+    } else if (d.hasMeta !== null) {
+      out += '<span class="maint-flag-ok">idx\u2713</span>';
+    }
+    out += ' <button class="seo-check-btn" data-client="' + clientId + '" onclick="checkSeo(this)" style="margin-left:2px">\u21BB</button>';
+    cell.innerHTML = out;
+  } catch(e) {
+    cell.innerHTML = '<span class="maint-dim">error</span>';
+  }
+}
+
+async function setMaintDate(btn) {
+  var clientId = btn.dataset.client;
+  var field = btn.dataset.field;
+  var value = btn.dataset.value;
+  var body = {};
+  body[field] = value;
+  var res = await fetch(API + '/api/clients/' + clientId + '/maintenance', {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    var c = maintData.find(function(x) { return x.id === clientId; });
+    if (c) c[field] = value;
+    renderMaintenance();
+    showSnackbar('Saved');
+  } else {
+    showSnackbar('Failed to save');
+  }
+}
+
+async function saveMaintNotes(input) {
+  var clientId = input.dataset.client;
+  var orig = input.dataset.orig;
+  var val = input.value.trim();
+  if (val === orig) return;
+  var res = await fetch(API + '/api/clients/' + clientId + '/maintenance', {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({maint_notes: val})
+  });
+  if (res.ok) {
+    input.dataset.orig = val;
+    var c = maintData.find(function(x) { return x.id === clientId; });
+    if (c) c.maint_notes = val;
+    showSnackbar('Notes saved');
+  } else {
+    input.value = orig;
+    showSnackbar('Failed to save');
+  }
+}
+
+// \u2500\u2500 Init \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+${authed ? "loadDashboard();" : "// Not authed \u2014 wait for login"}
+<\/script>
 </body>
 </html>`;
 }
+__name(getHTML, "getHTML");
+export {
+  worker_default as default
+};
+//# sourceMappingURL=worker.js.map
+
