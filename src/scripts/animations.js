@@ -15,35 +15,10 @@ gsap.utils.toArray('[data-animate]').forEach((el) => {
   })
 })
 
-// ─── Hero: word-by-word stagger on page load ──────────────────────────────────
-const heroWords = document.querySelectorAll('.hero-word')
-if (heroWords.length) {
-  gsap.from(heroWords, {
-    opacity: 0,
-    y: 40,
-    duration: 0.7,
-    stagger: 0.05,
-    ease: 'power3.out',
-    delay: 0.15,
-  })
-
-  gsap.from('.hero-sub', {
-    opacity: 0,
-    y: 30,
-    duration: 0.9,
-    stagger: 0.15,
-    ease: 'power3.out',
-    delay: 0.9,
-  })
-
-  gsap.from('.hero-cta', {
-    opacity: 0,
-    y: 25,
-    duration: 0.9,
-    ease: 'power3.out',
-    delay: 1.25,
-  })
-}
+// ─── Hero: CSS handles the animation — no JS opacity:0 on LCP elements ───────
+// Hero words and sub-copy use @keyframes defined in global.css.
+// GSAP is NOT used here to avoid setting opacity:0 before JS loads,
+// which was causing 7s LCP on mobile.
 
 // ─── Stats bar: count-up on scroll entry ──────────────────────────────────────
 document.querySelectorAll('[data-count]').forEach((el) => {

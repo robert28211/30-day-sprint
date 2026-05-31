@@ -13,8 +13,12 @@ const {
     <title>{title}</title>
     <meta name="description" content={description} />
 
-    <!-- Google Analytics -->
-    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-7CF3328ZK0"></script>
+    <!-- Preconnect to analytics/pixel origins — eliminates connection setup latency -->
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
+    <link rel="preconnect" href="https://www.clarity.ms" crossorigin />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
+
+    <!-- Google Analytics — stub only in head, script loads after interaction -->
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
       window.gtag = function(){dataLayer.push(arguments);}
@@ -23,7 +27,7 @@ const {
     </script>
 
     <!-- Microsoft Clarity -->
-    <script type="text/javascript">
+    <script is:inline>
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
@@ -31,31 +35,56 @@ const {
       })(window, document, "clarity", "script", "v5zy2jqg2w");
     </script>
 
-    <!-- Identity Resolution Pixel -->
-    <script src="https://cdn.idpixel.app/v1/idp-analytics-6990fa8981c12e22bc596313.min.js" defer></script>
-
-    <!-- Meta Pixel stub — queue only, no network call in <head> -->
+    <!-- All third-party scripts deferred until after first user interaction -->
     <script is:inline>
-      window.fbq=window.fbq||function(){(window._fbq=window._fbq||[]).push(arguments)};
-      window._fbq=window._fbq||[];
+      (function() {
+        var loaded = false;
+        function loadThirdParty() {
+          if (loaded) return;
+          loaded = true;
+          ['click','scroll','keydown','touchstart'].forEach(function(e) {
+            document.removeEventListener(e, loadThirdParty, {once:true, passive:true});
+          });
+
+          // Google Analytics
+          var ga = document.createElement('script');
+          ga.async = true;
+          ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-7CF3328ZK0';
+          document.head.appendChild(ga);
+
+          // Meta Pixel
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq&&f.fbq.loaded)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=(window._fbq||[]);t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '1362717861424529');
+          fbq('track', 'PageView');
+
+          // Identity Resolution Pixel
+          var idp = document.createElement('script');
+          idp.async = true;
+          idp.src = 'https://cdn.idpixel.app/v1/idp-analytics-6990fa8981c12e22bc596313.min.js';
+          document.head.appendChild(idp);
+        }
+        ['click','scroll','keydown','touchstart'].forEach(function(e) {
+          document.addEventListener(e, loadThirdParty, {once:true, passive:true});
+        });
+        // Fallback: load after 4s regardless
+        setTimeout(loadThirdParty, 4000);
+      })();
+
+      // Stubs so gtag/fbq calls before load don't throw
+      window.fbq = window.fbq || function(){(window._fbq=window._fbq||[]).push(arguments)};
+      window._fbq = window._fbq || [];
     </script>
   </head>
   <body>
     <slot />
 
-    <!-- Meta Pixel load — deferred to after LCP to avoid render-blocking -->
-    <script is:inline>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq&&f.fbq.loaded)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=(window._fbq||[]);t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '1362717861424529');
-      fbq('track', 'PageView');
-    </script>
     <noscript><img height="1" width="1" style="display:none"
       src="https://www.facebook.com/tr?id=1362717861424529&ev=PageView&noscript=1"
     /></noscript>
