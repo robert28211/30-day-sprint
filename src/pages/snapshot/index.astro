@@ -91,6 +91,25 @@ const displayMarket = detectedLocation || 'your market'
       </div>
     </section>
 
+    <!-- ═══ 1.5 ACTUAL BUYER INTENT PULL (artifact) ═══ -->
+    <section class="mp-proof">
+      <figure class="mp-proof-inner" data-animate>
+        <img
+          src="/img/intent-snapshot-hvac.png"
+          alt="Buyer intent pull — Columbia, SC HVAC: 233 active searchers identified, 85 multi-site visitors, 85 uncaptured with no contact made, competitor exposure locked until activation. Contact data preview blurred."
+          class="mp-proof-img"
+          loading="lazy"
+          decoding="async"
+          width="2882"
+          height="1472"
+        />
+        <figcaption class="mp-proof-cap">
+          <span class="mp-proof-cap-main"><strong>Actual buyer intent pull</strong> · HVAC, Columbia, SC</span>
+          <span class="mp-proof-cap-sub">Audience refreshes every 24 hours as new buyers search.</span>
+        </figcaption>
+      </figure>
+    </section>
+
     <!-- ═══ 2. HERO-ANCHOR TESTIMONIAL ═══ -->
     <section class="mp-anchor">
       <div class="mp-anchor-inner" data-animate>
@@ -687,6 +706,48 @@ const displayMarket = detectedLocation || 'your market'
     50% { opacity: 0.4; transform: scale(1.35); }
   }
 
+  /* ─── PROOF ARTIFACT (HVAC intent screenshot) ─── */
+  .mp-proof {
+    padding: 80px 32px 96px;
+    background: var(--canvas);
+  }
+  .mp-proof-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: flex; flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+  .mp-proof-img {
+    width: 100%; height: auto;
+    aspect-ratio: 2882 / 1472;
+    border-radius: 8px;
+    box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
+    background: var(--white);
+    display: block;
+  }
+  .mp-proof-cap {
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
+    gap: 4px;
+  }
+  .mp-proof-cap-main {
+    font-family: var(--font-t);
+    font-size: 14px;
+    letter-spacing: -0.018em;
+    color: var(--mid-gray);
+  }
+  .mp-proof-cap-main strong {
+    color: var(--graphite);
+    font-weight: 600;
+  }
+  .mp-proof-cap-sub {
+    font-family: var(--font-t);
+    font-size: 13px;
+    letter-spacing: -0.015em;
+    color: var(--light-gray);
+  }
+
   /* ─── ANCHOR TESTIMONIALS ─── */
   .mp-anchor {
     background: var(--white);
@@ -1259,5 +1320,6 @@ const displayMarket = detectedLocation || 'your market'
     .mp-do-col { padding: 24px 22px; }
     .mp-result { padding: 28px 24px; }
     .snap-card { padding: 24px 22px; }
+    .mp-proof { padding: 56px 22px 72px; }
   }
 </style>
