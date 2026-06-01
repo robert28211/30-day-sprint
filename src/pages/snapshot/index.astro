@@ -93,7 +93,10 @@ const displayMarket = detectedLocation || 'your market'
 
     <!-- ═══ 1.5 ACTUAL BUYER INTENT PULL (artifact) ═══ -->
     <section class="mp-proof">
-      <figure class="mp-proof-inner" data-animate>
+      <header class="mp-proof-head" data-animate>
+        <h2 class="mp-proof-h">See your market right now using the free Snapshot tool.</h2>
+      </header>
+      <figure class="mp-proof-inner" data-animate data-delay="0.1">
         <img
           src="/img/intent-snapshot-hvac.png"
           alt="Buyer intent pull — Columbia, SC HVAC: 233 active searchers identified, 85 multi-site visitors, 85 uncaptured with no contact made, competitor exposure locked until activation. Contact data preview blurred."
@@ -710,6 +713,18 @@ const displayMarket = detectedLocation || 'your market'
   .mp-proof {
     padding: 80px 32px 96px;
     background: var(--canvas);
+  }
+  .mp-proof-head {
+    max-width: 880px;
+    margin: 0 auto 40px;
+    text-align: center;
+  }
+  .mp-proof-h {
+    font-family: var(--font-d);
+    font-size: clamp(28px, 3.6vw, 40px);
+    font-weight: 600; line-height: 1.1;
+    letter-spacing: -0.018em;
+    color: var(--graphite);
   }
   .mp-proof-inner {
     max-width: 1080px;
