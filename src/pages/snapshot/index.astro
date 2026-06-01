@@ -43,10 +43,10 @@ const displayMarket = detectedLocation || 'your market'
           <div class="mp-hero-prose hero-sub">
             <p>Before a homeowner calls anyone, they're already searching. Reading reviews. Comparing options. Looking at maps.</p>
             <p>We identify those <strong>specific people</strong> — by name, email, telephone, and address — and put your ads in front of them, and only them, across Google, Facebook, YouTube, and every other platform they use.</p>
-            <p class="mp-hero-prose-close">No wasted spend on people who'll never call. No guessing who's in market. Just the buyers who are actually deciding right now.</p>
+            <p class="mp-hero-prose-close mobile-hide">No wasted spend on people who'll never call. No guessing who's in market. Just the buyers who are actually deciding right now.</p>
           </div>
 
-          <div class="mp-hero-trust">
+          <div class="mp-hero-trust mobile-hide">
             <div class="mp-guarantee-chip">
               <span class="mp-chip-check">✓</span>
               <span>Backed by our <strong>2X Revenue Guarantee</strong> — or we keep working. Free.</span>
@@ -1324,7 +1324,9 @@ const displayMarket = detectedLocation || 'your market'
 
   /* ─── Responsive ─── */
   @media (max-width: 768px) {
+    .mobile-hide { display: none; }
     .mp-hero { padding: 40px 22px 40px; }
+    .mp-hero-grid { gap: 32px; }
     .mp-clarity, .mp-engine, .mp-results, .mp-guarantee { padding: 80px 22px; }
     .mp-founder { padding: 64px 22px; }
     .mp-close { padding: 96px 22px 88px; }
