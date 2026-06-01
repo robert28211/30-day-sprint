@@ -55,7 +55,7 @@ export async function POST({ request, locals }: APIContext) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'EngageEngine <notifications@marketingperformance.net>',
+        from: 'EngageEngine <notifications@send.marketingperformance.net>',
         to: ['robertlbutt@gmail.com'],
         subject: `🎯 AI Score Unlock — ${businessName} · ${score}/100 ${profile}`,
         html: `

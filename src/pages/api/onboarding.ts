@@ -178,10 +178,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!data.phone?.trim()) return Response.json({ ok: false, error: 'Phone number is required' })
   if (!data.address?.trim()) return Response.json({ ok: false, error: 'Business address is required' })
 
-  // W-9 file is required
+  // W-9 file is optional
   const w9FileEntry = form.get('w9File')
   const w9File = w9FileEntry instanceof File && w9FileEntry.size > 0 ? w9FileEntry : null
-  if (!w9File) return Response.json({ ok: false, error: 'W-9 file is required' })
 
   const id = crypto.randomUUID()
   const submittedAt = new Date().toISOString()

@@ -32,17 +32,19 @@ const displayMarket = detectedLocation || 'your market'
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
           <h1 class="mp-h1">
-            <span class="hero-word">Your </span>
-            <span class="hero-word">ads </span>
-            <span class="hero-word">are </span>
-            <span class="hero-word">running. </span>
-            <span class="hero-word">Your </span>
-            <span class="hero-word">competitors </span>
-            <span class="hero-word">are </span>
-            <span class="hero-word">winning.</span>
+            <span class="hero-word">We </span>
+            <span class="hero-word">find </span>
+            <span class="hero-word">buyers </span>
+            <span class="hero-word">before </span>
+            <span class="hero-word">they </span>
+            <span class="hero-word">call </span>
+            <span class="hero-word">anyone.</span>
           </h1>
-          <p class="mp-hero-punch hero-sub">Not because they're better. Because they're in front of the buyers before you are.</p>
-          <p class="mp-hero-sub hero-sub">We already know who those buyers are — by name, email, phone, address, and what they're searching for right now.</p>
+          <div class="mp-hero-prose hero-sub">
+            <p>Before a homeowner calls anyone, they're already searching. Reading reviews. Comparing options. Looking at maps.</p>
+            <p>We identify those <strong>specific people</strong> — by name and address — and put your ads in front of them, and only them, across Google, Facebook, YouTube, and every other platform they use.</p>
+            <p class="mp-hero-prose-close">No wasted spend on people who'll never call. No guessing who's in market. Just the buyers who are actually deciding right now.</p>
+          </div>
 
           <div class="mp-hero-trust">
             <div class="mp-guarantee-chip">
@@ -92,16 +94,18 @@ const displayMarket = detectedLocation || 'your market'
     <!-- ═══ 2. HERO-ANCHOR TESTIMONIAL ═══ -->
     <section class="mp-anchor">
       <div class="mp-anchor-inner" data-animate>
-        <div class="mp-anchor-photo">RG</div>
+        <div class="mp-anchor-photo">
+          <img src="/img/rogerson.jpg" alt="George Rogerson, McClintock HVAC" width="80" height="80" loading="lazy" decoding="async" />
+        </div>
         <div class="mp-anchor-body">
-          <p class="mp-anchor-quote">"We were running ads, getting clicks, and watching people disappear. They found the problem. Booked appointments jumped 170%. I haven't touched the budget since."</p>
+          <p class="mp-anchor-quote">"Our cost per click dropped over 70%, clicks and engagement went up on our website, and in 30 days we doubled our booked appointments."</p>
           <p class="mp-anchor-attr"><strong>George Rogerson</strong> · McClintock HVAC · Charlotte, NC</p>
           <div class="mp-anchor-stats">
-            <span><strong>170%</strong> more booked appointments</span>
+            <span><strong>70%</strong> lower cost per click</span>
             <span class="mp-dot">·</span>
-            <span>same ad budget</span>
+            <span><strong>2×</strong> booked appointments</span>
             <span class="mp-dot">·</span>
-            <span>90 days</span>
+            <span>30 days</span>
           </div>
         </div>
       </div>
@@ -159,14 +163,8 @@ const displayMarket = detectedLocation || 'your market'
     <!-- ═══ 5. HOW IT WORKS ═══ -->
     <section class="mp-engine">
       <div class="mp-section-head">
-        <p class="mp-eye" data-animate>How It Works</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">We find buyers before they call anyone.</h2>
-      </div>
-
-      <div class="mp-mechanism" data-animate data-delay="0.1">
-        <p>Before a homeowner calls anyone, they're already searching. Reading reviews. Comparing options. Looking at maps.</p>
-        <p>We identify those <strong>specific people</strong> — by name and address — and put your ads in front of them, and only them, across Google, Facebook, YouTube, and every other platform they use.</p>
-        <p>No wasted spend on people who'll never call. No guessing who's in market. Just the buyers who are actually deciding right now.</p>
+        <p class="mp-eye" data-animate>Inside The Engine</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">Five layers. One engine.</h2>
       </div>
 
       <img src="/ee-explode.webp" alt="EngageEngine — five-layer system" class="mp-explode" loading="lazy" decoding="async" width="1536" height="1024" data-animate data-delay="0.15" />
@@ -536,6 +534,25 @@ const displayMarket = detectedLocation || 'your market'
     color: var(--mid-gray);
     max-width: 540px; margin-bottom: 36px;
   }
+  .mp-hero-prose {
+    display: flex; flex-direction: column;
+    gap: 14px;
+    max-width: 540px;
+    margin-bottom: 36px;
+  }
+  .mp-hero-prose p {
+    font-family: var(--font-t);
+    font-size: 17px; line-height: 1.55;
+    letter-spacing: -0.022em;
+    color: var(--mid-gray);
+  }
+  .mp-hero-prose p strong {
+    color: var(--blue); font-weight: 600;
+  }
+  .mp-hero-prose-close {
+    color: var(--graphite) !important;
+    font-weight: 500;
+  }
   .mp-hero-trust {
     display: flex; flex-direction: column; gap: 14px;
     padding-top: 24px; border-top: 1px solid var(--border);
@@ -692,6 +709,12 @@ const displayMarket = detectedLocation || 'your market'
     font-size: 22px; font-weight: 600;
     color: var(--mid-gray);
     flex-shrink: 0;
+    overflow: hidden;
+  }
+  .mp-anchor-photo img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .mp-anchor-quote {
     font-family: var(--font-d);
@@ -876,7 +899,8 @@ const displayMarket = detectedLocation || 'your market'
   .mp-mechanism strong { color: var(--blue); font-weight: 600; }
 
   .mp-explode {
-    display: block; width: 100%; max-width: 900px;
+    display: block; width: 100%; height: auto; max-width: 900px;
+    aspect-ratio: 1536 / 1024;
     margin: 0 auto 64px;
     border-radius: 8px;
   }

@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 import { renderers } from './renderers.mjs';
 import { c as createExports, s as serverEntrypointModule } from './chunks/_@astrojs-ssr-adapter_CrZyF4mt.mjs';
-import { manifest } from './manifest_CH1TRQ6U.mjs';
+import { manifest } from './manifest_BygeGIBj.mjs';
 
 const serverIslandMap = new Map();;
 
@@ -25,14 +25,14 @@ const _page16 = () => import('./pages/onboarding.astro.mjs');
 const _page17 = () => import('./pages/playbook/thank-you.astro.mjs');
 const _page18 = () => import('./pages/playbook.astro.mjs');
 const _page19 = () => import('./pages/preview.astro.mjs');
-const _page20 = () => import('./pages/score.astro.mjs');
-const _page21 = () => import('./pages/snapshot/booked.astro.mjs');
-const _page22 = () => import('./pages/snapshot/plastic-surgery.astro.mjs');
-const _page23 = () => import('./pages/snapshot/_id_.astro.mjs');
-const _page24 = () => import('./pages/snapshot.astro.mjs');
-const _page25 = () => import('./pages/the-build.astro.mjs');
-const _page26 = () => import('./pages/toolkit.astro.mjs');
-const _page27 = () => import('./pages/v2.astro.mjs');
+const _page20 = () => import('./pages/privacy.astro.mjs');
+const _page21 = () => import('./pages/score.astro.mjs');
+const _page22 = () => import('./pages/snapshot/booked.astro.mjs');
+const _page23 = () => import('./pages/snapshot/plastic-surgery.astro.mjs');
+const _page24 = () => import('./pages/snapshot/_id_.astro.mjs');
+const _page25 = () => import('./pages/snapshot.astro.mjs');
+const _page26 = () => import('./pages/the-build.astro.mjs');
+const _page27 = () => import('./pages/toolkit.astro.mjs');
 const _page28 = () => import('./pages/index.astro.mjs');
 const pageMap = new Map([
     ["node_modules/@astrojs/cloudflare/dist/entrypoints/image-endpoint.js", _page0],
@@ -55,14 +55,14 @@ const pageMap = new Map([
     ["src/pages/playbook/thank-you.astro", _page17],
     ["src/pages/playbook/index.astro", _page18],
     ["src/pages/preview.astro", _page19],
-    ["src/pages/score/index.astro", _page20],
-    ["src/pages/snapshot/booked.astro", _page21],
-    ["src/pages/snapshot/plastic-surgery/index.astro", _page22],
-    ["src/pages/snapshot/[id].astro", _page23],
-    ["src/pages/snapshot/index.astro", _page24],
-    ["src/pages/the-build.astro", _page25],
-    ["src/pages/toolkit/index.astro", _page26],
-    ["src/pages/v2.astro", _page27],
+    ["src/pages/privacy.astro", _page20],
+    ["src/pages/score/index.astro", _page21],
+    ["src/pages/snapshot/booked.astro", _page22],
+    ["src/pages/snapshot/plastic-surgery/index.astro", _page23],
+    ["src/pages/snapshot/[id].astro", _page24],
+    ["src/pages/snapshot/index.astro", _page25],
+    ["src/pages/the-build.astro", _page26],
+    ["src/pages/toolkit/index.astro", _page27],
     ["src/pages/index.astro", _page28]
 ]);
 
