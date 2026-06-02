@@ -271,9 +271,18 @@ const refId      = id && id !== 'preview' ? id.split('-')[0].toUpperCase() : 'PR
         <input type="hidden" name="multi_site" value={data.multi_site} />
         <input type="hidden" name="competitor_exposed" value={data.competitor_exposed} />
         <div class="claim-fields">
-          <input type="text" name="name"  required class="claim-input" />
-          <input type="email" name="email"  required class="claim-input" />
-          <input type="tel" name="phone"  class="claim-input" />
+          <div class="claim-field">
+            <label for="claim-name" class="claim-label">Name</label>
+            <input id="claim-name" type="text" name="name" placeholder="Your name" required class="claim-input" autocomplete="name" />
+          </div>
+          <div class="claim-field">
+            <label for="claim-email" class="claim-label">Email</label>
+            <input id="claim-email" type="email" name="email" placeholder="you@yourbusiness.com" required class="claim-input" autocomplete="email" />
+          </div>
+          <div class="claim-field">
+            <label for="claim-phone" class="claim-label">Phone</label>
+            <input id="claim-phone" type="tel" name="phone" placeholder="(555) 555-5555" class="claim-input" autocomplete="tel" />
+          </div>
         </div>
         <button type="submit" class="claim-btn" id="claim-submit">
           {isHomeService ? 'Add Me to the Waitlist →' : 'Claim My Market →'}
@@ -571,7 +580,14 @@ if (claimForm) {
     color: #0071e3; margin: 0 0 40px;
   }
   .claim-form { display: flex; flex-direction: column; }
-  .claim-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .claim-fields { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+  .claim-field { display: flex; flex-direction: column; gap: 6px; }
+  .claim-label {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: #707070;
+  }
   .claim-input {
     font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif; font-size: 15px;
     padding: 13px 16px; border: 1px solid #d6d6d6; border-radius: 10px;
