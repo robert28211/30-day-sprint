@@ -23,24 +23,26 @@ import Footer from '../components/Footer.astro'
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
           <h1 class="mp-h1">
-            <span class="hero-word">Your </span>
-            <span class="hero-word">ads </span>
-            <span class="hero-word">are </span>
-            <span class="hero-word">running. </span>
-            <span class="hero-word">Your </span>
-            <span class="hero-word">competitors </span>
-            <span class="hero-word">are </span>
-            <span class="hero-word">winning.</span>
+            <span class="hero-word">We </span>
+            <span class="hero-word">find </span>
+            <span class="hero-word">buyers </span>
+            <span class="hero-word">before </span>
+            <span class="hero-word">they </span>
+            <span class="hero-word">call </span>
+            <span class="hero-word">anyone.</span>
           </h1>
-          <p class="mp-hero-punch hero-sub">Not because they're better. Because they're in front of the buyers before you are.</p>
-          <p class="mp-hero-sub hero-sub">We already know who those buyers are — by name, email, phone, address, and what they're searching for right now.</p>
+          <div class="mp-hero-prose hero-sub">
+            <p>Before a homeowner calls anyone, they're already searching. Reading reviews. Comparing options. Looking at maps.</p>
+            <p>We identify those <strong>specific people</strong> — by name, email, telephone, and address — and put your ads in front of them, and only them, across Google, Facebook, YouTube, and every other platform they use.</p>
+            <p class="mp-hero-prose-close mobile-hide">No wasted spend on people who'll never call. No guessing who's in market. Just the buyers who are actually deciding right now.</p>
+          </div>
 
           <div class="hero-cta mp-hero-cta-block">
             <a href="/snapshot" class="mp-btn-primary">Show Me Who's Searching in My Market</a>
             <p class="mp-micro">No email required</p>
           </div>
 
-          <div class="mp-hero-trust">
+          <div class="mp-hero-trust mobile-hide">
             <div class="mp-guarantee-chip">
               <span class="mp-chip-check">✓</span>
               <span>Backed by our <strong>2X Revenue Guarantee</strong> — or we keep working. Free.</span>
@@ -416,6 +418,25 @@ import Footer from '../components/Footer.astro'
     letter-spacing: -0.022em;
     color: var(--mid-gray);
     max-width: 540px; margin-bottom: 36px;
+  }
+  .mp-hero-prose {
+    display: flex; flex-direction: column;
+    gap: 14px;
+    max-width: 540px;
+    margin-bottom: 32px;
+  }
+  .mp-hero-prose p {
+    font-family: var(--font-t);
+    font-size: 17px; line-height: 1.55;
+    letter-spacing: -0.022em;
+    color: var(--mid-gray);
+  }
+  .mp-hero-prose p strong {
+    color: var(--blue); font-weight: 600;
+  }
+  .mp-hero-prose-close {
+    color: var(--graphite) !important;
+    font-weight: 500;
   }
   .mp-hero-cta-block {
     display: flex; flex-direction: column;
@@ -986,6 +1007,7 @@ import Footer from '../components/Footer.astro'
 
   /* ─── Responsive ─── */
   @media (max-width: 768px) {
+    .mobile-hide { display: none; }
     .mp-hero { padding: 56px 22px 72px; }
     .mp-clarity, .mp-engine, .mp-results, .mp-guarantee { padding: 80px 22px; }
     .mp-founder { padding: 64px 22px; }
