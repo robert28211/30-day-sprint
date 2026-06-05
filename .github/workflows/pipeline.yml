@@ -1,9 +1,9 @@
 name: Prospector Pipeline
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'   # every 15 minutes
-  workflow_dispatch:          # manual trigger from GitHub UI
+  # schedule:
+  #   - cron: '*/15 * * * *'   # PAUSED 2026-06-05 — re-enable to resume
+  workflow_dispatch:          # manual trigger still available from GitHub UI
 
 jobs:
   run-pipeline:
