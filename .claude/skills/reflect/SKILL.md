@@ -116,15 +116,30 @@ via `/reflect review`.
 
 ## Step 5 — Version it
 
-If `git.commit` is true, after writing:
+⚠️ The git repo root is the **home directory** (`/Users/robbiebutt`), whose remote
+is `gbp-intelligence`. NEVER run `git add -A` / `git add .` — that would stage
+hundreds of unrelated home-dir files. Stage ONLY the exact files this reflection
+changed, by explicit path.
+
+If `git.commit` is true, after writing, stage just the files you edited and commit:
 
 ```bash
-git -C ~/.claude add -A
-git -C ~/.claude commit -m "reflect(<skill>): <summary>"
+# list ONLY the files this run actually modified — e.g. the target SKILL.md,
+# review-queue.md, and config.json if the toggle changed.
+git -C ~ add ".claude/skills/<skill>/SKILL.md" ".claude/reflect/review-queue.md"
+git -C ~ commit -q -m "reflect(<skill>): <summary>" -- \
+  ".claude/skills/<skill>/SKILL.md" ".claude/reflect/review-queue.md"
 ```
 
-If `git.push` is true, then `git -C ~/.claude push`. If push fails (no remote /
-offline), keep the commit and report it — never lose the learning.
+Scoping `commit` with `-- <paths>` guarantees nothing else gets swept in even if
+other files happen to be staged. Verify with `git -C ~ show --stat HEAD` that only
+your intended files are in the commit.
+
+If `git.push` is true, then `git -C ~ push`. **Push is OFF by default** because the
+remote is the shared home-dir repo — only push if the user has explicitly confirmed
+they want skill learnings pushed there. If push fails (no remote / offline), keep
+the commit and report it — never lose the learning. The local commit alone already
+gives full version history and rollback.
 
 ## Step 6 — Report
 
@@ -150,5 +165,5 @@ When the Stop hook triggers this skill automatically:
 2. Apply only learnings at or above `auto_apply_confidence` (default HIGH).
 3. Queue everything below that to `review-queue.md` — do **not** edit SKILL.md with it.
 4. Never use `body-edit` in auto mode. `learnings-section` only.
-5. Commit + push per config.
+5. Commit per config, staging ONLY the files you changed (never `add -A`). Push only if `git.push` is true.
 6. Emit the one-line report. If there's nothing worth learning, say nothing and stop.

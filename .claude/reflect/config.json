@@ -3,7 +3,8 @@
   "auto_apply_confidence": "high",
   "git": {
     "commit": true,
-    "push": true
+    "push": false,
+    "_push_note": "Repo root is the home dir (/Users/robbiebutt), remote 'gbp' = gbp-intelligence. Local commits give full history + rollback. Leave push false unless you want skill learnings pushed to that shared remote."
   },
   "target": {
     "mode": "auto-detect",
