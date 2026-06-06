@@ -1,0 +1,14 @@
+# ─────────────────────────────────────────────────────────────────────────
+# SAFETY NET — this git repo's root is the HOME directory (/Users/robbiebutt).
+# That is not intended; a relocation is planned. Until then, this file shields
+# every untracked file in your home folder (.ssh, .aws, .config, .claude.json,
+# shell history, Dropbox, etc.) from ever being staged by an accidental
+# `git add -A` / `git add .` and pushed to GitHub.
+#
+# How it works: ignore EVERYTHING, then re-allow only the .gitignore itself.
+# Files already committed stay tracked and continue to stage when modified —
+# .gitignore does not un-track anything. To add a genuinely NEW file to this
+# repo, use `git add -f <path>` deliberately.
+# ─────────────────────────────────────────────────────────────────────────
+/*
+!/.gitignore
