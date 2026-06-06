@@ -1,0 +1,66 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__telegram__reply",
+      "mcp__telegram__react",
+      "mcp__telegram__edit_message"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "enabledMcpjsonServers": [],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/robbiebutt/.claude/hooks/session-start.sh",
+            "timeout": 15,
+            "statusMessage": "Running preflight & loading memory..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/robbiebutt/.claude/hooks/reflect-stop.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin /opt/homebrew/bin/engram consolidate --json"
+          },
+          {
+            "type": "command",
+            "command": "/Users/robbiebutt/.claude/hooks/engram-push.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/robbiebutt/.claude/hooks/save-to-obsidian.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "telegram@claude-plugins-official": true,
+    "toprank@nowork-studio": true
+  },
+  "extraKnownMarketplaces": {
+    "nowork-studio": {
+      "source": {
+        "source": "github",
+        "repo": "nowork-studio/toprank"
+      }
+    }
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "light",
+  "agentPushNotifEnabled": true,
+  "skipWorkflowUsageWarning": true
+}
