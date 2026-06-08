@@ -2480,6 +2480,29 @@ body{padding-bottom:80px}
 .svc-website{background:var(--accent-glow);color:var(--accent)}
 .svc-none{color:var(--text-muted);font-size:16px;line-height:1}
 .svc-thru{display:block;font-size:9px;color:var(--text-muted);font-family:"JetBrains Mono",monospace;margin-top:1px;white-space:nowrap}
+/* ── Maintenance table ── */
+.maint-table-wrap{overflow:auto;max-height:calc(100vh - 220px);border:1px solid var(--border);border-radius:10px}
+.maint-table{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface)}
+.maint-table thead tr{position:sticky;top:0;z-index:4}
+.maint-table th{background:var(--surface);padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--text-dim);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:4}
+.maint-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.maint-table tbody tr:last-child td{border-bottom:none}
+.maint-client{font-weight:600;font-size:13px;white-space:nowrap;position:sticky;left:0;background:var(--surface);z-index:2;border-right:1px solid var(--border)}
+.maint-flag-red{color:var(--red);font-size:12px;white-space:nowrap}
+.maint-flag-warn{color:var(--amber);font-size:12px;white-space:nowrap}
+.maint-flag-ok{color:var(--green);font-size:12px;white-space:nowrap}
+.maint-dim{color:var(--text-muted);font-size:12px}
+.maint-loading{color:var(--text-dim);font-size:11px;font-style:italic}
+.maint-date-btn{background:var(--surface2);border:1px solid var(--border);border-radius:4px;font-size:11px;padding:2px 7px;cursor:pointer;color:var(--text-dim);font-family:inherit;transition:background .15s}
+.maint-date-btn:hover{background:var(--accent-glow);color:var(--accent);border-color:var(--accent)}
+.maint-notes-input{background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);font-size:12px;font-family:inherit;padding:2px 4px;outline:none;width:140px}
+.maint-notes-input:hover{border-bottom-color:var(--border)}
+.maint-notes-input:focus{border-bottom-color:var(--accent)}
+.seo-check-btn{background:var(--surface2);border:1px solid var(--border);border-radius:4px;font-size:11px;padding:2px 8px;cursor:pointer;color:var(--text-dim);font-family:inherit;transition:background .15s}
+.seo-check-btn:hover{background:var(--accent-glow);color:var(--accent);border-color:var(--accent)}
+.seo-score-g{color:var(--green);font-weight:700;font-size:12px}
+.seo-score-y{color:var(--amber);font-weight:700;font-size:12px}
+.seo-score-r{color:var(--red);font-weight:700;font-size:12px}
 </style>
 </head>
 <body>
