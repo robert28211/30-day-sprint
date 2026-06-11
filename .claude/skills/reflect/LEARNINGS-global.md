@@ -1,6 +1,7 @@
 # Global Learnings
 <!-- Maintained by /reflect. Newest at top. Each line: - [TIER] (YYYY-MM-DD) statement -->
 
+- [HIGH] (2026-06-11) Before uploading demo videos showing real user data to public Meta ads, verify all personal information (names, addresses, phone numbers) is properly blurred. The Columbia SC roofing video incident showed unblurred names publicly for several hours — a serious privacy violation that must be caught at upload time, not after the ad is live.
 - [HIGH] (2026-06-08) Operations Hub Anthropic calls in Cloudflare Workers: always add `if (!apiResp.ok) throw new Error(\`Anthropic \${apiResp.status}: \${JSON.stringify(data)}\`)` immediately after `await apiResp.json()` — without this, non-2xx responses silently produce undefined content and empty output with no error logged anywhere.
 - [HIGH] (2026-06-08) Operations Hub brief AbortController timeout (22s) is calibrated for max_tokens ≤ 2000. At 4000 tokens Haiku takes >22s and aborts with "The operation was aborted." Never raise max_tokens above 2000 without also raising the abort timeout — or move generation to the cron trigger (15min wall-clock) instead of HTTP waitUntil (30s total).
 - [MED] (2026-06-08) To debug empty Operations Hub brief: query BOTH `narrative_text` AND `action_items_json`. If action_len > 0 but narrative_len = 0, the output format section ordering is the issue (not an API failure). If both are 0, it's an API/auth/timeout error.
