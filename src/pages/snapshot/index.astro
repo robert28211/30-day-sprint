@@ -32,14 +32,11 @@ const displayMarket = detectedLocation || 'your market'
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
           <h1 class="mp-h1">
-            <span class="hero-word">We </span>
-            <span class="hero-word">find </span>
-            <span class="hero-word">buyers </span>
-            <span class="hero-word">before </span>
-            <span class="hero-word">they </span>
-            <span class="hero-word">call </span>
-            <span class="hero-word">anyone.</span>
+            Your ads aren't bad. Your targeting is.
           </h1>
+          <p class="mp-hero-punch">
+            We find buyers before they call anyone.
+          </p>
           <div class="mp-hero-prose hero-sub">
             <p>Before a homeowner calls anyone, they're already searching. Reading reviews. Comparing options. Looking at maps.</p>
             <p>We identify those <strong>specific people</strong> — by name, email, telephone, and address — and put your ads in front of them, and only them, across Google, Facebook, YouTube, and every other platform they use.</p>
@@ -79,11 +76,11 @@ const displayMarket = detectedLocation || 'your market'
             </p>
 
             <button type="submit" class="snap-btn" id="snap-submit">
-              <span>Show Me</span>
+              <span>Show me my buyers</span>
               <span class="snap-btn-arrow">→</span>
             </button>
 
-            <p class="snap-micro">No email required · Results in 30 seconds</p>
+            <p class="snap-micro">We'll send you 10 real buyers — by name — free.</p>
 
             <div class="snap-scarcity">
               <span class="snap-scarcity-dot"></span>
@@ -94,24 +91,28 @@ const displayMarket = detectedLocation || 'your market'
       </div>
     </section>
 
-    <!-- ═══ 1.5 ACTUAL BUYER INTENT PULL (artifact) ═══ -->
+    <!-- ═══ 1.5 ACTUAL LIVE PULL — video demo (artifact) ═══ -->
     <section class="mp-proof">
       <header class="mp-proof-head" data-animate>
         <h2 class="mp-proof-h">See your market right now using the free Snapshot tool.</h2>
       </header>
       <figure class="mp-proof-inner" data-animate data-delay="0.1">
-        <img
-          src="/img/intent-snapshot-hvac.png"
-          alt="Buyer intent pull — Columbia, SC HVAC: 233 active searchers identified, 85 multi-site visitors, 85 uncaptured with no contact made, competitor exposure locked until activation. Contact data preview blurred."
-          class="mp-proof-img"
-          loading="lazy"
-          decoding="async"
-          width="2882"
-          height="1472"
-        />
+        <video
+          class="mp-proof-video"
+          src="/video/gutters-richmond.mp4"
+          poster="/video/gutters-richmond-poster.jpg"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          width="1280"
+          height="800"
+          aria-label="Live data pull demonstration: building a buyer audience for Gutters in Richmond, Virginia. 812 in-market buyers identified with names, business emails, phones, and job titles."
+        ></video>
         <figcaption class="mp-proof-cap">
-          <span class="mp-proof-cap-main"><strong>Actual buyer intent pull</strong> · HVAC, Columbia, SC</span>
-          <span class="mp-proof-cap-sub">Audience refreshes every 24 hours as new buyers search.</span>
+          <span class="mp-proof-cap-main"><strong>Actual live pull</strong> · Gutters, Richmond, VA</span>
+          <span class="mp-proof-cap-sub">Watch the system find real buyers in real time. Audience refreshes every 24 hours.</span>
         </figcaption>
       </figure>
     </section>
@@ -784,13 +785,19 @@ const displayMarket = detectedLocation || 'your market'
     align-items: center;
     gap: 22px;
   }
-  .mp-proof-img {
+  .mp-proof-img,
+  .mp-proof-video {
     width: 100%; height: auto;
-    aspect-ratio: 2882 / 1472;
     border-radius: 8px;
     box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
     background: var(--white);
     display: block;
+  }
+  .mp-proof-img { aspect-ratio: 2882 / 1472; }
+  .mp-proof-video {
+    aspect-ratio: 1280 / 800;
+    object-fit: cover;
+    background: #0a0a0a;
   }
   .mp-proof-cap {
     display: flex; flex-direction: column;
