@@ -107,7 +107,7 @@ var ROUTES = [
   { method: "DELETE", re: /^\/api\/clients\/([^/]+)\/portal-token$/, handler: (r, e, m) => handlePortalTokenRevoke(r, e, m[1]) },
   { method: "POST", re: /^\/api\/internal\/push-ad-data$/, handler: handlePushAdData, public: true },
   // Services & Maintenance
-  { method: "GET", re: /^\/api\/services$/, handler: handleServicesList },
+  { method: "GET", re: /^\/api\/services$/, handler: handleServicesList, readKey: true },
   { method: "PATCH", re: /^\/api\/services\/([^/]+)\/([^/]+)$/, handler: (r, e, m) => handleServiceUpdate(r, e, m[1], m[2]) },
   { method: "GET", re: /^\/api\/maintenance$/, handler: handleMaintenanceList },
   { method: "GET", re: /^\/api\/maintenance\/wp\/([^/]+)$/, handler: (r, e, m) => handleMaintenanceWp(r, e, m[1]) },
@@ -1465,7 +1465,8 @@ var worker_default = {
             continue;
           if (!route.public) {
             const authed2 = await authMiddleware(request, env);
-            if (!authed2)
+            const readOk = route.readKey && request.method === "GET" && env.SERVICES_READ_KEY && request.headers.get("x-read-key") === env.SERVICES_READ_KEY;
+            if (!authed2 && !readOk)
               return json({ error: "Unauthorized" }, 401);
           }
           return await route.handler(request, env, m);
@@ -4641,6 +4642,7 @@ var servicesData = null;
 
 var SERVICE_COLS = [
   {key:'weekly_email', label:'Email'},
+  {key:'drip',         label:'Drip'},
   {key:'ga4',          label:'GA4'},
   {key:'gads',         label:'G Ads'},
   {key:'meta',         label:'Meta'},
