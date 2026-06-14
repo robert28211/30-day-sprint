@@ -1,3 +1,7 @@
-name = "engageengine-staging"
+# ⚠️ This Pages config is for marketingperformance.net STAGING ONLY.
+# Do NOT use the project "engageengine-staging" here — that project serves the
+# LIVE engageengine.ai site, and deploying MPN to it overwrites engageengine.ai
+# (incident 2026-06-14). MPN staging now has its own isolated project below.
+name = "marketingperformance-staging"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"

@@ -162,7 +162,8 @@ Between hero and card grid: `pt-8 border-t border-border`
 ## Deployment
 
 - **Production:** `rough-brook-782b` Worker — `npx wrangler deploy -c wrangler-worker.toml`
-- **Staging:** `engageengine-staging` Pages — `npx wrangler pages deploy dist` (do NOT use for production)
+- **Staging:** `marketingperformance-staging` Pages — `npx wrangler pages deploy dist --project-name marketingperformance-staging` (do NOT use for production)
+- **🚫 NEVER deploy this site to `engageengine-staging`** — that Pages project serves the LIVE **engageengine.ai** site. Deploying MPN there overwrites engageengine.ai (incident 2026-06-14). The MPN staging project is `marketingperformance-staging` only.
 - **Worktree:** `/Users/robbiebutt/.claude/worktrees/youthful-tu/`
 - **Build:** `npm run build` (Astro + Cloudflare Workers adapter)
 
