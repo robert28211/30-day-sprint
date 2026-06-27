@@ -37,6 +37,8 @@ The goal is not to be clever. The goal is to find the thing that's actually true
 
 This is the engine. Across repeated live use, the insight has never come from "being creative" — it has come from this short forensic sequence run on the problem *before* any lens. Do not skip a step. Most problems crack here, on move 2 or 3, and you never reach the backup lenses below.
 
+**Keep the spine interrogative, never prescriptive.** Moves 1–4 scrutinize the *inputs* — the question, the tool, the numbers, the anomaly. They ask; they never presume what kind of answer the problem has. Move 5 only *describes* what's left after the frame is cleared — it does not name a conclusion-class either. The instant a "move" tells you what sort of answer to reach (it's about intent, it's about pricing, it's about trust), it has become a biased instrument — exactly what Move 2 exists to catch — and it will quietly drag a single domain's ontology into a room that's supposed to be empty. A clean-room move is a question or a stripping operation, never a pre-loaded answer.
+
 ### Move 1 — Literal-Words Frame Check
 Read the *exact words* of the ask, not the gist. The obvious frame almost always substitutes an easier near-synonym for the question actually posed. Did they say "estimates" while you're about to answer "leads"? Did they ask "who do we call" when the live question is "who did we already fail"? **Name the swap out loud before answering anything.** The gap between the stated word and the assumed word is usually the whole game.
 
@@ -49,8 +51,12 @@ The clean, dramatic stat is usually the lie. Take the load-bearing number or col
 ### Move 4 — Refuse to Smooth the Contradiction
 When two things in the data can't both be true — "everything looks great" and "HELP, send the estimators home" — do NOT resolve the paradox. The contradiction *is* the signal. Usually it means you're reading one instrument to diagnose a problem that lives somewhere the instrument can't see (a marketing dashboard diagnosing an operations failure). The instinct to reconcile, average, or explain-away the anomaly is the error. Sit in it.
 
-### Move 5 — Name Where the Intent Died
-Strip the platform, the app, the channel, the trend. Name the underlying human behavior — fear of loss, status, in-group belonging, trust — and find the exact point between *intent* and *action* where it stalled. The hand-raise happened; what failed to carry it forward? The leak is almost never at the top of the funnel everyone's staring at — it's at the handoff. (Universal psychology only here. Name the behavior and the stall point; never the vault framework label.)
+### Move 5 — Strip to the Mechanism (Translation Test)
+Once the first four moves have cleared the false frame, describe what is *actually happening* in terms primitive enough to survive translation to a completely different field. If your description needs this industry's vocabulary — funnels, leads, intent, conversions — you haven't stripped far enough.
+
+**Do not decide in advance what *kind* of thing the mechanism is.** It might be a human behavior, a physical constraint, a misaligned incentive, a broken information flow, a structural bottleneck — let the stripped description reveal it; never arrive carrying the answer-shape. Then **stop and hand the raw mechanism back**. It is not this skill's job to decide which framework the insight maps into — that's the next step, and it belongs to Robbie, not the clean room.
+
+> The same move, three fields: a demand problem may strip to *"the readiness existed and nothing carried it forward"*; a manufacturing problem to *"the bottleneck moved upstream but the metric still watches downstream"*; a story problem to *"the scene has no want."* Each is an **output** of the move, never the move itself.
 
 ---
 

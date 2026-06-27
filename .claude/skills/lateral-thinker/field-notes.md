@@ -8,5 +8,6 @@ Newest at top. Format: `- [TIER] (YYYY-MM-DD) move`.
 
 ## Moves
 
+- [HIGH] (2026-06-27) A step in your own method that prescribes the *shape* of the answer ("find where X stalled," "name the behavior") is a biased instrument hiding as a neutral move — run Instrument's Bias on your own checklist. Clean moves only ask a question or strip away vocabulary; they never arrive carrying a conclusion-class. Test: would the move still make sense in a field where that answer-shape doesn't exist?
 - [HIGH] (2026-06-27) Read the literal words of the ask; the obvious frame often substitutes an easier near-synonym question for the one posed. Name the swap before answering.
 - [HIGH] (2026-06-27) Ask what answer the instrument/dataset/report is structurally built to produce, then ask what you'd see without it. The tool shapes the diagnosis.
