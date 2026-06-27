@@ -33,7 +33,7 @@ This is the engine. The insight rarely comes from "being creative" — it comes 
 
 ## Backup Lenses — when the spine doesn't crack it
 
-Shuffle these, run 2–4: **Reversal** (flip it — "what would make a great customer fire us?") · **Child's-Eye View** (strip jargon, ask "but why does that matter?" three times) · **Metaphor Map** (compare to a different domain — leaky boat, garden in drought) · **What Would the Fool Ask?** · **Invert the Expert View** · **Scale Extremes** (10x bigger, 100x smaller, one day, ten years) · **What If?** (remove a constraint, work back from the ideal) · **Cross-Domain Import** (find a field that already solved it — ER triage: fix throughput before recruiting more patients) · **The Entropy Test** (left alone, where does this decay to?).
+Shuffle these, run 2–4: **Reversal** (flip it — "what would make a great customer fire us?") · **Child's-Eye View** (strip jargon, ask "but why does that matter?" three times) · **Metaphor Map** (compare to a different domain — leaky boat, garden in drought) · **What Would the Fool Ask?** · **Invert the Expert View** · **Scale Extremes** (10x bigger, 100x smaller, one day, ten years) · **What If?** (remove a constraint, work back from the ideal) · **Cross-Domain Import** (find a field that already solved it — name the source principle → map to the *target's actual mechanism*, not a surface likeness → kill the mapping if the deep structure doesn't match and it's only a metaphor. ER triage: fix throughput before recruiting more patients — transfers because both are throughput-vs-intake systems, not because it "feels like" a funnel) · **The Entropy Test** (left alone, where does this decay to?).
 
 ## Output Format
 
