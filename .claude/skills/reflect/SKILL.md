@@ -49,6 +49,10 @@ Read `~/.claude/reflect/config.json` first. It controls:
 3. If exactly one skill is in play, use it. If several, list them and ask which to
    reflect into (or "all"). If none, fall back to the global learnings file
    `~/.claude/skills/reflect/LEARNINGS-global.md` and say so.
+4. **Skip self-reflecting skills.** If a candidate target's `SKILL.md` declares its
+   own `## Self-Reflection` section, NEVER reflect into it — it owns a clean-room
+   learning loop that this engine would contaminate. Exclude it from auto-detect,
+   from `"all"`, and from `pinned` targeting; note that it was skipped and stop.
 
 ## Step 2 — Extract signals
 
