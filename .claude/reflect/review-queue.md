@@ -13,3 +13,6 @@ Run `/reflect review` to triage. Format: `- [LOW] (date) [target-skill] observat
 - [LOW] (2026-06-11) [global] GitHub Actions Node 20 deprecation: the client_health_report workflow uses actions/checkout@v4 + actions/setup-python@v5 (Node 20). Forced to Node 24 on 2026-06-16, Node 20 removed 2026-09-16. Bump the action versions before then.
 - [LOW] (2026-06-08) [sprint-tracker] Sprint Tracker CSS lives inline inside the `getHTML()` template literal in `worker.js`. Large commits (many-line rewrites) can silently drop CSS blocks that were deployed but never committed to git — the deployed worker and the git tree diverge. Confirm CSS is committed before major rewrites.
 - (2026-06-18) [global] This bash environment runs with `set -e` — a `grep`/check that exits non-zero (e.g. no match) aborts a multi-command script before later lines run. Isolate fallible checks or append `|| true`.
+
+- [LOW] (2026-06-28) weekly-emails: Winyah Bay Pools shows paid-social GA4 traffic (115 sessions) but no Winyah Meta account is visible under the current token — locate the Meta account driving it.
+- [LOW] (2026-06-28) global/infra: Engram memory DB hit "database disk image is malformed" (~/.engram/default.db) — memory writes failing; needs sqlite recovery (.recover).
