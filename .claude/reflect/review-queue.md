@@ -16,3 +16,6 @@ Run `/reflect review` to triage. Format: `- [LOW] (date) [target-skill] observat
 
 - [LOW] (2026-06-28) weekly-emails: Winyah Bay Pools shows paid-social GA4 traffic (115 sessions) but no Winyah Meta account is visible under the current token — locate the Meta account driving it.
 - [LOW] (2026-06-28) global/infra: Engram memory DB hit "database disk image is malformed" (~/.engram/default.db) — memory writes failing; needs sqlite recovery (.recover).
+
+- [LOW] (2026-06-29) [→ global/pipeline] AudienceLab has a list endpoint `GET https://api.audiencelab.io/audiences` (header `x-api-key`) returning {id,name} for all audiences (paginated) — use it to map client names → audience UUIDs instead of asking.
+- [LOW] (2026-06-29) [→ global] Disable a scheduled GitHub Actions workflow by commenting out the `schedule:`/`cron:` block while KEEPING `workflow_dispatch:` — stops auto-runs, preserves manual trigger, fully reversible (vs deleting the file).
