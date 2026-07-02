@@ -491,10 +491,10 @@ async function handleSprintActivate(request, env) {
   return json({ success: true });
 }
 __name(handleSprintActivate, "handleSprintActivate");
-async function callClaude(env, messages, model = "claude-sonnet-4-6", system = null) {
+async function callClaude(env, messages, model = "claude-sonnet-5", system = null) {
   if (!env.ANTHROPIC_API_KEY)
     throw new Error("ANTHROPIC_API_KEY not set");
-  const body = { model, max_tokens: 2048, messages };
+  const body = { model, max_tokens: 2048, messages, thinking: { type: "disabled" } };
   if (system)
     body.system = system;
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -511,7 +511,8 @@ async function callClaude(env, messages, model = "claude-sonnet-4-6", system = n
     throw new Error(`Claude API error ${res.status}: ${err.slice(0, 200)}`);
   }
   const data = await res.json();
-  return data.content[0].text;
+  const textBlock = (data.content || []).find((b) => b.type === "text");
+  return textBlock?.text || "";
 }
 __name(callClaude, "callClaude");
 function validateExtraction(parsed) {
@@ -727,7 +728,7 @@ ${rawText}`
         content: `Extract the client work request from this email. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string"}]}]}. If you cannot extract structured data, return {"client_name": "", "jobs": []}.
 
 ${rawText}`
-      }], "claude-sonnet-4-6");
+      }], "claude-sonnet-5");
       const jsonMatch = extractText.match(/\{[\s\S]*\}/);
       if (jsonMatch)
         extracted = JSON.parse(jsonMatch[0]);
@@ -846,7 +847,7 @@ async function handleIntakeUpload(request, env) {
           { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } },
           { type: "text", text: 'Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}. Be thorough \u2014 capture every deliverable, phase, and task mentioned.' }
         ]
-      }], "claude-sonnet-4-6");
+      }], "claude-sonnet-5");
     } catch (err) {
       return json({ error: `Extraction failed: ${err.message}` }, 500);
     }
@@ -864,7 +865,7 @@ async function handleIntakeUpload(request, env) {
         content: `Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}.
 
 ${rawText}`
-      }], "claude-sonnet-4-6");
+      }], "claude-sonnet-5");
     } catch (err) {
       return json({ error: `Extraction failed: ${err.message}` }, 500);
     }
@@ -877,7 +878,7 @@ ${rawText}`
         content: `Extract all jobs, phases, milestones, and tasks from this proposal or document. Return ONLY valid JSON: {"client_name": "string", "jobs": [{"name": "string", "tasks": [{"name": "string", "notes": "string"}]}]}.
 
 ${rawText}`
-      }], "claude-sonnet-4-6");
+      }], "claude-sonnet-5");
     } catch (err) {
       return json({ error: `Extraction failed: ${err.message}` }, 500);
     }
@@ -959,7 +960,7 @@ Be concise and helpful.`;
   ];
   let reply;
   try {
-    reply = await callClaude(env, messages, "claude-sonnet-4-6");
+    reply = await callClaude(env, messages, "claude-sonnet-5");
   } catch (err) {
     return json({ error: `Claude error: ${err.message}` }, 500);
   }
@@ -1154,175 +1155,6 @@ ${(item.raw_text || "").slice(0, 2e3)}`.trim();
   return json({ success: true });
 }
 __name(handleIntakeSaveAsNote, "handleIntakeSaveAsNote");
-async function floorProAuth(request, env) {
-  const token = getCookie(request, "fp_session");
-  if (!token || !env.FLOOR_PRO_PASSWORD)
-    return false;
-  try {
-    return await isValidToken(env.FLOOR_PRO_PASSWORD, token);
-  } catch {
-    return false;
-  }
-}
-__name(floorProAuth, "floorProAuth");
-async function handleFloorProDomain(request, env, path) {
-  try {
-    if (path === "/api/fp-login" && request.method === "POST") {
-      const body = await request.json().catch(() => ({}));
-      if (!env.FLOOR_PRO_PASSWORD || body.password !== env.FLOOR_PRO_PASSWORD) {
-        return json({ error: "Incorrect password" }, 401);
-      }
-      const token = await makeToken(env.FLOOR_PRO_PASSWORD);
-      const cookie = `fp_session=${token}; HttpOnly; SameSite=Lax; Max-Age=604800; Path=/`;
-      return json({ ok: true }, 200, { "Set-Cookie": cookie });
-    }
-    if (path === "/api/fp-refresh" && request.method === "POST") {
-      if (!await floorProAuth(request, env))
-        return json({ error: "Unauthorized" }, 401);
-      return await handleFloorProRefresh(env);
-    }
-    if (path === "/api/fp-data" && request.method === "GET") {
-      if (!await floorProAuth(request, env))
-        return json({ error: "Unauthorized" }, 401);
-      return await handleFloorProData(env);
-    }
-    const authed = await floorProAuth(request, env);
-    return new Response(getFloorProHTML(authed), {
-      headers: { "Content-Type": "text/html; charset=utf-8" }
-    });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-}
-__name(handleFloorProDomain, "handleFloorProDomain");
-async function getGadsAccessToken(env) {
-  const resp = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: env.GADS_CLIENT_ID,
-      client_secret: env.GADS_CLIENT_SECRET,
-      refresh_token: env.GADS_REFRESH_TOKEN,
-      grant_type: "refresh_token"
-    })
-  });
-  const d = await resp.json();
-  if (!d.access_token)
-    throw new Error(`Token exchange failed: ${d.error_description || d.error}`);
-  return d.access_token;
-}
-__name(getGadsAccessToken, "getGadsAccessToken");
-async function runGAQL(accessToken, env, query) {
-  const custId = "8999197888";
-  const resp = await fetch(
-    `https://googleads.googleapis.com/v24/customers/${custId}/googleAds:search`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "developer-token": env.GADS_DEVELOPER_TOKEN,
-        "login-customer-id": "7536541386",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ query })
-    }
-  );
-  if (!resp.ok) {
-    const err = await resp.text();
-    throw new Error(`GAQL failed (${resp.status}): ${err.slice(0, 300)}`);
-  }
-  const data = await resp.json();
-  return data.results || [];
-}
-__name(runGAQL, "runGAQL");
-function stripSpend(rows) {
-  const bad = ["cost", "spend", "cpc", "cpm", "budget", "revenue", "value"];
-  function clean(obj) {
-    const out = {};
-    for (const [k, v] of Object.entries(obj || {})) {
-      if (bad.some((b) => k.toLowerCase().includes(b)))
-        continue;
-      out[k] = v && typeof v === "object" && !Array.isArray(v) ? clean(v) : v;
-    }
-    return out;
-  }
-  __name(clean, "clean");
-  return rows.map(clean);
-}
-__name(stripSpend, "stripSpend");
-async function handleFloorProRefresh(env) {
-  const token = await getGadsAccessToken(env);
-  const today = /* @__PURE__ */ new Date();
-  const fmt = /* @__PURE__ */ __name((d) => d.toISOString().split("T")[0], "fmt");
-  const yesterday = fmt(new Date(today - 864e5));
-  const sevenAgo = fmt(new Date(today - 7 * 864e5));
-  const thirtyAgo = fmt(new Date(today - 30 * 864e5));
-  const queries = {
-    summary: `SELECT metrics.impressions, metrics.clicks, metrics.ctr,
-        metrics.search_impression_share, metrics.conversions
-      FROM customer
-      WHERE segments.date BETWEEN '${sevenAgo}' AND '${yesterday}'`,
-    campaigns: `SELECT campaign.name, campaign.status, metrics.impressions,
-        metrics.clicks, metrics.ctr, metrics.search_impression_share, metrics.conversions
-      FROM campaign
-      WHERE segments.date BETWEEN '${thirtyAgo}' AND '${yesterday}'
-        AND campaign.status != 'REMOVED'
-      ORDER BY metrics.impressions DESC`,
-    ad_groups: `SELECT campaign.name, ad_group.name, ad_group.status,
-        metrics.impressions, metrics.clicks, metrics.ctr
-      FROM ad_group
-      WHERE segments.date BETWEEN '${thirtyAgo}' AND '${yesterday}'
-        AND ad_group.status != 'REMOVED'
-      ORDER BY metrics.impressions DESC LIMIT 100`,
-    keywords: `SELECT campaign.name, ad_group.name, ad_group_criterion.keyword.text,
-        ad_group_criterion.keyword.match_type, ad_group_criterion.status,
-        metrics.impressions, metrics.clicks, metrics.ctr
-      FROM keyword_view
-      WHERE segments.date BETWEEN '${thirtyAgo}' AND '${yesterday}'
-        AND ad_group_criterion.status != 'REMOVED'
-      ORDER BY metrics.impressions DESC LIMIT 200`,
-    negatives: `SELECT campaign.name, campaign_criterion.keyword.text,
-        campaign_criterion.keyword.match_type
-      FROM campaign_criterion
-      WHERE campaign_criterion.type = 'KEYWORD'
-        AND campaign_criterion.negative = true
-      ORDER BY campaign.name LIMIT 500`
-  };
-  const results = {};
-  for (const [key, q] of Object.entries(queries)) {
-    const rows = await runGAQL(token, env, q);
-    results[key] = key === "negatives" ? rows : stripSpend(rows);
-  }
-  const clientId = "recWK4ZeH88QQkqhl";
-  for (const [dataType, payload] of Object.entries(results)) {
-    await env.DB.prepare(`
-      INSERT INTO client_ad_cache (id, client_id, data_type, payload_json, date_range, fetched_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'))
-      ON CONFLICT(client_id, data_type) DO UPDATE SET
-        id=excluded.id, payload_json=excluded.payload_json,
-        date_range=excluded.date_range, fetched_at=excluded.fetched_at
-    `).bind(genId("cac"), clientId, dataType, JSON.stringify(payload), yesterday).run();
-  }
-  return json({ ok: true, data: results, as_of: yesterday });
-}
-__name(handleFloorProRefresh, "handleFloorProRefresh");
-async function handleFloorProData(env) {
-  const clientId = "recWK4ZeH88QQkqhl";
-  const rows = await env.DB.prepare(
-    "SELECT data_type, payload_json, date_range, fetched_at FROM client_ad_cache WHERE client_id=?"
-  ).bind(clientId).all();
-  if (!rows.results.length)
-    return json({ ok: true, data: null });
-  const data = {};
-  for (const r of rows.results) {
-    data[r.data_type] = { payload: JSON.parse(r.payload_json), date_range: r.date_range, fetched_at: r.fetched_at };
-  }
-  return json({ ok: true, data });
-}
-__name(handleFloorProData, "handleFloorProData");
 async function handlePushAdData(request, env) {
   const secret = request.headers.get("X-Internal-Secret");
   if (!secret || secret !== env.INTERNAL_PUSH_SECRET) {
@@ -1420,6 +1252,34 @@ async function handlePortalTokenRevoke(request, env, clientId) {
   return json({ success: true });
 }
 __name(handlePortalTokenRevoke, "handlePortalTokenRevoke");
+async function writeSprintGmailHeartbeat(env, errorMessage) {
+  try {
+    const nowIso = (/* @__PURE__ */ new Date()).toISOString();
+    if (errorMessage) {
+      await env.DB.prepare(`
+        INSERT INTO pipeline_heartbeats (pipeline, last_run, last_ok, last_error, expected_hours, meta)
+        VALUES (?, ?, NULL, ?, ?, NULL)
+        ON CONFLICT(pipeline) DO UPDATE SET
+          last_run=excluded.last_run,
+          last_error=excluded.last_error,
+          expected_hours=excluded.expected_hours
+      `).bind("sprint-gmail-poll", nowIso, errorMessage, 26).run();
+    } else {
+      await env.DB.prepare(`
+        INSERT INTO pipeline_heartbeats (pipeline, last_run, last_ok, last_error, expected_hours, meta)
+        VALUES (?, ?, ?, NULL, ?, NULL)
+        ON CONFLICT(pipeline) DO UPDATE SET
+          last_run=excluded.last_run,
+          last_ok=excluded.last_ok,
+          last_error=NULL,
+          expected_hours=excluded.expected_hours
+      `).bind("sprint-gmail-poll", nowIso, nowIso, 26).run();
+    }
+  } catch (hbErr) {
+    console.error("Failed to write sprint-gmail-poll heartbeat:", hbErr);
+  }
+}
+__name(writeSprintGmailHeartbeat, "writeSprintGmailHeartbeat");
 var worker_default = {
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
@@ -1430,12 +1290,16 @@ var worker_default = {
             "UPDATE sprint_gmail_tokens SET cron_last_error=? WHERE id=?"
           ).bind(result.error, "main").run().catch(() => {
           });
+          await writeSprintGmailHeartbeat(env, result.error);
+        } else {
+          await writeSprintGmailHeartbeat(env, null);
         }
       } catch (err) {
         await env.DB.prepare(
           "UPDATE sprint_gmail_tokens SET cron_last_error=? WHERE id=?"
         ).bind(err.message, "main").run().catch(() => {
         });
+        await writeSprintGmailHeartbeat(env, err.message);
       }
     })());
   },
@@ -1448,12 +1312,8 @@ var worker_default = {
     }
     const url = new URL(request.url);
     const path = url.pathname;
-    const host = request.headers.get("host") || "";
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204 });
-    }
-    if (host === "floorpro.engageengine.ai") {
-      return handleFloorProDomain(request, env, path);
     }
     try {
       if (path.startsWith("/api/")) {
@@ -1489,247 +1349,6 @@ var worker_default = {
     }
   }
 };
-function getFloorProHTML(authed) {
-  if (!authed) {
-    return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Floor Pro \u2014 Ads Dashboard</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F8F7F4;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.card{background:#fff;border:1px solid #E5E2DB;border-radius:12px;padding:40px;width:100%;max-width:360px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-h1{font-size:18px;font-weight:600;margin-bottom:4px}
-.sub{font-size:13px;color:#6B6963;margin-bottom:28px}
-label{display:block;font-size:12px;font-weight:600;color:#6B6963;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
-input[type=password]{width:100%;padding:10px 12px;border:1px solid #E5E2DB;border-radius:8px;font-size:15px;font-family:inherit;outline:none}
-input[type=password]:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-button{width:100%;margin-top:16px;padding:12px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
-button:hover{background:#1d4ed8}
-.err{color:#DC2626;font-size:13px;margin-top:10px;display:none}
-</style></head><body>
-<div class="card">
-  <h1>Floor Pro</h1>
-  <div class="sub">Google Ads Dashboard</div>
-  <label>Password</label>
-  <input type="password" id="pw" placeholder="Enter your password" autofocus>
-  <button onclick="login()">Sign In</button>
-  <div class="err" id="err">Incorrect password. Try again.</div>
-</div>
-<script>
-document.getElementById('pw').addEventListener('keydown', function(e){ if(e.key==='Enter') login(); });
-async function login() {
-  var pw = document.getElementById('pw').value;
-  document.getElementById('err').style.display = 'none';
-  var res = await fetch('/api/fp-login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
-  if (res.ok) { window.location.reload(); }
-  else { document.getElementById('err').style.display='block'; document.getElementById('pw').select(); }
-}
-<\/script></body></html>`;
-  }
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Floor Pro \u2014 Ads Dashboard</title>
-<style>
-:root{--bg:#F8F7F4;--surface:#fff;--border:#E5E2DB;--text:#1A1A18;--dim:#6B6963;--muted:#A8A29E;--accent:#2563EB;--green:#16A34A;--amber:#D97706}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.header h1{font-size:16px;font-weight:600}.header .sub{font-size:12px;color:var(--dim);margin-top:2px}
-.refresh-btn{padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:background .15s}
-.refresh-btn:hover{background:#1d4ed8}.refresh-btn:disabled{background:#6B7280;cursor:not-allowed}
-.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-bar{height:3px;background:var(--accent);border-radius:2px;animation:progress 2.5s ease-in-out infinite}
-@keyframes progress{0%{width:0;opacity:1}80%{width:90%;opacity:1}100%{width:90%;opacity:.5}}
-.status{font-size:11px;color:var(--muted)}
-.container{max-width:1100px;margin:0 auto;padding:24px 20px}
-.empty-state{text-align:center;padding:80px 20px;color:var(--dim)}
-.empty-state h2{font-size:18px;margin-bottom:8px;color:var(--text)}
-.empty-state p{font-size:14px;line-height:1.6}
-.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px}
-.metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
-.metric .lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px}
-.metric .val{font-size:24px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
-.metric .val.green{color:var(--green)}
-.bar-wrap{height:5px;background:#E5E7EB;border-radius:3px;margin-top:6px}
-.bar-fill{height:100%;border-radius:3px;background:var(--accent)}
-.as-of{font-size:11px;color:var(--muted);margin-bottom:20px}
-.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;width:fit-content;margin-bottom:16px}
-.tab{padding:6px 14px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--dim);font-family:inherit}
-.tab.active{background:var(--accent);color:#fff}
-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:13px}
-thead th{background:#F3F2EF;text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);font-weight:600;white-space:nowrap}
-tbody td{padding:10px 14px;border-top:1px solid var(--border);vertical-align:middle}
-tbody tr:hover{background:#FAFAF8}
-.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600}
-.badge.enabled,.badge.active{background:#DCFCE7;color:#15803D}
-.badge.paused{background:#FEF9C3;color:#A16207}
-.badge.removed{background:#FEE2E2;color:#B91C1C}
-.badge.broad{background:#EFF6FF;color:#1D4ED8}
-.badge.phrase{background:#F5F3FF;color:#6D28D9}
-.badge.exact{background:#F0FDF4;color:#166534}
-.no-data{text-align:center;padding:40px;color:var(--dim);font-size:13px}
-</style>
-</head>
-<body>
-<div class="header">
-  <div>
-    <h1>Floor Pro \u2014 Google Ads Dashboard</h1>
-    <div class="sub">Performance overview &middot; Read-only</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:14px">
-    <div class="status" id="status">Loading&hellip;</div>
-    <button class="refresh-btn" id="refreshBtn" onclick="refresh()">
-      <span id="refreshLabel">Refresh My Data</span>
-    </button>
-  </div>
-</div>
-<div class="container" id="app"></div>
-<script>
-var data = null;
-var activeTab = 'campaigns';
-
-function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function num(n){ if(n==null||n==='')return'\u2014'; var v=parseFloat(n); return isNaN(v)?'\u2014':Math.round(v).toLocaleString(); }
-function pct(n){ if(n==null||n==='')return'\u2014'; var v=parseFloat(n); return isNaN(v)?'\u2014':(v*100).toFixed(1)+'%'; }
-function statusBadge(s){ var c=(s||'').toLowerCase(); return '<span class="badge '+c+'">'+h(s)+'</span>'; }
-function matchBadge(t){ var c=(t||'').toLowerCase().replace(/_type$/,''); var m={BROAD:'BROAD',broad:'BROAD',PHRASE:'PHRASE',phrase:'PHRASE',EXACT:'EXACT',exact:'EXACT'}; return '<span class="badge '+c+'">'+(m[t]||h(t))+'</span>'; }
-
-// The Google Ads REST API returns nested objects \u2014 extract by dot-path
-function get(obj, path) {
-  return path.split('.').reduce(function(o,k){ return o&&o[k]!=null?o[k]:null; }, obj);
-}
-
-function renderEmpty() {
-  document.getElementById('app').innerHTML =
-    '<div class="empty-state"><h2>No data yet</h2><p>Click <strong>Refresh My Data</strong> above to load your Google Ads performance.</p></div>';
-  document.getElementById('status').textContent = '';
-}
-
-function renderDashboard() {
-  if (!data) { renderEmpty(); return; }
-  var sum = (data.summary && data.summary.payload && data.summary.payload[0]) || {};
-  var asOf = data.summary && data.summary.date_range || '';
-  var fetchedAt = data.summary && data.summary.fetched_at || '';
-  var impr = num(get(sum,'metrics.impressions'));
-  var clicks = num(get(sum,'metrics.clicks'));
-  var ctr = pct(get(sum,'metrics.ctr'));
-  var is = parseFloat(get(sum,'metrics.searchImpressionShare') || get(sum,'metrics.search_impression_share') || 0) || 0;
-  var convs = num(get(sum,'metrics.conversions'));
-
-  var html = '<div class="summary-grid">'+
-    '<div class="metric"><div class="lbl">Impressions</div><div class="val">'+impr+'</div></div>'+
-    '<div class="metric"><div class="lbl">Clicks</div><div class="val">'+clicks+'</div></div>'+
-    '<div class="metric"><div class="lbl">Click-Through Rate</div><div class="val">'+ctr+'</div></div>'+
-    '<div class="metric"><div class="lbl">Search Impr. Share</div><div class="val">'+pct(is)+'<div class="bar-wrap"><div class="bar-fill" style="width:'+Math.min(is*100,100)+'%"></div></div></div></div>'+
-    '<div class="metric"><div class="lbl">Conversions</div><div class="val green">'+convs+'</div></div>'+
-    '</div>';
-
-  if (asOf) html += '<div class="as-of">Last 7 days &middot; as of '+h(asOf)+(fetchedAt?' &middot; refreshed '+new Date(fetchedAt+' UTC').toLocaleString():'')+'</div>';
-
-  html += '<div class="tabs">'+
-    ['campaigns','ad_groups','keywords','negatives'].map(function(id){
-      var labels={campaigns:'Campaigns',ad_groups:'Ad Groups',keywords:'Keywords',negatives:'Negatives'};
-      return '<button class="tab'+(activeTab===id?' active':'')+'" onclick="switchTab(\\''+id+'\\')">'+labels[id]+'</button>';
-    }).join('')+'</div>';
-
-  html += renderTab();
-  document.getElementById('app').innerHTML = html;
-}
-
-function renderTab() {
-  var d = data && data[activeTab];
-  var rows = d && d.payload || [];
-  if (!rows.length) return '<div class="no-data">No data for this section.</div>';
-
-  if (activeTab === 'campaigns') {
-    var h2 = '<table><thead><tr><th>Campaign</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Impr. Share</th><th>Conversions</th></tr></thead><tbody>';
-    rows.forEach(function(r){
-      var is2 = get(r,'metrics.searchImpressionShare') || get(r,'metrics.search_impression_share');
-      h2 += '<tr><td>'+h(get(r,'campaign.name'))+'</td><td>'+statusBadge(get(r,'campaign.status'))+'</td><td>'+num(get(r,'metrics.impressions'))+'</td><td>'+num(get(r,'metrics.clicks'))+'</td><td>'+pct(get(r,'metrics.ctr'))+'</td><td>'+pct(is2)+'</td><td>'+num(get(r,'metrics.conversions'))+'</td></tr>';
-    });
-    return h2+'</tbody></table>';
-  }
-  if (activeTab === 'ad_groups') {
-    var h2 = '<table><thead><tr><th>Campaign</th><th>Ad Group</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>';
-    rows.forEach(function(r){
-      var ag = get(r,'adGroup') || get(r,'ad_group') || {};
-      h2 += '<tr><td>'+h(get(r,'campaign.name'))+'</td><td>'+h(ag.name)+'</td><td>'+statusBadge(ag.status)+'</td><td>'+num(get(r,'metrics.impressions'))+'</td><td>'+num(get(r,'metrics.clicks'))+'</td><td>'+pct(get(r,'metrics.ctr'))+'</td></tr>';
-    });
-    return h2+'</tbody></table>';
-  }
-  if (activeTab === 'keywords') {
-    var h2 = '<table><thead><tr><th>Keyword</th><th>Match</th><th>Ad Group</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>';
-    rows.forEach(function(r){
-      var agc = get(r,'adGroupCriterion') || get(r,'ad_group_criterion') || {};
-      var ag2 = get(r,'adGroup') || get(r,'ad_group') || {};
-      var kw = agc.keyword || {};
-      h2 += '<tr><td><strong>'+h(kw.text)+'</strong></td><td>'+matchBadge(kw.matchType||kw.match_type)+'</td><td>'+h(ag2.name)+'</td><td>'+statusBadge(agc.status)+'</td><td>'+num(get(r,'metrics.impressions'))+'</td><td>'+num(get(r,'metrics.clicks'))+'</td><td>'+pct(get(r,'metrics.ctr'))+'</td></tr>';
-    });
-    return h2+'</tbody></table>';
-  }
-  if (activeTab === 'negatives') {
-    var h2 = '<table><thead><tr><th>Negative Keyword</th><th>Match</th><th>Campaign</th></tr></thead><tbody>';
-    rows.forEach(function(r){
-      var cc = get(r,'campaignCriterion') || get(r,'campaign_criterion') || {};
-      var kw2 = cc.keyword || {};
-      h2 += '<tr><td>'+h(kw2.text)+'</td><td>'+matchBadge(kw2.matchType||kw2.match_type)+'</td><td>'+h(get(r,'campaign.name'))+'</td></tr>';
-    });
-    return h2+'</tbody></table>';
-  }
-  return '';
-}
-
-function switchTab(tab) { activeTab = tab; renderDashboard(); }
-
-async function refresh() {
-  var btn = document.getElementById('refreshBtn');
-  var label = document.getElementById('refreshLabel');
-  var status = document.getElementById('status');
-  btn.disabled = true;
-  label.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" style="animation:spin .7s linear infinite;flex-shrink:0"><circle cx="7" cy="7" r="5.5" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"/><path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg> Pulling data\u2026';
-  status.textContent = 'Connecting to Google Ads\u2026';
-  document.getElementById('app').innerHTML = '<div style="padding:20px 0"><div class="loading-bar" style="width:0"></div></div><div class="empty-state" style="padding-top:40px"><p style="color:var(--dim)">Fetching your latest data\u2026 this takes about 10\u201320 seconds.</p></div>';
-  try {
-    var res = await fetch('/api/fp-refresh', {method:'POST'});
-    var j = await res.json();
-    if (!res.ok) throw new Error(j.error||'Refresh failed');
-    await load();
-    status.textContent = 'Updated just now';
-  } catch(e) {
-    status.textContent = 'Error \u2014 see below';
-    document.getElementById('app').innerHTML = '<div class="empty-state"><h2 style="color:#DC2626">Refresh failed</h2><p style="margin-top:8px">'+h(e.message)+'</p><p style="margin-top:12px;font-size:12px;color:var(--muted)">Try again in a moment. If this keeps happening, contact your account manager.</p></div>';
-  } finally {
-    btn.disabled = false;
-    label.textContent = 'Refresh My Data';
-  }
-}
-
-async function load() {
-  try {
-    var res = await fetch('/api/fp-data');
-    var json = await res.json();
-    if (json.data) {
-      data = json.data;
-      var dates = Object.values(json.data).map(function(d){return d&&d.fetched_at;}).filter(Boolean).sort();
-      var latest = dates[dates.length-1];
-      document.getElementById('status').textContent = latest ? 'Last updated '+new Date(latest+' UTC').toLocaleString() : '';
-      renderDashboard();
-    } else {
-      renderEmpty();
-    }
-  } catch(e) {
-    renderEmpty();
-  }
-}
-
-load();
-<\/script>
-</body>
-</html>`;
-}
-__name(getFloorProHTML, "getFloorProHTML");
 function getPortalNotFoundHTML() {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dashboard Not Found</title>
@@ -4604,7 +4223,7 @@ async function loadPortalSection(clientId) {
   var d = await res.json();
   var tok = d.token;
   if (tok) {
-    var url = 'https://floorpro.engageengine.ai/portal/' + tok.token;
+    var url = location.origin + '/portal/' + tok.token;
     el.innerHTML =
       '<div style="border:1px solid var(--border);border-radius:8px;padding:14px 16px;background:var(--surface)">' +
       '<div class="section-title" style="margin-bottom:10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">Google Ads Client Portal</div>' +
@@ -4613,7 +4232,7 @@ async function loadPortalSection(clientId) {
       '<button data-action="portal-copy" data-id="' + esc(clientId) + '" data-val="' + url + '" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-family:inherit">Copy</button>' +
       '<button data-action="portal-revoke" data-id="' + esc(clientId) + '" style="padding:7px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-family:inherit;color:var(--red)">Revoke</button>' +
       '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">Created ' + new Date(tok.created_at).toLocaleDateString() + ' &middot; Data updated by running push_floor_pro_to_portal.py</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">Created ' + new Date(tok.created_at).toLocaleDateString() + '</div>' +
       '</div>';
   } else {
     el.innerHTML =
@@ -4631,7 +4250,7 @@ async function portalCreate(clientId) {
 }
 
 async function portalRevoke(clientId) {
-  if (!confirm('Revoke this portal link? Larry will lose access immediately.')) return;
+  if (!confirm('Revoke this portal link? The client will lose access immediately.')) return;
   await fetch(API + '/api/clients/' + clientId + '/portal-token', { method: 'DELETE' });
   loadPortalSection(clientId);
 }
