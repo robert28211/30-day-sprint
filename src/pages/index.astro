@@ -164,7 +164,22 @@ import Footer from '../components/Footer.astro'
             <p class="mp-stack-body">Leads, source, and cost per booked job. No dashboards to learn.</p>
           </li>
         </ul>
-        <div class="mp-offer-do" data-animate data-delay="0.2">
+
+        <p class="mp-stack-total" data-animate data-delay="0.15">
+          Total comparable value: <strong>$6,000+/month.</strong><br/>
+          <span class="mp-stack-total-sub">(Not counting market exclusivity — which no competitor can sell you at any price.)</span>
+        </p>
+
+        <div class="mp-offer-price" data-animate data-delay="0.2">
+          <p class="mp-price-eye">Your Investment</p>
+          <p class="mp-price-headline">
+            <span class="mp-price-num">$3,500</span><span class="mp-price-per">/month</span>
+            <span class="mp-price-plus">+ ad spend</span>
+          </p>
+          <p class="mp-price-body"><strong>Month to month. No contracts.</strong> The guarantee is on our fee, not your ad spend: <strong>$3,500 in → at least $7,000/month in closed revenue within 90 days</strong>, or we keep working until it does. Free.</p>
+        </div>
+
+        <div class="mp-offer-do" data-animate data-delay="0.25">
           <p class="mp-offer-do-yes"><strong>Here's what you do:</strong> tell us your service area, tell us what a good job looks like, answer the phone.</p>
           <p class="mp-offer-do-no"><strong>Here's what you don't:</strong> everything else.</p>
         </div>
@@ -593,6 +608,79 @@ import Footer from '../components/Footer.astro'
   .mp-stack-anchor strong {
     color: var(--blue); font-weight: 600; font-style: normal;
   }
+
+  /* Total-comparable-value setup line */
+  .mp-stack-total {
+    text-align: center;
+    margin: 28px auto 32px;
+    font-family: var(--font-t);
+    font-size: 15px;
+    line-height: 1.5;
+    letter-spacing: -0.015em;
+    color: var(--mid-gray);
+    max-width: 620px;
+  }
+  .mp-stack-total strong {
+    font-family: var(--font-d);
+    font-size: 20px; font-weight: 600;
+    letter-spacing: -0.018em;
+    color: var(--graphite);
+  }
+  .mp-stack-total-sub {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--light-gray);
+    font-style: italic;
+  }
+
+  /* Price reveal card — the Grand Slam moment */
+  .mp-offer-price {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 40px 44px;
+    margin: 0 auto 32px;
+    max-width: 720px;
+    box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
+  }
+  .mp-price-eye {
+    font-family: var(--font-t);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--blue); margin-bottom: 14px;
+  }
+  .mp-price-headline {
+    display: flex; align-items: baseline; flex-wrap: wrap;
+    gap: 8px; margin-bottom: 20px;
+    font-family: var(--font-d);
+  }
+  .mp-price-num {
+    font-size: clamp(48px, 6vw, 64px);
+    font-weight: 600;
+    letter-spacing: -0.028em;
+    color: var(--graphite);
+    line-height: 1;
+  }
+  .mp-price-per {
+    font-size: 22px; font-weight: 400;
+    color: var(--mid-gray); margin-right: 10px;
+    letter-spacing: -0.018em;
+  }
+  .mp-price-plus {
+    font-family: var(--font-t);
+    font-size: 17px; font-weight: 400;
+    color: var(--mid-gray); letter-spacing: -0.018em;
+  }
+  .mp-price-body {
+    font-family: var(--font-t);
+    font-size: 16px; line-height: 1.6;
+    letter-spacing: -0.018em;
+    color: var(--mid-gray);
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .mp-price-body strong { color: var(--graphite); font-weight: 600; }
+
   .mp-offer-do {
     display: flex; flex-direction: column; gap: 12px;
     padding: 28px 32px;
@@ -697,6 +785,7 @@ import Footer from '../components/Footer.astro'
     .mp-guarantee-card { padding: 32px 26px; }
     .mp-stack-item { padding: 22px 24px; }
     .mp-offer-do { padding: 22px 24px; }
+    .mp-offer-price { padding: 28px 24px; }
     .mp-proof-feature { padding: 22px 24px; }
     .mp-proof-founder { padding: 20px 24px; }
   }
