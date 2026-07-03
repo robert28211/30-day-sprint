@@ -171,11 +171,13 @@ import Footer from '../components/Footer.astro'
           </li>
         </ul>
 
-        <p class="mp-stack-total" data-animate data-delay="0.2">
-          <span class="mp-stack-total-math">$5,000 + $6,500 + $1,500</span>
-          <span class="mp-stack-total-equals">= <strong>$13,000/mo of work</strong></span>
-          <span class="mp-stack-total-sub">plus the one thing your competitors physically cannot buy.</span>
-        </p>
+        <div class="mp-stack-total" data-animate data-delay="0.2">
+          <p class="mp-stack-total-head">This is what you'd pay to build it yourself.</p>
+          <p class="mp-stack-total-body">
+            Buyer List broker: <strong>$5,000</strong>. Agency retainer: <strong>$6,500</strong>. Pixel tool: <strong>$1,500</strong>. That's <span class="mp-stack-total-strike">$13,000/mo</span> to assemble &mdash; and you'd still be missing the one thing your competitors can't buy: your market.
+          </p>
+          <p class="mp-stack-total-close"><strong>Your fee is a fraction of that.</strong> We'll show you on the call.</p>
+        </div>
       </div>
     </section>
 
@@ -628,7 +630,7 @@ import Footer from '../components/Footer.astro'
     text-align: center;
   }
 
-  /* Total-value line at end of stack — with math breakdown */
+  /* Total-value block at end of stack — retail anchor, NOT the fee */
   .mp-stack-total {
     text-align: center;
     margin: 32px auto 0;
@@ -636,36 +638,65 @@ import Footer from '../components/Footer.astro'
     letter-spacing: -0.015em;
     color: var(--mid-gray);
     max-width: 720px;
-    padding: 24px 28px;
+    padding: 32px 36px;
     background: var(--white);
     border-left: 3px solid var(--blue);
     display: flex; flex-direction: column;
-    align-items: center; gap: 6px;
+    align-items: center; gap: 14px;
   }
-  .mp-stack-total-math {
-    display: block;
+  .mp-stack-total-head {
     font-family: var(--font-d);
-    font-size: 18px; font-weight: 500;
+    font-size: clamp(20px, 2.2vw, 24px);
+    font-weight: 600;
+    letter-spacing: -0.018em;
+    line-height: 1.3;
+    color: var(--graphite);
+    margin: 0;
+  }
+  .mp-stack-total-body {
+    font-family: var(--font-t);
+    font-size: 16px;
+    line-height: 1.55;
+    letter-spacing: -0.015em;
     color: var(--mid-gray);
-    letter-spacing: -0.018em;
+    max-width: 620px;
+    margin: 0;
   }
-  .mp-stack-total-equals {
-    display: block;
+  .mp-stack-total-body strong {
+    color: var(--graphite); font-weight: 600;
+  }
+  .mp-stack-total-strike {
+    position: relative;
+    display: inline-block;
     font-family: var(--font-d);
-    font-size: 22px; font-weight: 500;
-    letter-spacing: -0.018em;
-    color: var(--graphite);
+    font-weight: 600;
+    color: var(--light-gray);
+    padding: 0 4px;
   }
-  .mp-stack-total-equals strong {
-    font-family: var(--font-d);
-    font-size: 26px; font-weight: 700;
-    letter-spacing: -0.018em;
-    color: var(--graphite);
+  .mp-stack-total-strike::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 2px;
+    background: #d62828;
+    transform: rotate(-6deg);
+    transform-origin: center;
   }
-  .mp-stack-total-sub {
-    display: block;
-    font-size: 14px; color: var(--light-gray);
-    margin-top: 4px;
+  .mp-stack-total-close {
+    font-family: var(--font-t);
+    font-size: 15px;
+    line-height: 1.5;
+    letter-spacing: -0.015em;
+    color: var(--mid-gray);
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    max-width: 560px;
+    margin: 0;
+  }
+  .mp-stack-total-close strong {
+    color: var(--blue); font-weight: 700;
   }
 
   /* ─── 6. GUARANTEE ─── */
