@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 import { renderers } from './renderers.mjs';
 import { c as createExports, s as serverEntrypointModule } from './chunks/_@astrojs-ssr-adapter_CrZyF4mt.mjs';
-import { manifest } from './manifest_BygeGIBj.mjs';
+import { manifest } from './manifest_CVbvECkQ.mjs';
 
 const serverIslandMap = new Map();;
 
@@ -20,20 +20,22 @@ const _page11 = () => import('./pages/fm1.astro.mjs');
 const _page12 = () => import('./pages/fm2.astro.mjs');
 const _page13 = () => import('./pages/fm3.astro.mjs');
 const _page14 = () => import('./pages/fm4.astro.mjs');
-const _page15 = () => import('./pages/img/_file_.astro.mjs');
-const _page16 = () => import('./pages/onboarding.astro.mjs');
-const _page17 = () => import('./pages/playbook/thank-you.astro.mjs');
-const _page18 = () => import('./pages/playbook.astro.mjs');
-const _page19 = () => import('./pages/preview.astro.mjs');
-const _page20 = () => import('./pages/privacy.astro.mjs');
-const _page21 = () => import('./pages/score.astro.mjs');
-const _page22 = () => import('./pages/snapshot/booked.astro.mjs');
-const _page23 = () => import('./pages/snapshot/plastic-surgery.astro.mjs');
-const _page24 = () => import('./pages/snapshot/_id_.astro.mjs');
-const _page25 = () => import('./pages/snapshot.astro.mjs');
-const _page26 = () => import('./pages/the-build.astro.mjs');
-const _page27 = () => import('./pages/toolkit.astro.mjs');
-const _page28 = () => import('./pages/index.astro.mjs');
+const _page15 = () => import('./pages/how-it-works.astro.mjs');
+const _page16 = () => import('./pages/img/_file_.astro.mjs');
+const _page17 = () => import('./pages/onboarding.astro.mjs');
+const _page18 = () => import('./pages/playbook/thank-you.astro.mjs');
+const _page19 = () => import('./pages/playbook.astro.mjs');
+const _page20 = () => import('./pages/preview.astro.mjs');
+const _page21 = () => import('./pages/privacy.astro.mjs');
+const _page22 = () => import('./pages/recovery.astro.mjs');
+const _page23 = () => import('./pages/score.astro.mjs');
+const _page24 = () => import('./pages/snapshot/booked.astro.mjs');
+const _page25 = () => import('./pages/snapshot/plastic-surgery.astro.mjs');
+const _page26 = () => import('./pages/snapshot/_id_.astro.mjs');
+const _page27 = () => import('./pages/snapshot.astro.mjs');
+const _page28 = () => import('./pages/the-build.astro.mjs');
+const _page29 = () => import('./pages/toolkit.astro.mjs');
+const _page30 = () => import('./pages/index.astro.mjs');
 const pageMap = new Map([
     ["node_modules/@astrojs/cloudflare/dist/entrypoints/image-endpoint.js", _page0],
     ["src/pages/api/onboarding.ts", _page1],
@@ -50,20 +52,22 @@ const pageMap = new Map([
     ["src/pages/fm2.astro", _page12],
     ["src/pages/fm3.astro", _page13],
     ["src/pages/fm4.astro", _page14],
-    ["src/pages/img/[file].ts", _page15],
-    ["src/pages/onboarding/index.astro", _page16],
-    ["src/pages/playbook/thank-you.astro", _page17],
-    ["src/pages/playbook/index.astro", _page18],
-    ["src/pages/preview.astro", _page19],
-    ["src/pages/privacy.astro", _page20],
-    ["src/pages/score/index.astro", _page21],
-    ["src/pages/snapshot/booked.astro", _page22],
-    ["src/pages/snapshot/plastic-surgery/index.astro", _page23],
-    ["src/pages/snapshot/[id].astro", _page24],
-    ["src/pages/snapshot/index.astro", _page25],
-    ["src/pages/the-build.astro", _page26],
-    ["src/pages/toolkit/index.astro", _page27],
-    ["src/pages/index.astro", _page28]
+    ["src/pages/how-it-works.astro", _page15],
+    ["src/pages/img/[file].ts", _page16],
+    ["src/pages/onboarding/index.astro", _page17],
+    ["src/pages/playbook/thank-you.astro", _page18],
+    ["src/pages/playbook/index.astro", _page19],
+    ["src/pages/preview.astro", _page20],
+    ["src/pages/privacy.astro", _page21],
+    ["src/pages/recovery/index.astro", _page22],
+    ["src/pages/score/index.astro", _page23],
+    ["src/pages/snapshot/booked.astro", _page24],
+    ["src/pages/snapshot/plastic-surgery/index.astro", _page25],
+    ["src/pages/snapshot/[id].astro", _page26],
+    ["src/pages/snapshot/index.astro", _page27],
+    ["src/pages/the-build.astro", _page28],
+    ["src/pages/toolkit/index.astro", _page29],
+    ["src/pages/index.astro", _page30]
 ]);
 
 const _manifest = Object.assign(manifest, {

@@ -32,37 +32,25 @@ const displayMarket = detectedLocation || 'your market'
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
           <h1 class="mp-h1">
-            Your ads aren't bad. Your targeting is.
+            How many people in {displayMarket} searched for your service this week?
           </h1>
           <p class="mp-hero-punch">
-            We find buyers before they call anyone.
+            Type your service and find out.
           </p>
-          <div class="mp-hero-prose hero-sub">
-            <p>Before a homeowner calls anyone, they're already searching. Reading reviews. Comparing options. Looking at maps.</p>
-            <p>We identify those <strong>specific people</strong> — by name, email, telephone, and address — and put your ads in front of them, and only them, across Google, Facebook, YouTube, and every other platform they use.</p>
-            <p class="mp-hero-prose-close mobile-hide">No wasted spend on people who'll never call. No guessing who's in market. Just the buyers who are actually deciding right now.</p>
-          </div>
 
-          <div class="mp-hero-trust mobile-hide">
-            <div class="mp-guarantee-chip">
-              <span class="mp-chip-check">✓</span>
-              <span>Backed by our <strong>2X Revenue Guarantee</strong> — or we keep working. Free.</span>
-            </div>
-            <p class="mp-cred-line"><strong>31 years in business. Zero refunds.</strong> Not because we don't offer them — because we don't need to.</p>
-          </div>
         </div>
 
         <!-- LIVE FORM — replaces the static screenshot from / -->
         <div class="snap-card" id="snap-form-card">
           <div class="snap-card-head">
-            <span class="snap-card-eye">Free Buyer Snapshot · 30 Seconds</span>
+            <span class="snap-card-eye">Free Buyer Sample · {displayMarket} · 24 Hours</span>
             <span class="snap-card-loc">{detectedLocation ? `Detected: ${detectedLocation}` : 'Detecting your market…'}</span>
           </div>
 
           <form id="snapshot-form" class="snap-form" novalidate>
             <label class="snap-sr-only" for="service-input">Your service</label>
             <p class="snap-sentence">
-              Show me everyone in <strong>{displayMarket}</strong> searching for
+              Send me 10 buyers in <strong>{displayMarket}</strong> searching for
               <input
                 type="text"
                 name="trade"
@@ -76,11 +64,11 @@ const displayMarket = detectedLocation || 'your market'
             </p>
 
             <button type="submit" class="snap-btn" id="snap-submit">
-              <span>Show me my buyers</span>
+              <span>Pull My Free Sample</span>
               <span class="snap-btn-arrow">→</span>
             </button>
 
-            <p class="snap-micro">We'll send you 10 real buyers — by name — free.</p>
+            <p class="snap-micro">Delivered to your inbox within 24 hours. No call required.</p>
 
             <div class="snap-scarcity">
               <span class="snap-scarcity-dot"></span>

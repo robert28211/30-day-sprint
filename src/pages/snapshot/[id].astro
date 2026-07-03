@@ -328,14 +328,14 @@ const refId      = id && id !== 'preview' ? id.split('-')[0].toUpperCase() : 'PR
           </div>
         </div>
         <button type="submit" class="claim-btn" id="claim-submit">
-          {isHomeService ? 'Add Me to the Waitlist →' : 'Claim My Market →'}
+          {isHomeService ? 'Send Me the Names →' : 'Claim My Market →'}
         </button>
-        <p class="claim-note">We'll reach out within 24 hours to confirm your slot.</p>
+        <p class="claim-note">Your sample lands in your inbox within 24 hours. No call, no pitch.</p>
       </form>
       <div id="claim-confirm" class="claim-confirm" style="display:none">
         <div class="claim-confirm-check">✓</div>
-        <div class="claim-confirm-headline">You're on the list.</div>
-        <p class="claim-confirm-body">We'll reach out within 24 hours to confirm your {data.city_state} slot. If a competitor claims it first, we'll let you know immediately.</p>
+        <div class="claim-confirm-headline">On its way.</div>
+        <p class="claim-confirm-body">We're pulling 10 real buyers from {data.city_state} right now. Check your inbox within 24 hours. — Robbie</p>
       </div>
     </div>
 
@@ -413,7 +413,7 @@ if (claimForm) {
     const fd = new FormData(claimForm);
 
     if (typeof gtag !== 'undefined') {
-      gtag('event', 'snapshot_waitlist_submit', {
+      gtag('event', 'snapshot_sample_request', {
         market: fd.get('city_state'),
         trade: fd.get('trade'),
         failure_mode: fd.get('failure_mode'),
