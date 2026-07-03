@@ -63,7 +63,7 @@ import Footer from '../components/Footer.astro'
             class="mp-artifact-img"
             loading="eager"
           />
-          <figcaption class="mp-artifact-cap">Actual buyer pull · Columbia, SC HVAC · Last 72 hours</figcaption>
+          <figcaption class="mp-artifact-cap">Actual buyer pull · Columbia, SC HVAC</figcaption>
         </figure>
       </div>
     </section>
@@ -139,18 +139,18 @@ import Footer from '../components/Footer.astro'
           <li class="mp-stack-item">
             <div class="mp-stack-head">Engine 1. Your Buyer List, refreshed daily.</div>
             <p class="mp-stack-body">Every in-market homeowner in your territory by name, phone, and address. Rebuilt every morning, so you're always working today's buyers, not a list that went cold three weeks ago.</p>
-            <p class="mp-stack-body">This is the same compliant identity data Fortune 500 brands buy. You just couldn't access it until now.</p>
+            <p class="mp-stack-body mp-stack-emphasis"><strong><em>This is the same compliant identity data Fortune 500 brands buy. You just couldn't access it until now.</em></strong></p>
             <p class="mp-stack-body">Data brokers sell this exact feed for $5,000/mo. We'll show you the invoice.</p>
             <figure class="mp-stack-invoice">
-              <img src="/img/broker-invoice.png" alt="Redacted broker invoice for compliant B2B identity data, showing the recurring monthly commitment we buy at wholesale so you don't have to." class="mp-stack-invoice-img" loading="lazy" decoding="async" />
-              <figcaption class="mp-stack-invoice-cap">Redacted broker invoice. Real vendor, real spend.</figcaption>
+              <img src="/img/broker-invoice.png" alt="Redacted Zeta Residential Leads invoice — one month of compliant residential consumer identity data at $5,400." class="mp-stack-invoice-img" loading="lazy" decoding="async" />
+              <figcaption class="mp-stack-invoice-cap">Redacted vendor invoice. Real spend, monthly.</figcaption>
             </figure>
             <div class="mp-stack-anchor">Value: <strong>$5,000/mo</strong></div>
           </li>
           <li class="mp-stack-item">
             <div class="mp-stack-head">Done-for-you campaigns, pointed only at those buyers.</div>
             <p class="mp-stack-body">We build, run, and optimize your Google, Facebook, and YouTube, aimed at the named people on your list instead of everyone inside a 20-mile circle. You approve, we execute, you answer the phone.</p>
-            <div class="mp-stack-anchor">Value: <strong>$5,000/mo</strong></div>
+            <div class="mp-stack-anchor">Value: <strong>$6,500/mo</strong></div>
           </li>
           <li class="mp-stack-item">
             <div class="mp-stack-head">Engine 2. The Invisible-Visitor Pixel.</div>
@@ -169,7 +169,9 @@ import Footer from '../components/Footer.astro'
         </ul>
 
         <p class="mp-stack-total" data-animate data-delay="0.2">
-          Total: <strong>$11,500/mo of work</strong>, plus the one thing your competitors physically cannot buy.
+          <span class="mp-stack-total-math">$5,000 + $6,500 + $1,500</span>
+          <span class="mp-stack-total-equals">= <strong>$13,000/mo of work</strong></span>
+          <span class="mp-stack-total-sub">plus the one thing your competitors physically cannot buy.</span>
         </p>
       </div>
     </section>
@@ -568,45 +570,77 @@ import Footer from '../components/Footer.astro'
     font-size: 15px;
   }
 
-  /* Invoice image inside Engine 1 */
+  /* Compliance emphasis line */
+  .mp-stack-emphasis {
+    color: var(--graphite) !important;
+    padding: 12px 16px;
+    background: var(--canvas);
+    border-left: 3px solid var(--blue);
+    margin: 4px 0;
+  }
+  .mp-stack-emphasis strong em {
+    font-weight: 600;
+    font-style: italic;
+  }
+
+  /* Invoice image inside Engine 1 — small proof, not hero */
   .mp-stack-invoice {
-    margin: 8px 0 4px;
-    display: flex; flex-direction: column; gap: 8px;
+    margin: 6px 0 2px;
+    display: flex; flex-direction: column; gap: 6px;
     align-items: center;
   }
   .mp-stack-invoice-img {
-    width: 100%; max-width: 560px; height: auto; display: block;
+    width: 100%; max-width: 240px; height: auto; display: block;
     border-radius: 4px;
     border: 1px solid var(--border);
-    box-shadow: rgba(0,0,0,0.10) 0 2px 12px 0;
+    box-shadow: rgba(0,0,0,0.08) 0 2px 8px 0;
   }
   .mp-stack-invoice-cap {
     font-family: var(--font-t);
-    font-size: 12px; color: var(--light-gray);
+    font-size: 11px; color: var(--light-gray);
     letter-spacing: -0.015em;
     font-style: italic;
     text-align: center;
   }
 
-  /* Total-value line at end of stack */
+  /* Total-value line at end of stack — with math breakdown */
   .mp-stack-total {
     text-align: center;
     margin: 32px auto 0;
     font-family: var(--font-t);
-    font-size: 16px;
-    line-height: 1.55;
     letter-spacing: -0.015em;
     color: var(--mid-gray);
     max-width: 720px;
     padding: 24px 28px;
     background: var(--white);
     border-left: 3px solid var(--blue);
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
   }
-  .mp-stack-total strong {
+  .mp-stack-total-math {
+    display: block;
     font-family: var(--font-d);
-    font-size: 22px; font-weight: 600;
+    font-size: 18px; font-weight: 500;
+    color: var(--mid-gray);
+    letter-spacing: -0.018em;
+  }
+  .mp-stack-total-equals {
+    display: block;
+    font-family: var(--font-d);
+    font-size: 22px; font-weight: 500;
     letter-spacing: -0.018em;
     color: var(--graphite);
+  }
+  .mp-stack-total-equals strong {
+    font-family: var(--font-d);
+    font-size: 26px; font-weight: 700;
+    letter-spacing: -0.018em;
+    color: var(--graphite);
+  }
+  .mp-stack-total-sub {
+    display: block;
+    font-size: 14px; color: var(--light-gray);
+    margin-top: 4px;
   }
 
   /* ─── 6. GUARANTEE ─── */
