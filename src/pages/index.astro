@@ -93,6 +93,9 @@ import Footer from '../components/Footer.astro'
           <p><strong>Why it works:</strong> a homeowner who's about to hire behaves nothing like one who isn't. They binge reviews. They compare maps. They pull up competitor sites back to back. We buy only that behavior, and refuse to spend a dollar of yours on anyone not showing it.</p>
           <p>And they're <strong>yours alone.</strong> One company per trade, per market. The day you lock your territory is the day your competitor can't. That isn't a bonus. It's the product.</p>
         </div>
+        <p class="mp-solution-more" data-animate data-delay="0.2">
+          <a href="/how-it-works" class="mp-text-link">Look inside the engine <span class="mp-text-link-arrow">→</span></a>
+        </p>
       </div>
     </section>
 
@@ -421,6 +424,28 @@ import Footer from '../components/Footer.astro'
   }
   .mp-solution-prose p strong {
     color: var(--blue); font-weight: 600;
+  }
+  .mp-solution-more {
+    margin-top: 32px;
+    font-family: var(--font-t);
+    font-size: 15px;
+    letter-spacing: -0.015em;
+  }
+  .mp-text-link {
+    display: inline-flex;
+    align-items: baseline; gap: 6px;
+    color: var(--blue-link);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .mp-text-link:hover { color: var(--blue); }
+  .mp-text-link-arrow {
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+  .mp-text-link:hover .mp-text-link-arrow {
+    transform: translateX(3px);
   }
 
   /* ─── 4. PROOF ─── */
