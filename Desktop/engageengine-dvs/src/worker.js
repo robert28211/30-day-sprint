@@ -1738,6 +1738,19 @@ var worker_default = {
         await env.DB.prepare(
           "UPDATE dvs_reports SET status='complete', total_score=?, profile=? WHERE id=?"
         ).bind(result.total, result.profile, reportId).run();
+        try {
+          const normalizedSite = String(body.url || "").replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+          const clientRow = await env.DB.prepare(
+            "SELECT id, name FROM sprint_clients WHERE domain = ?1 OR name = ?1 LIMIT 1"
+          ).bind(normalizedSite).first();
+          const clientId = clientRow ? clientRow.id : null;
+          const clientName = clientRow ? clientRow.name : normalizedSite;
+          await env.DB.prepare(
+            "INSERT INTO client_activity (client_id, client_name, tool, kind, score, summary, artifact_url) VALUES (?, ?, ?, ?, ?, ?, ?)"
+          ).bind(clientId, clientName, "dvs", "report", result.total, `DVS report — score ${result.total}`, `/reports/${reportId}`).run();
+        } catch (activityErr) {
+          console.error("client_activity insert failed:", activityErr);
+        }
         return json({
           id: reportId,
           total_score: result.total,
