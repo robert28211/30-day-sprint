@@ -49,7 +49,12 @@
   },
   "enabledPlugins": {
     "telegram@claude-plugins-official": true,
-    "toprank@nowork-studio": true
+    "toprank@nowork-studio": true,
+    "superpowers@claude-plugins-official": true,
+    "hundred-million-leads@claude-next-level": true,
+    "grandslam-offer@claude-next-level": true,
+    "ralph-wiggum@claude-next-level": true,
+    "ralph-wiggum-toolkit@claude-next-level": true
   },
   "extraKnownMarketplaces": {
     "nowork-studio": {
@@ -59,8 +64,9 @@
       }
     }
   },
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
   "theme": "light",
-  "agentPushNotifEnabled": true,
-  "skipWorkflowUsageWarning": true
+  "agentPushNotifEnabled": true
 }

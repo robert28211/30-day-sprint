@@ -106,6 +106,12 @@ var ROUTES = [
   { method: "POST", re: /^\/api\/clients\/([^/]+)\/portal-token$/, handler: (r, e, m) => handlePortalTokenCreate(r, e, m[1]) },
   { method: "DELETE", re: /^\/api\/clients\/([^/]+)\/portal-token$/, handler: (r, e, m) => handlePortalTokenRevoke(r, e, m[1]) },
   { method: "POST", re: /^\/api\/internal\/push-ad-data$/, handler: handlePushAdData, public: true },
+  // Ads Audit engine (called by app-engageengine hub with X-Internal-Secret)
+  { method: "GET", re: /^\/api\/internal\/audit\/clients$/, handler: handleAuditClients, public: true },
+  { method: "GET", re: /^\/api\/internal\/audit\/([^/]+)\/latest$/, handler: (r, e, m) => handleAuditLatest(r, e, m[1]), public: true },
+  { method: "POST", re: /^\/api\/internal\/audit\/([^/]+)$/, handler: (r, e, m) => handleAuditRun(r, e, m[1]), public: true },
+  // Client roster (shared source for suppression + client pickers across the tool suite; X-Internal-Secret gated)
+  { method: "GET", re: /^\/api\/internal\/roster$/, handler: handleRoster, public: true },
   // Services & Maintenance
   { method: "GET", re: /^\/api\/services$/, handler: handleServicesList, readKey: true },
   { method: "PATCH", re: /^\/api\/services\/([^/]+)\/([^/]+)$/, handler: (r, e, m) => handleServiceUpdate(r, e, m[1], m[2]) },
@@ -4719,6 +4725,247 @@ ${authed ? "loadDashboard();" : "// Not authed \u2014 wait for login"}
 </html>`;
 }
 __name(getHTML, "getHTML");
+// ==================== ADS AUDIT ENGINE ====================
+function auditAuthorized(request, env) {
+  const secret = request.headers.get("X-Internal-Secret");
+  return !!secret && !!env.INTERNAL_AUDIT_SECRET && secret === env.INTERNAL_AUDIT_SECRET;
+}
+__name(auditAuthorized, "auditAuthorized");
+async function auditGadsToken(env) {
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: env.GADS_CLIENT_ID,
+      client_secret: env.GADS_CLIENT_SECRET,
+      refresh_token: env.GADS_REFRESH_TOKEN,
+      grant_type: "refresh_token"
+    })
+  });
+  const d = await resp.json();
+  if (!d.access_token) throw new Error(`Google token exchange failed: ${d.error_description || d.error}`);
+  return d.access_token;
+}
+__name(auditGadsToken, "auditGadsToken");
+async function auditGAQL(token, env, custId, query) {
+  const resp = await fetch(`https://googleads.googleapis.com/v21/customers/${custId}/googleAds:search`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "developer-token": env.GADS_DEVELOPER_TOKEN,
+      "login-customer-id": "7536541386",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ query })
+  });
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`GAQL failed (${resp.status}) on [${query.trim().slice(0, 80)}]: ${err.replace(/\s+/g, " ").slice(0, 800)}`);
+  }
+  const data = await resp.json();
+  return data.results || [];
+}
+__name(auditGAQL, "auditGAQL");
+async function ensureAuditTable(env) {
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS ads_audit_runs (
+    id TEXT PRIMARY KEY, client_id TEXT NOT NULL, run_at TEXT DEFAULT (datetime('now')),
+    overall_score INTEGER, sections_json TEXT, findings_json TEXT
+  )`).run();
+}
+__name(ensureAuditTable, "ensureAuditTable");
+async function handleAuditClients(request, env) {
+  if (!auditAuthorized(request, env)) return json({ error: "Forbidden" }, 403);
+  const rows = await env.DB.prepare(`
+    SELECT c.id, c.name FROM sprint_clients c
+    JOIN client_services s ON s.client_id = c.id AND s.service = 'gads' AND s.status = 'active'
+    WHERE c.archived = 0 AND c.google_ads_customer_id IS NOT NULL AND c.google_ads_customer_id != ''
+    ORDER BY c.name
+  `).all();
+  return json(rows.results || []);
+}
+__name(handleAuditClients, "handleAuditClients");
+async function handleAuditLatest(request, env, clientId) {
+  if (!auditAuthorized(request, env)) return json({ error: "Forbidden" }, 403);
+  await ensureAuditTable(env);
+  const row = await env.DB.prepare(
+    "SELECT * FROM ads_audit_runs WHERE client_id=? ORDER BY run_at DESC LIMIT 1"
+  ).bind(clientId).first();
+  if (!row) return json({ error: "No audit runs for this client" }, 404);
+  return json({
+    run_id: row.id, run_at: row.run_at, overall_score: row.overall_score,
+    section_scores: JSON.parse(row.sections_json || "{}"),
+    findings: JSON.parse(row.findings_json || "[]"),
+    pdf_available: false
+  });
+}
+__name(handleAuditLatest, "handleAuditLatest");
+function micros(v) { return Number(v || 0) / 1e6; }
+__name(micros, "micros");
+function money(v) { return "$" + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+__name(money, "money");
+async function handleAuditRun(request, env, clientId) {
+  if (!auditAuthorized(request, env)) return json({ error: "Forbidden" }, 403);
+  const client = await env.DB.prepare(
+    "SELECT id, name, google_ads_customer_id FROM sprint_clients WHERE id=? AND archived=0"
+  ).bind(clientId).first();
+  if (!client) return json({ error: "Client not found" }, 404);
+  if (!client.google_ads_customer_id) return json({ error: "No Google Ads customer ID on file for this client" }, 400);
+  const cid = client.google_ads_customer_id;
+  try {
+    const token = await auditGadsToken(env);
+    const [campaigns, terms, keywords, negatives, convActions] = await Promise.all([
+      auditGAQL(token, env, cid, `
+        SELECT campaign.id, campaign.name, campaign.status, campaign_budget.amount_micros,
+               metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.conversions,
+               metrics.search_impression_share, metrics.search_budget_lost_impression_share
+        FROM campaign WHERE campaign.status = 'ENABLED' AND segments.date DURING LAST_30_DAYS`),
+      auditGAQL(token, env, cid, `
+        SELECT search_term_view.search_term, campaign.name,
+               metrics.cost_micros, metrics.clicks, metrics.conversions
+        FROM search_term_view
+        WHERE segments.date DURING LAST_30_DAYS AND metrics.clicks > 0
+        ORDER BY metrics.cost_micros DESC LIMIT 500`),
+      auditGAQL(token, env, cid, `
+        SELECT ad_group_criterion.keyword.text, ad_group_criterion.quality_info.quality_score,
+               campaign.name, metrics.impressions, metrics.cost_micros, metrics.conversions
+        FROM keyword_view
+        WHERE ad_group_criterion.status = 'ENABLED' AND campaign.status = 'ENABLED'
+          AND segments.date DURING LAST_30_DAYS LIMIT 1000`),
+      auditGAQL(token, env, cid, `
+        SELECT campaign.id, campaign.name, campaign_criterion.keyword.text
+        FROM campaign_criterion
+        WHERE campaign_criterion.negative = TRUE AND campaign_criterion.type = 'KEYWORD'
+          AND campaign.status = 'ENABLED' LIMIT 2000`),
+      auditGAQL(token, env, cid, `
+        SELECT conversion_action.name, conversion_action.status, conversion_action.primary_for_goal
+        FROM conversion_action WHERE conversion_action.status = 'ENABLED'`)
+    ]);
+    const findings = [];
+    const totalSpend = campaigns.reduce((a, r) => a + micros(r.metrics?.costMicros), 0);
+    const totalConv = campaigns.reduce((a, r) => a + Number(r.metrics?.conversions || 0), 0);
+    if (!campaigns.length) {
+      findings.push({ severity: "critical", title: "No enabled campaigns", evidence: "Zero campaigns with status ENABLED had activity in the last 30 days.", action: "Confirm the account should be running; enable or rebuild campaigns." });
+    }
+    // --- Spend efficiency (waste) ---
+    const wasted = terms.filter((r) => Number(r.metrics?.conversions || 0) === 0 && micros(r.metrics?.costMicros) > 0);
+    const wastedSpend = wasted.reduce((a, r) => a + micros(r.metrics?.costMicros), 0);
+    const wastePct = totalSpend > 0 ? wastedSpend / totalSpend * 100 : 0;
+    let wasteScore = campaigns.length ? Math.max(0, Math.round(100 - wastePct * 1.8)) : 0;
+    const topWaste = wasted.slice(0, 5).map((r) => `"${r.searchTermView?.searchTerm}" (${money(micros(r.metrics?.costMicros))})`).join(", ");
+    if (wastePct >= 40) {
+      findings.push({ severity: "critical", title: `${Math.round(wastePct)}% of spend went to search terms with zero conversions`, evidence: `${money(wastedSpend)} of ${money(totalSpend)} (30 days) on non-converting terms. Top: ${topWaste}`, action: "Add the top wasted terms as negatives and tighten match types." });
+    } else if (wastePct >= 20) {
+      findings.push({ severity: "warning", title: `${Math.round(wastePct)}% of spend on non-converting search terms`, evidence: `${money(wastedSpend)} of ${money(totalSpend)} over 30 days. Top: ${topWaste}`, action: "Review the search-terms report and add negatives weekly." });
+    } else if (campaigns.length) {
+      findings.push({ severity: "ok", title: "Spend efficiency is healthy", evidence: `Only ${Math.round(wastePct)}% of 30-day spend (${money(wastedSpend)}) went to zero-conversion search terms.`, action: "Keep the weekly negative-mining cadence." });
+    }
+    // --- Keyword quality ---
+    const qsRows = keywords.filter((r) => r.adGroupCriterion?.qualityInfo?.qualityScore);
+    let qualityScore = 50;
+    if (qsRows.length) {
+      let imp = 0, qsImp = 0, lowQs = 0;
+      for (const r of qsRows) {
+        const w = Number(r.metrics?.impressions || 0) + 1;
+        const qs = Number(r.adGroupCriterion.qualityInfo.qualityScore);
+        imp += w; qsImp += qs * w;
+        if (qs <= 4) lowQs++;
+      }
+      const avgQs = qsImp / imp;
+      qualityScore = Math.round(avgQs / 10 * 100);
+      if (avgQs < 5) {
+        findings.push({ severity: "critical", title: `Average Quality Score is ${avgQs.toFixed(1)}/10`, evidence: `${lowQs} of ${qsRows.length} scored keywords are QS 4 or below (impression-weighted average ${avgQs.toFixed(1)}).`, action: "Rework ad relevance and landing pages for the low-QS ad groups; pause chronic QS 1-3 keywords." });
+      } else if (avgQs < 7) {
+        findings.push({ severity: "warning", title: `Average Quality Score is ${avgQs.toFixed(1)}/10`, evidence: `${lowQs} keywords at QS ≤ 4 out of ${qsRows.length} scored.`, action: "Tighten ad-group themes and align RSA headlines to keyword intent." });
+      } else {
+        findings.push({ severity: "ok", title: `Quality Score healthy (avg ${avgQs.toFixed(1)}/10)`, evidence: `${qsRows.length} scored keywords, ${lowQs} at QS ≤ 4.`, action: "No action needed." });
+      }
+    } else if (campaigns.length) {
+      findings.push({ severity: "warning", title: "No Quality Score data available", evidence: "No enabled keywords returned a Quality Score (low volume or non-search campaigns).", action: "If this account is search-driven, check keyword volume; QS needs sufficient impressions." });
+    }
+    // --- Negatives ---
+    const negByCampaign = {};
+    for (const r of negatives) negByCampaign[r.campaign?.name || "?"] = (negByCampaign[r.campaign?.name || "?"] || 0) + 1;
+    const searchCampaigns = campaigns.filter((r) => Number(r.metrics?.impressions || 0) > 0);
+    const bare = searchCampaigns.filter((r) => !negByCampaign[r.campaign?.name]);
+    let negScore = searchCampaigns.length ? Math.round(100 * (1 - bare.length / searchCampaigns.length)) : 0;
+    if (negatives.length === 0 && searchCampaigns.length) {
+      negScore = 0;
+      findings.push({ severity: "critical", title: "No negative keywords in any active campaign", evidence: `0 campaign-level negatives across ${searchCampaigns.length} active campaigns.`, action: "Mine the 30-day search-terms report and build a negative list immediately." });
+    } else if (bare.length) {
+      findings.push({ severity: "warning", title: `${bare.length} active campaign(s) have zero negatives`, evidence: bare.map((r) => r.campaign?.name).slice(0, 5).join(", "), action: "Add campaign-level negatives or attach a shared negative list." });
+    } else if (searchCampaigns.length) {
+      findings.push({ severity: "ok", title: "Negative coverage in place", evidence: `${negatives.length} campaign-level negatives across ${searchCampaigns.length} campaigns.`, action: "Keep mining search terms weekly." });
+    }
+    // --- Conversion tracking ---
+    let convScore = 0;
+    if (convActions.length === 0) {
+      findings.push({ severity: "critical", title: "No enabled conversion actions", evidence: "conversion_action query returned zero enabled actions.", action: "Set up conversion tracking before optimizing anything else." });
+    } else if (totalConv === 0 && totalSpend > 0) {
+      convScore = 40;
+      findings.push({ severity: "critical", title: "Conversion actions exist but recorded ZERO conversions in 30 days", evidence: `${convActions.length} enabled action(s), ${money(totalSpend)} spend, 0 conversions — tracking may be broken (green-but-zero).`, action: "Fire a test conversion and verify the tag/GA4 import is still recording." });
+    } else {
+      convScore = 100;
+      findings.push({ severity: "ok", title: "Conversion tracking recording", evidence: `${convActions.length} enabled action(s); ${totalConv.toFixed(1)} conversions in the last 30 days.`, action: "No action needed." });
+    }
+    // --- Budget pacing ---
+    let paceScore = 100;
+    const limited = campaigns.filter((r) => Number(r.metrics?.searchBudgetLostImpressionShare || 0) > 0.1);
+    if (campaigns.length) {
+      const avgLost = campaigns.reduce((a, r) => a + Number(r.metrics?.searchBudgetLostImpressionShare || 0), 0) / campaigns.length;
+      paceScore = Math.max(0, Math.round(100 - avgLost * 200));
+      if (limited.length) {
+        findings.push({ severity: "warning", title: `${limited.length} campaign(s) losing impression share to budget`, evidence: limited.map((r) => `${r.campaign?.name} (${Math.round(Number(r.metrics.searchBudgetLostImpressionShare) * 100)}% lost)`).slice(0, 5).join(", "), action: "Raise budget on winners or rebalance from underperformers." });
+      } else {
+        findings.push({ severity: "ok", title: "No campaigns budget-limited", evidence: "Search budget lost impression share ≤ 10% on all active campaigns.", action: "No action needed." });
+      }
+    } else { paceScore = 0; }
+    const section_scores = {
+      waste: wasteScore, quality: qualityScore, negatives: negScore,
+      conversions: convScore, pacing: paceScore
+    };
+    const overall = Math.round(
+      wasteScore * 0.3 + qualityScore * 0.25 + negScore * 0.2 + convScore * 0.15 + paceScore * 0.1
+    );
+    await ensureAuditTable(env);
+    const runId = genId("audit");
+    await env.DB.prepare(
+      "INSERT INTO ads_audit_runs (id, client_id, overall_score, sections_json, findings_json) VALUES (?,?,?,?,?)"
+    ).bind(runId, clientId, overall, JSON.stringify(section_scores), JSON.stringify(findings)).run();
+    await env.DB.prepare("UPDATE sprint_clients SET last_audit_date=date('now') WHERE id=?").bind(clientId).run();
+    return json({ run_id: runId, overall_score: overall, section_scores, findings, pdf_available: false });
+  } catch (err) {
+    return json({ error: `Audit failed: ${err.message}` }, 502);
+  }
+}
+__name(handleAuditRun, "handleAuditRun");
+async function handleRoster(request, env) {
+  const sec = request.headers.get("X-Internal-Secret");
+  const ok = !!sec && ((env.ROSTER_READ_SECRET && sec === env.ROSTER_READ_SECRET) || (env.INTERNAL_AUDIT_SECRET && sec === env.INTERNAL_AUDIT_SECRET));
+  if (!ok) return json({ error: "Forbidden" }, 403);
+  const clients = await env.DB.prepare(
+    "SELECT id, name, domain, google_ads_customer_id FROM sprint_clients WHERE archived = 0 ORDER BY name"
+  ).all();
+  const svc = await env.DB.prepare(
+    "SELECT client_id, service, status FROM client_services WHERE status = 'active'"
+  ).all();
+  const svcByClient = {};
+  for (const s of svc.results || []) (svcByClient[s.client_id] ||= []).push(s.service);
+  function normDomain(d) {
+    if (!d) return null;
+    return String(d).toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").trim() || null;
+  }
+  const roster = (clients.results || []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    domain: normDomain(c.domain),
+    google_ads_customer_id: c.google_ads_customer_id || null,
+    services: svcByClient[c.id] || []
+  }));
+  return json({ count: roster.length, clients: roster }, 200, {
+    "Cache-Control": "public, max-age=300"
+  });
+}
+__name(handleRoster, "handleRoster");
 export {
   worker_default as default
 };
