@@ -714,6 +714,10 @@ function renderDashboard(reports) {
     <div class="card-body">
       <h2 style="font-family:${DS.fontDisplay};font-size:21px;font-weight:600;letter-spacing:-0.28px;margin-bottom:20px">Run New Audit</h2>
       <form id="auditForm">
+        <div class="form-row">
+          <label>Client <span style="font-weight:400;color:${DS.midGray}">(optional — pick to autofill, or type below)</span></label>
+          <select id="ee-client-picker" style="width:100%;padding:10px;border:1px solid #e2ded5;border-radius:8px;font-size:14px"><option value="">— Select a client —</option></select>
+        </div>
         <div class="form-grid">
           <div class="form-row">
             <label>Business Name</label>
@@ -766,6 +770,21 @@ function renderDashboard(reports) {
 </div>
 
 <script>
+(function(){
+  var sel = document.getElementById('ee-client-picker');
+  if (!sel) return;
+  fetch('/api/ee-roster').then(function(r){return r.json();}).then(function(d){
+    (d.clients||[]).filter(function(c){return c.domain;}).sort(function(a,b){return a.name.localeCompare(b.name);}).forEach(function(c){
+      var o=document.createElement('option'); o.value=c.domain; o.textContent=c.name; o.dataset.name=c.name; sel.appendChild(o);
+    });
+  }).catch(function(){});
+  sel.addEventListener('change', function(){
+    var o=sel.selectedOptions[0]; if(!o||!o.value) return;
+    var f=document.getElementById('auditForm');
+    var nameI=f.querySelector('[name=businessName]'); if(nameI) nameI.value=o.dataset.name;
+    var urlI=f.querySelector('[name=url]'); if(urlI) urlI.value='https://'+o.value;
+  });
+})();
 document.getElementById('auditForm').addEventListener('submit', async e => {
   e.preventDefault();
   const form = e.target;
@@ -1668,6 +1687,18 @@ async function eeGate(request, env, publicRes) {
   return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401, headers: { "Content-Type": "application/json" } });
 }
 
+// Server-side roster proxy — keeps ROSTER_READ_SECRET off the client. Behind the auth gate.
+async function eeRosterProxy(env) {
+  const empty = new Response('{"clients":[]}', { headers: { "Content-Type": "application/json" } });
+  try {
+    const r = await fetch("https://sprint.engageengine.cc/api/internal/roster", { headers: { "X-Internal-Secret": env.ROSTER_READ_SECRET || "" } });
+    if (!r.ok) return empty;
+    const d = await r.json();
+    const clients = (d.clients || []).map((c) => ({ name: c.name, domain: c.domain, gads: c.google_ads_customer_id }));
+    return new Response(JSON.stringify({ clients }), { headers: { "Content-Type": "application/json" } });
+  } catch (e) { return empty; }
+}
+
 var worker_default = {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -1728,6 +1759,9 @@ var worker_default = {
     if (method === "GET" && path === "/api/reports") {
       const { results } = await env.DB.prepare("SELECT * FROM dvs_reports ORDER BY created_at DESC LIMIT 50").all();
       return json(results || []);
+    }
+    if (method === "GET" && path === "/api/ee-roster") {
+      return eeRosterProxy(env);
     }
     const publishMatch = path.match(/^\/api\/reports\/([a-z0-9_]+)\/publish-to-portal$/);
     if (method === "POST" && publishMatch) {
