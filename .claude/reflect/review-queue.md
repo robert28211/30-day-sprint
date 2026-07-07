@@ -19,3 +19,6 @@ Run `/reflect review` to triage. Format: `- [LOW] (date) [target-skill] observat
 
 - [LOW] (2026-06-29) [→ global/pipeline] AudienceLab has a list endpoint `GET https://api.audiencelab.io/audiences` (header `x-api-key`) returning {id,name} for all audiences (paginated) — use it to map client names → audience UUIDs instead of asking.
 - [LOW] (2026-06-29) [→ global] Disable a scheduled GitHub Actions workflow by commenting out the `schedule:`/`cron:` block while KEEPING `workflow_dispatch:` — stops auto-runs, preserves manual trigger, fully reversible (vs deleting the file).
+
+- [LOW] (2026-07-07) [→ global] AudienceLab segments API caps page_size at 50 (larger → empty response); only `GET /segments/{id}` exists — NO create endpoint and NO list-all (probed every path, all 404). Segments also omit email/UUID/hash columns unless those fields are explicitly selected when the segment is built. Consequence: can't script segment creation via API; pull the parent audience and DMA-filter instead.
+- [LOW] (2026-07-07) [→ global] EngageEngine pixel Google Sheets are split across two owners — mostly robertlbutt@gmail.com but a few (Guttermen, DNB) under robertlbutt3@gmail.com. Intended single source is robertlbutt@; consolidate so AudienceSync destinations don't drift across accounts.
