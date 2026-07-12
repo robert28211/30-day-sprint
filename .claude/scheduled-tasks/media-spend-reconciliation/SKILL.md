@@ -1,0 +1,38 @@
+---
+name: media-spend-reconciliation
+description: Monthly check: actual Google + Meta ad spend vs. what was billed in Zoho — flags under-billing (you lose) and over-billing (client risk).
+---
+
+You are running the monthly Media Spend Reconciliation for Marketing Performance Group (EngageEngine). Goal: catch billing errors where what was entered in Zoho (and billed to the client) doesn't match what Google/Meta ACTUALLY charged. Both platforms are cost-plus (marked up), so the Zoho billable expense should equal actual platform spend.
+
+PRIOR MONTH = the calendar month before today (today is the 8th, so reconcile last month). Use it throughout.
+
+═══ PART A — GOOGLE ADS ═══
+1. What was billed (Zoho, in Cloudflare D1): use `mcp__4e52a2d7-b31a-4092-bb0e-0d98cdd825eb__d1_database_query` on database `command-center` (id 13f98f2a-574d-495c-acd7-4f8900acd036):
+   SELECT customer_name, description, total, date FROM zoho_expenses WHERE is_billable=1 AND (vendor_name LIKE '%google%' OR description LIKE '%Google%' OR description LIKE '%PPC%') ORDER BY customer_name, date
+   Entries are made ~2-4 days after month end; billing month is in the description ("Google PPC May") or inferred from entry date (entered early month N = spend for month N-1).
+2. What was actually spent (Google Ads, live): `mcp__google-ads__run_gaql` with manager_id "7536541386":
+   SELECT metrics.cost_micros FROM customer WHERE segments.date BETWEEN '<prior-month-first>' AND '<prior-month-last>'  (cost_micros ÷ 1,000,000 = dollars)
+   Google account IDs: Smith-Built 3612183359, Midlands Landscape 2155239348, Guttermen 3163903415, Brabham 8997050280, Austin Drilling 5532540484, Carolina Stone 6274779362, Donen Davis 1522213374, Nature's Best 2781268550, Rytec 6204062093, Sheppard's Glass 6570617076, Stormy 3138268319, Stripewide 1520306766, Superior Plumbing 3532670525, Red Shirt Guys 9879346995, Atlantic Building Materials 7784684639 (account named "Atlantic Window & Door" — same client). (Floor Pro paused / has Google Guarantee LSA — note separately.)
+   GOOGLE PATTERN: Robbie enters the floor dollar, so actual is normally a few cents higher — IGNORE sub-$1 differences. In May 2026 every client was under-billed $17-137 (systematic) — flag any client where actual exceeds billed by >$5.
+
+═══ PART B — META ADS ═══
+1. What was billed (Zoho): same D1 table:
+   SELECT customer_name, description, total, date FROM zoho_expenses WHERE is_billable=1 AND (vendor_name LIKE '%meta%' OR vendor_name LIKE '%facebook%' OR description LIKE '%Facebook%' OR description LIKE '%Meta%') ORDER BY customer_name, date
+   WARNING: Meta entries are FLAT round numbers ($200/$300/$400/$250), entered as estimates NOT actual spend — so they are wrong in BOTH directions.
+2. What was actually spent (Meta, live): `mcp__meta-ads__get_insights` with account_id and time_range {since:'<prior-month-first>', until:'<prior-month-last>'}; read the `spend` field.
+   Meta account IDs (act_ prefix): Smith-Built act_825482629231492, Guttermen act_1674649316474419, Carolina Stone act_1056472362018893, Donen Davis act_1993211034532318, Stormy act_623476310325492, Stripewide act_1085727513459621, Midlands Supply act_2381069928973321, Midlands Landscape act_1192259215742537, Nature's Best act_3949260368655954, Sheppard's Glass act_2394246810910565, Mt Horeb act_1933085000433186, Superior P+G act_951215997192137, Red Shirt Guys act_675544281833967, DNB act_687486973721096, Blythewood Pools act_850487748094599, Roof Maxx act_776995328603731, Jaguar act_2709325102771951, 803 Realty act_1252517706613939, CCS Dock and Deck act_2104833536667345, Genesis Pro Painting act_2001304570378453, Atlantic Building Materials act_1741480816422882 (account named "Atlantic Windows and Doors" — same client). Brabham: main act_936865717758709 OFTEN EMPTY — also check "Brabham Backup" act_9952903768085952 and use whichever has spend (or sum both). Use `mcp__meta-ads__get_ad_accounts` if an account is missing. EXCLUDE Robbie's own accounts act_548797500901490 (Marketing Performance) and act_10767834 (Robbie Butt).
+   META PATTERN: flag BOTH directions where |actual − billed| > $5: under-billing (Robbie ate the cost) AND over-billing (client was charged for spend that didn't happen = trust/refund risk).
+
+═══ REPORT ═══
+Email results to robertlbutt@gmail.com (Robbie's PRIMARY inbox — the one all other automated reports land in; do NOT use robertlbutt3@gmail.com, which is unmonitored) via the Resend MCP (`mcp__resend__send-email`), subject "Media Reconciliation — <Month> — Google $<x> under / Meta $<y> off". Two tables (Google, Meta): Client | Actual | Billed | Difference, sorted by largest absolute difference, with totals. For Meta, label each row UNDER (you lose) or OVER (client risk). If a platform reconciles within $5 across all clients, say "all clear." Note any client whose account couldn't be verified (e.g. Floor Pro). If the expense-tracker worker (https://expense-tracker.robertlbutt.workers.dev) has gained a reconciliation/report endpoint by the time you run, prefer that; otherwise use Resend directly.
+
+CONTEXT (built 2026-06-15): Google May 2026 = ~$513 systematic under-billing across 15 clients (every one under, none over). Meta May 2026 = mis-billed both ways (Guttermen −$148.72 under; Donen Davis +$44.19, Carolina Stone +$36.49 over). Root cause both platforms: Robbie enters estimates, not the actual API figure. The whole point of this job is to make him enter actual.
+
+## Learnings
+<!-- Maintained by /reflect. Newest at top. Each line: - [TIER] (YYYY-MM-DD) statement -->
+
+- [HIGH] (2026-07-12) Meta `get_insights` returns error code 190 ("user changed password") whenever the Facebook password rotates — the MCP profile token (`~/.claude/mcp-profiles/marketing.json` META_ACCESS_TOKEN) lags behind. When that happens, DON'T report Meta as "blocked": pull Meta directly via Graph API v21.0 — `curl "https://graph.facebook.com/v21.0/act_XXX/insights?fields=spend&time_range=%7B%22since%22%3A%22<first>%22%2C%22until%22%3A%22<last>%22%7D&access_token=<TOKEN>"` — using the current long-lived token from the Credentials Index (Reference/Credentials Index.md, "Meta Graph API — Long-Lived Token" line; note its rotation date, ~60-day expiry).
+- [HIGH] (2026-07-12) The Resend MCP (`mcp__resend__send-email`) is frequently NOT connected this session. Fallback: POST `https://api.resend.com/emails` with a valid `re_` key (verified sending domain `send.marketingperformance.net`), `from: "Media Reconciliation <reconciliation@send.marketingperformance.net>"`, `to: robertlbutt3@gmail.com`. Confirm a key is live with `curl https://api.resend.com/domains -H "Authorization: Bearer <key>"`. The expense-tracker worker still has NO reconciliation/report endpoint (checked 2026-07-12) — use Resend directly.
+- [HIGH] (2026-07-12) Midlands: the "$200 Midlands Supply Facebook Ads" Zoho bill covers the Supply account (act_2381069928973321) ONLY. Reconcile it against Supply spend; Midlands Landscape (act_1192259215742537) spend is separate and typically has no Zoho bill.
+- [MED] (2026-07-12) Meta accounts that show spend but have NO matching Zoho bill (seen June 2026: Midlands Landscape, Roof Maxx, 803 Realty, Blythewood, Mt Horeb, Genesis, CCS Dock & Deck, Jaguar) → present as an "unbilled Meta spend — needs confirmation" exceptions list. Do NOT assert a dollar under-bill verdict; flag each for Robbie to confirm billing-gap vs. flat-retainer arrangement.

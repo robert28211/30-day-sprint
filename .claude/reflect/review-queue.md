@@ -22,3 +22,7 @@ Run `/reflect review` to triage. Format: `- [LOW] (date) [target-skill] observat
 
 - [LOW] (2026-07-07) [→ global] AudienceLab segments API caps page_size at 50 (larger → empty response); only `GET /segments/{id}` exists — NO create endpoint and NO list-all (probed every path, all 404). Segments also omit email/UUID/hash columns unless those fields are explicitly selected when the segment is built. Consequence: can't script segment creation via API; pull the parent audience and DMA-filter instead.
 - [LOW] (2026-07-07) [→ global] EngageEngine pixel Google Sheets are split across two owners — mostly robertlbutt@gmail.com but a few (Guttermen, DNB) under robertlbutt3@gmail.com. Intended single source is robertlbutt@; consolidate so AudienceSync destinations don't drift across accounts.
+
+- [LOW] (2026-07-07) [full_report/global] User preference confirmed: orchestrate build/fix work to Sonnet sub-agents ("you orchestrate, have sonnet do it").
+
+- [LOW] (2026-07-12) [media-spend-reconciliation] June 2026: Google reconciled all-clear (all 15 accounts within $1, $3.78 total under) — Robbie entered actuals, a big improvement over May's ~$513 systematic under-billing. Track whether this sticks in July as a sign the "enter actual" behavior change held.
