@@ -26,3 +26,5 @@ Run `/reflect review` to triage. Format: `- [LOW] (date) [target-skill] observat
 - [LOW] (2026-07-07) [full_report/global] User preference confirmed: orchestrate build/fix work to Sonnet sub-agents ("you orchestrate, have sonnet do it").
 
 - [LOW] (2026-07-12) [media-spend-reconciliation] June 2026: Google reconciled all-clear (all 15 accounts within $1, $3.78 total under) — Robbie entered actuals, a big improvement over May's ~$513 systematic under-billing. Track whether this sticks in July as a sign the "enter actual" behavior change held.
+
+- [LOW] (2026-07-13) [weekly-emails] Meta token rotations are often already written to secrets.json + marketing.json by the incident that rotated them — validate with a /me Graph call before assuming any token action is needed (7/7 rotation was already live this run; no action required).

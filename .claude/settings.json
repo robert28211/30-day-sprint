@@ -9,6 +9,18 @@
   },
   "enabledMcpjsonServers": [],
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Users/robbiebutt/.claude/hooks/vault-consult.py",
+            "timeout": 6,
+            "statusMessage": "Consulting the vault..."
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
@@ -61,6 +73,12 @@
       "source": {
         "source": "github",
         "repo": "nowork-studio/toprank"
+      }
+    },
+    "boris-says": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/robbiebutt/boris-says"
       }
     }
   },

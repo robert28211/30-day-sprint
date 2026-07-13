@@ -1,3 +1,4 @@
+- [A] (2026-07-05) When asked "what is missing" from a whole system, audit the system's instruments by output-type: if every instrument produces/transmits and none receives/verifies, the missing thing is the return signal (consequences, echoes, scored predictions) — a category no amount of additional production tooling can supply.
 # Lateral Thinker — Field Notes
 
 Raw thinking-move observations, captured **outside every framework**. This is the clean-room scratchpad: only domain-agnostic thinking moves land here — nothing may reference a client, an industry, a product, a platform, or a framework label (FM1–FM4, Demand Collapse, any vault term).
