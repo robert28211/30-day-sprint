@@ -112,6 +112,14 @@ var ROUTES = [
   { method: "POST", re: /^\/api\/internal\/audit\/([^/]+)$/, handler: (r, e, m) => handleAuditRun(r, e, m[1]), public: true },
   // Client roster (shared source for suppression + client pickers across the tool suite; X-Internal-Secret gated)
   { method: "GET", re: /^\/api\/internal\/roster$/, handler: handleRoster, public: true },
+  // Client activity spine — ingest (X-Internal-Secret gated) + per-client timeline (session gated)
+  { method: "POST", re: /^\/api\/internal\/activity$/, handler: handleActivityIngest, public: true },
+  { method: "GET", re: /^\/api\/clients\/([^/]+)\/activity$/, handler: (r, e, m) => handleClientActivity(r, e, m[1]) },
+  // Firm-wide cross-client activity feed (session gated)
+  { method: "GET", re: /^\/api\/activity$/, handler: handleActivityFeed },
+  // Outcome loop — activities due for review + record what actually happened (session gated)
+  { method: "GET", re: /^\/api\/activity\/due$/, handler: handleActivityDue },
+  { method: "POST", re: /^\/api\/activity\/([0-9]+)\/outcome$/, handler: (r, e, m) => handleActivityOutcome(r, e, m[1]) },
   // Services & Maintenance
   { method: "GET", re: /^\/api\/services$/, handler: handleServicesList, readKey: true },
   { method: "PATCH", re: /^\/api\/services\/([^/]+)\/([^/]+)$/, handler: (r, e, m) => handleServiceUpdate(r, e, m[1], m[2]) },
@@ -579,7 +587,11 @@ async function handleGmailAuth(request, env) {
     response_type: "code",
     scope: "https://www.googleapis.com/auth/gmail.readonly",
     access_type: "offline",
-    prompt: "consent"
+    // select_account forces Google's account chooser (otherwise it silently
+    // reuses whichever account is active — kept landing on robertlbutt@);
+    // login_hint pre-selects the right one.
+    prompt: "select_account consent",
+    login_hint: "robertlbutt3@gmail.com"
   });
   return redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
 }
@@ -1342,6 +1354,12 @@ var worker_default = {
       if (path.startsWith("/portal/")) {
         const token = path.slice("/portal/".length).replace(/\/$/, "");
         return handlePortal(request, env, token);
+      }
+      const auditViewMatch = path.match(/^\/audit\/([^/]+)$/);
+      if (auditViewMatch) {
+        const viewerAuthed = await authMiddleware(request, env);
+        if (!viewerAuthed) return redirect("/");
+        return await handleAuditViewPage(request, env, auditViewMatch[1]);
       }
       const authed = await authMiddleware(request, env);
       return new Response(getHTML(authed), {
@@ -2163,6 +2181,7 @@ body{padding-bottom:80px}
       <button class="mode-tab" id="modeServicesBtn" data-action="mode-services">Services</button>
       <button class="mode-tab" id="modeMaintenanceBtn" data-action="mode-maintenance">Maintenance</button>
       <button class="mode-tab" id="modeHealthBtn" data-action="mode-health">Health</button>
+      <button class="mode-tab" id="modeActivityBtn" data-action="mode-activity">Activity</button>
     </div>
   </div>
   <div class="header-right">
@@ -2234,6 +2253,11 @@ body{padding-bottom:80px}
   <div id="healthContent"><div class="loading">Loading...</div></div>
 </div>
 
+<!-- Activity mode -->
+<div id="activityMode" class="hidden">
+  <div id="activityContent"><div class="loading">Loading...</div></div>
+</div>
+
 </div><!-- /container -->
 </div><!-- /appShell -->
 
@@ -2281,6 +2305,12 @@ var sprintPhase = 'preSprint';
 var currentIntakeId = null;
 var intakeConfirmData = null;
 
+// Activity feed state
+var activityFeedData = null;
+var activityToolFilter = '';
+var activityDueData = null;
+var activityScoreboard = null;
+
 // \u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function esc(s){if(!s)return'';return String(s).split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;')}
@@ -2321,6 +2351,7 @@ document.addEventListener('click', function(e) {
   else if (act === 'mode-services') { switchMode('services'); }
   else if (act === 'mode-maintenance') { switchMode('maintenance'); }
   else if (act === 'mode-health') { switchMode('health'); }
+  else if (act === 'mode-activity') { switchMode('activity'); }
   else if (act === 'allwork-tab') { switchAllWorkTab(val); }
   else if (act === 'allwork-goto-client') { switchMode('jobs'); loadClient(id); }
   else if (act === 'allwork-job-complete') { completeAllWorkJob(id); }
@@ -2375,6 +2406,7 @@ document.addEventListener('click', function(e) {
   else if (act === 'portal-create') { portalCreate(id); }
   else if (act === 'portal-revoke') { portalRevoke(id); }
   else if (act === 'portal-copy') { navigator.clipboard.writeText(val).then(function(){ showSnackbar('Link copied!'); }); }
+  else if (act === 'loop-outcome') { recordLoopOutcome(id, val); }
 });
 
 document.addEventListener('change', function(e) {
@@ -2382,6 +2414,7 @@ document.addEventListener('change', function(e) {
   if (!el) return;
   var act = el.getAttribute('data-action');
   if (act === 'note-client-change') { loadNoteJobSelect(el.value); }
+  else if (act === 'activity-filter-tool') { activityToolFilter = el.value; loadActivityFeed(); }
 });
 
 // \u2500\u2500 Mode switching \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -2394,12 +2427,14 @@ function switchMode(mode) {
   document.getElementById('modeServicesBtn').classList.toggle('active', mode === 'services');
   document.getElementById('modeMaintenanceBtn').classList.toggle('active', mode === 'maintenance');
   document.getElementById('modeHealthBtn').classList.toggle('active', mode === 'health');
+  document.getElementById('modeActivityBtn').classList.toggle('active', mode === 'activity');
   document.getElementById('jobsMode').classList.toggle('hidden', mode !== 'jobs');
   document.getElementById('sprintMode').classList.toggle('hidden', mode !== 'sprint');
   document.getElementById('allWorkMode').classList.toggle('hidden', mode !== 'allwork');
   document.getElementById('servicesMode').classList.toggle('hidden', mode !== 'services');
   document.getElementById('maintenanceMode').classList.toggle('hidden', mode !== 'maintenance');
   document.getElementById('healthMode').classList.toggle('hidden', mode !== 'health');
+  document.getElementById('activityMode').classList.toggle('hidden', mode !== 'activity');
   document.getElementById('navBack').style.display = 'none';
   if (mode === 'jobs') {
     document.getElementById('headerStats').style.display = '';
@@ -2419,6 +2454,9 @@ function switchMode(mode) {
   } else if (mode === 'health') {
     document.getElementById('headerStats').style.display = 'none';
     loadClientHealth();
+  } else if (mode === 'activity') {
+    document.getElementById('headerStats').style.display = 'none';
+    loadActivityFeed();
   }
 }
 
@@ -2696,6 +2734,7 @@ function renderClientDetail(data) {
       html += renderJobSection(completeJobs[i], tasks.filter(function(t) { return t.job_id === completeJobs[i].id; }), client.id, today, true);
     }
   }
+  html += '<div id="clientActivity" style="margin-top:8px"></div>';
   document.getElementById('detail').innerHTML = html;
   // Wire up notes save on blur
   var notesEl = document.getElementById('clientNotes');
@@ -2715,6 +2754,8 @@ function renderClientDetail(data) {
   loadTemplatesForForm(client.id);
   // Load portal section
   loadPortalSection(client.id);
+  // Load activity spine timeline
+  loadClientActivity(client.id);
 }
 
 function renderJobSection(job, tasks, clientId, today, collapsed) {
@@ -4275,6 +4316,7 @@ var SERVICE_COLS = [
   {key:'audiencelab',  label:'Int. Data'},
   {key:'pipeline',     label:'Pipeline'},
   {key:'pixel',        label:'Pixel'},
+  {key:'gbp',          label:'GBP'},
   {key:'social',       label:'Social'},
   {key:'website',      label:'Website'},
   {key:'seo',          label:'SEO'},
@@ -4717,6 +4759,152 @@ async function saveMaintNotes(input) {
   }
 }
 
+function fmtActivityDate(s){if(!s)return'';var d=String(s).split(' ')[0];var p=d.split('-');if(p.length===3)return p[1]+'/'+p[2]+'/'+p[0].slice(2);return d;}
+
+async function loadClientActivity(clientId){
+  var wrap=document.getElementById('clientActivity');
+  if(!wrap)return;
+  try{
+    var res=await fetch(API+'/api/clients/'+clientId+'/activity');
+    if(!res.ok){wrap.innerHTML='';return;}
+    var data=await res.json();
+    renderClientActivity(data.activity||[]);
+  }catch(e){wrap.innerHTML='';}
+}
+
+function renderClientActivity(rows){
+  var wrap=document.getElementById('clientActivity');
+  if(!wrap)return;
+  if(!rows.length){wrap.innerHTML='';return;}
+  var html='<div class="section-title" style="margin-top:24px">Client Activity</div>';
+  html+='<div class="activity-list">';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    var meta=fmtActivityDate(r.created_at)+' \u00b7 '+esc(r.tool||'')+' \u00b7 '+esc(r.kind||'');
+    if(r.score!==null&&r.score!==undefined&&r.score!=='')meta+=' \u00b7 '+esc(String(r.score));
+    meta+=loopBadge(r);
+    var summary=esc(r.summary||'');
+    if(r.artifact_url)summary='<a href="'+esc(r.artifact_url)+'" target="_blank" rel="noopener">'+(summary||'View')+'</a>';
+    html+='<div class="activity-item" style="padding:8px 0;border-bottom:1px solid var(--border)">';
+    html+='<div style="font-size:12px;color:var(--text-dim)">'+meta+'</div>';
+    if(summary)html+='<div style="font-size:14px;margin-top:2px">'+summary+'</div>';
+    html+='</div>';
+  }
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+
+// ── Firm-wide Activity Feed ─────────────────────────────────
+
+async function loadActivityFeed(){
+  var wrap=document.getElementById('activityContent');
+  if(!wrap)return;
+  wrap.innerHTML='<div class="loading">Loading...</div>';
+  try{
+    var qs=activityToolFilter?('?tool='+encodeURIComponent(activityToolFilter)):'';
+    var res=await fetch(API+'/api/activity'+qs);
+    if(res.status===401){showLoginScreen();return;}
+    if(!res.ok){wrap.innerHTML='<div class="loading">Failed to load activity.</div>';return;}
+    var data=await res.json();
+    activityFeedData=data.activity||[];
+    try{
+      var dueRes=await fetch(API+'/api/activity/due');
+      if(dueRes.ok){var dueData=await dueRes.json();activityDueData=dueData.due||[];activityScoreboard=dueData.scoreboard||{};}
+    }catch(e2){activityDueData=[];}
+    renderActivityFeed();
+  }catch(e){wrap.innerHTML='<div class="loading">Failed to load activity.</div>';}
+}
+
+function renderActivityFeed(){
+  var wrap=document.getElementById('activityContent');
+  if(!wrap)return;
+  var rows=activityFeedData||[];
+  var tools=[];
+  for(var i=0;i<rows.length;i++){
+    var t=rows[i].tool||'';
+    if(t&&tools.indexOf(t)===-1)tools.push(t);
+  }
+  tools.sort();
+  var html='';
+  var due=activityDueData||[];
+  var sb=activityScoreboard||{};
+  var reviewed=(sb.confirmed||0)+(sb.missed||0)+(sb.partial||0);
+  if(due.length||reviewed){
+    html+='<div class="section-title">The Loop — What Happened Next?</div>';
+    if(reviewed){
+      var hitPct=Math.round(((sb.confirmed||0)+(sb.partial||0)*0.5)/reviewed*100);
+      html+='<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px">Scoreboard: '+(sb.confirmed||0)+' confirmed · '+(sb.partial||0)+' partial · '+(sb.missed||0)+' missed — <strong style="color:var(--text)">'+hitPct+'% hit rate</strong> ('+reviewed+' reviewed)</div>';
+    }
+    if(!due.length){
+      html+='<div style="font-size:13px;color:var(--text-dim);margin-bottom:20px">Nothing due for review. New predictions come back here on their review date.</div>';
+    }
+    for(var d=0;d<due.length;d++){
+      var q=due[d];
+      var qmeta=esc(q.client_name||'—')+' · '+esc(q.tool||'')+' · logged '+fmtActivityDate(q.created_at)+' · due '+fmtActivityDate(q.review_at);
+      html+='<div class="activity-item" style="padding:10px 12px;margin-bottom:10px;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;background:var(--surface)">';
+      html+='<div style="font-size:12px;color:var(--text-dim)">'+qmeta+'</div>';
+      if(q.summary)html+='<div style="font-size:14px;margin-top:2px">'+(q.artifact_url?'<a href="'+esc(q.artifact_url)+'" target="_blank" rel="noopener">'+esc(q.summary)+'</a>':esc(q.summary))+'</div>';
+      if(q.expected_outcome)html+='<div style="font-size:13px;margin-top:4px"><strong>Predicted:</strong> '+esc(q.expected_outcome)+'</div>';
+      html+='<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">';
+      html+='<button data-action="loop-outcome" data-id="'+q.id+'" data-val="confirmed" style="background:#16A34A;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">Confirmed</button>';
+      html+='<button data-action="loop-outcome" data-id="'+q.id+'" data-val="partial" style="background:#D97706;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">Partial</button>';
+      html+='<button data-action="loop-outcome" data-id="'+q.id+'" data-val="missed" style="background:#DC2626;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">Missed</button>';
+      html+='<button data-action="loop-outcome" data-id="'+q.id+'" data-val="na" style="background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">N/A</button>';
+      html+='</div></div>';
+    }
+    html+='<div style="height:16px"></div>';
+  }
+  html+='<div class="section-title">Firm-Wide Activity</div>';
+  html+='<div style="margin-bottom:14px">';
+  html+='<select data-action="activity-filter-tool" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;outline:none">';
+  html+='<option value=""'+(activityToolFilter===''?' selected':'')+'>All tools</option>';
+  for(var j=0;j<tools.length;j++){
+    var tv=tools[j];
+    html+='<option value="'+esc(tv)+'"'+(activityToolFilter===tv?' selected':'')+'>'+esc(tv)+'</option>';
+  }
+  html+='</select>';
+  html+='</div>';
+  if(!rows.length){
+    html+='<div class="loading">No activity yet.</div>';
+    wrap.innerHTML=html;
+    return;
+  }
+  html+='<div class="activity-list">';
+  for(var k=0;k<rows.length;k++){
+    var r=rows[k];
+    var meta=fmtActivityDate(r.created_at)+' \u00b7 '+esc(r.client_name||'\u2014')+' \u00b7 '+esc(r.tool||'')+' \u00b7 '+esc(r.kind||'');
+    if(r.score!==null&&r.score!==undefined&&r.score!=='')meta+=' \u00b7 '+esc(String(r.score));
+    var summary=esc(r.summary||'');
+    if(r.artifact_url)summary='<a href="'+esc(r.artifact_url)+'" target="_blank" rel="noopener">'+(summary||'View')+'</a>';
+    html+='<div class="activity-item" style="padding:8px 0;border-bottom:1px solid var(--border)">';
+    html+='<div style="font-size:12px;color:var(--text-dim)">'+meta+loopBadge(r)+'</div>';
+    if(summary)html+='<div style="font-size:14px;margin-top:2px">'+summary+'</div>';
+    if(r.expected_outcome&&!r.outcome_status)html+='<div style="font-size:12px;color:var(--text-dim);margin-top:2px">Predicted: '+esc(r.expected_outcome)+(r.review_at?' (review '+fmtActivityDate(r.review_at)+')':'')+'</div>';
+    if(r.outcome_note)html+='<div style="font-size:12px;color:var(--text-dim);margin-top:2px">Outcome: '+esc(r.outcome_note)+'</div>';
+    html+='</div>';
+  }
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+
+function loopBadge(r){
+  if(!r||!r.outcome_status)return'';
+  var colors={confirmed:'#16A34A',partial:'#D97706',missed:'#DC2626',na:'#78716C'};
+  var labels={confirmed:'CONFIRMED',partial:'PARTIAL',missed:'MISSED',na:'N/A'};
+  var c=colors[r.outcome_status]||'#78716C';
+  return' <span style="color:'+c+';font-weight:700;font-size:11px;letter-spacing:0.5px">'+(labels[r.outcome_status]||'')+'</span>';
+}
+
+async function recordLoopOutcome(id,status){
+  var note=window.prompt('What actually happened? (optional note)','');
+  if(note===null)return;
+  try{
+    var res=await fetch(API+'/api/activity/'+id+'/outcome',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:status,note:note})});
+    if(res.ok){showSnackbar('Outcome recorded');loadActivityFeed();}
+    else{showSnackbar('Failed to record outcome');}
+  }catch(e){showSnackbar('Failed to record outcome');}
+}
+
 // \u2500\u2500 Init \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 ${authed ? "loadDashboard();" : "// Not authed \u2014 wait for login"}
@@ -4931,6 +5119,15 @@ async function handleAuditRun(request, env, clientId) {
     await env.DB.prepare(
       "INSERT INTO ads_audit_runs (id, client_id, overall_score, sections_json, findings_json) VALUES (?,?,?,?,?)"
     ).bind(runId, clientId, overall, JSON.stringify(section_scores), JSON.stringify(findings)).run();
+    try {
+      const artifactUrl = `https://sprint.engageengine.cc/audit/${runId}`;
+      // Outcome loop: the audit's top issue becomes a scored prediction, due for review in 30 days.
+      const topIssue = findings.find((f) => f.severity === "critical") || findings.find((f) => f.severity === "warning") || null;
+      const expected = topIssue ? `If "${topIssue.action}" is done, expect score above ${overall} and "${topIssue.title}" resolved on the next audit.` : null;
+      await env.DB.prepare(
+        "INSERT INTO client_activity (client_id, client_name, tool, kind, score, summary, artifact_url, expected_outcome, review_at) VALUES (?,?,?,?,?,?,?,?, CASE WHEN ?8 IS NULL THEN NULL ELSE date('now','+30 days') END)"
+      ).bind(clientId, client.name || null, "ads-audit", "audit", overall, `Ads audit — score ${overall}/100`, artifactUrl, expected).run();
+    } catch (e) {}
     await env.DB.prepare("UPDATE sprint_clients SET last_audit_date=date('now') WHERE id=?").bind(clientId).run();
     return json({ run_id: runId, overall_score: overall, section_scores, findings, pdf_available: false });
   } catch (err) {
@@ -4938,6 +5135,87 @@ async function handleAuditRun(request, env, clientId) {
   }
 }
 __name(handleAuditRun, "handleAuditRun");
+function auditSeverityColor(sev) {
+  if (sev === "critical") return "#DC2626";
+  if (sev === "warning") return "#D97706";
+  return "#16A34A";
+}
+__name(auditSeverityColor, "auditSeverityColor");
+function escAudit(s) {
+  if (s === null || s === undefined) return "";
+  return String(s).split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;");
+}
+__name(escAudit, "escAudit");
+async function handleAuditViewPage(request, env, runId) {
+  await ensureAuditTable(env);
+  const row = await env.DB.prepare(
+    "SELECT r.*, c.name AS client_name FROM ads_audit_runs r LEFT JOIN sprint_clients c ON c.id = r.client_id WHERE r.id=?"
+  ).bind(runId).first();
+  if (!row) {
+    return new Response("<!DOCTYPE html><html><body style=\"font-family:sans-serif;padding:40px;color:#1C1917\"><h2>Audit not found</h2><p>No ads-audit run matches this id.</p></body></html>", {
+      status: 404,
+      headers: { "Content-Type": "text/html; charset=utf-8" }
+    });
+  }
+  let sections = {};
+  let findings = [];
+  try { sections = JSON.parse(row.sections_json || "{}"); } catch {}
+  try { findings = JSON.parse(row.findings_json || "[]"); } catch {}
+  const sectionRows = Object.entries(sections).map(([k, v]) => `
+    <div class="a-metric">
+      <div class="a-metric-label">${escAudit(k)}</div>
+      <div class="a-metric-score">${escAudit(v)}<span>/100</span></div>
+    </div>`).join("");
+  const findingRows = findings.map((f) => `
+    <div class="a-finding" style="border-left-color:${auditSeverityColor(f.severity)}">
+      <div class="a-finding-title">${escAudit(f.title)}</div>
+      <div class="a-finding-sev" style="color:${auditSeverityColor(f.severity)}">${escAudit((f.severity || "").toUpperCase())}</div>
+      <div class="a-finding-evidence">${escAudit(f.evidence)}</div>
+      <div class="a-finding-action"><strong>Action:</strong> ${escAudit(f.action)}</div>
+    </div>`).join("");
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ads Audit — ${escAudit(row.client_name || row.client_id)}</title>
+<style>
+:root{--bg:#F5F3EE;--surface:#FFFFFF;--border:#E2DED5;--text:#1C1917;--text-dim:#78716C;--accent:#CF6344}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"DM Sans",sans-serif;background:var(--bg);color:var(--text);padding:32px}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-size:22px;margin-bottom:4px}
+.sub{color:var(--text-dim);font-size:13px;margin-bottom:24px}
+.overall{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:24px;display:flex;align-items:center;gap:20px}
+.overall .score{font-size:48px;font-weight:700;color:var(--accent)}
+.overall .score span{font-size:20px;color:var(--text-dim);font-weight:500}
+.a-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px}
+.a-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.a-metric-label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:6px}
+.a-metric-score{font-size:22px;font-weight:700}
+.a-metric-score span{font-size:12px;color:var(--text-dim);font-weight:500}
+.a-finding{background:var(--surface);border:1px solid var(--border);border-left:4px solid;border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.a-finding-title{font-weight:700;font-size:14px;margin-bottom:2px}
+.a-finding-sev{font-size:11px;font-weight:700;letter-spacing:0.5px;margin-bottom:8px}
+.a-finding-evidence{font-size:13px;color:var(--text-dim);margin-bottom:6px;line-height:1.5}
+.a-finding-action{font-size:13px;line-height:1.5}
+.back{display:inline-block;margin-bottom:16px;color:var(--accent);text-decoration:none;font-size:13px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="/">&larr; Back to Sprint Tracker</a>
+<h1>Ads Audit — ${escAudit(row.client_name || row.client_id)}</h1>
+<div class="sub">Run ${escAudit(row.id)} &middot; ${escAudit(row.run_at)}</div>
+<div class="overall"><div class="score">${escAudit(row.overall_score)}<span>/100 overall</span></div></div>
+<div class="a-metrics">${sectionRows}</div>
+<div>${findingRows || '<p style="color:var(--text-dim)">No findings recorded.</p>'}</div>
+</div>
+</body>
+</html>`;
+  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+}
+__name(handleAuditViewPage, "handleAuditViewPage");
 async function handleRoster(request, env) {
   const sec = request.headers.get("X-Internal-Secret");
   const ok = !!sec && ((env.ROSTER_READ_SECRET && sec === env.ROSTER_READ_SECRET) || (env.INTERNAL_AUDIT_SECRET && sec === env.INTERNAL_AUDIT_SECRET));
@@ -4966,6 +5244,115 @@ async function handleRoster(request, env) {
   });
 }
 __name(handleRoster, "handleRoster");
+function normActivityDomain(d) {
+  if (!d) return null;
+  return String(d).toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").trim() || null;
+}
+__name(normActivityDomain, "normActivityDomain");
+async function handleActivityIngest(request, env) {
+  const sec = request.headers.get("X-Internal-Secret");
+  const ok = !!sec && ((env.INTERNAL_AUDIT_SECRET && sec === env.INTERNAL_AUDIT_SECRET) || (env.ROSTER_READ_SECRET && sec === env.ROSTER_READ_SECRET));
+  if (!ok) return json({ error: "Unauthorized" }, 401);
+  const body = await request.json().catch(() => ({}));
+  const tool = body.tool && String(body.tool).trim();
+  const kind = body.kind && String(body.kind).trim();
+  if (!tool || !kind) return json({ error: "tool and kind are required" }, 400);
+  let clientId = body.client_id != null ? String(body.client_id) : null;
+  let clientName = body.client_name != null ? String(body.client_name) : null;
+  let resolved = false;
+  if (clientId) {
+    const row = await env.DB.prepare("SELECT id, name FROM sprint_clients WHERE id = ?1 LIMIT 1").bind(clientId).first().catch(() => null);
+    if (row) { clientName = row.name; resolved = true; }
+  } else {
+    const nd = normActivityDomain(body.domain);
+    const candidates = [nd, body.domain, body.client_name].filter((v) => v != null && String(v).length > 0);
+    for (const cand of candidates) {
+      const row = await env.DB.prepare("SELECT id, name FROM sprint_clients WHERE domain = ?1 OR name = ?1 LIMIT 1").bind(String(cand)).first().catch(() => null);
+      if (row) { clientId = String(row.id); clientName = row.name; resolved = true; break; }
+    }
+    if (!resolved && !clientName) clientName = nd || (body.domain ? String(body.domain) : null);
+  }
+  const score = body.score != null && body.score !== "" ? Number(body.score) : null;
+  const summary = body.summary != null ? String(body.summary) : null;
+  const artifactUrl = body.artifact_url != null ? String(body.artifact_url) : null;
+  // Outcome loop: an activity may carry a prediction (expected_outcome) and a review date.
+  // review_days defaults to 30 whenever a prediction is supplied.
+  const expectedOutcome = body.expected_outcome != null && String(body.expected_outcome).trim() !== "" ? String(body.expected_outcome).trim() : null;
+  let reviewDays = body.review_days != null && body.review_days !== "" ? Math.max(1, Math.round(Number(body.review_days))) : null;
+  if (!reviewDays && expectedOutcome) reviewDays = 30;
+  const ins = await env.DB.prepare(
+    `INSERT INTO client_activity (client_id, client_name, tool, kind, score, summary, artifact_url, expected_outcome, review_at)
+     VALUES (?,?,?,?,?,?,?,?, CASE WHEN ?9 IS NULL THEN NULL ELSE date('now', '+' || ?9 || ' days') END)`
+  ).bind(clientId, clientName, tool, kind, score, summary, artifactUrl, expectedOutcome, reviewDays).run();
+  return json({ ok: true, id: ins.meta?.last_row_id ?? null, resolved });
+}
+__name(handleActivityIngest, "handleActivityIngest");
+async function handleClientActivity(request, env, clientId) {
+  const rows = await env.DB.prepare(
+    "SELECT id, client_id, client_name, tool, kind, score, summary, artifact_url, created_at, expected_outcome, review_at, outcome_status, outcome_note FROM client_activity WHERE client_id = ?1 ORDER BY created_at DESC LIMIT 100"
+  ).bind(String(clientId)).all();
+  return json({ activity: rows.results || [] });
+}
+__name(handleClientActivity, "handleClientActivity");
+async function handleActivityFeed(request, env) {
+  const url = new URL(request.url);
+  const tool = url.searchParams.get("tool");
+  const clientId = url.searchParams.get("client_id");
+  const conditions = [];
+  const binds = [];
+  if (tool) { conditions.push("a.tool = ?"); binds.push(tool); }
+  if (clientId) { conditions.push("a.client_id = ?"); binds.push(clientId); }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const stmt = `
+    SELECT a.id, a.client_id, a.client_name, a.tool, a.kind, a.score, a.summary, a.artifact_url, a.created_at,
+      a.expected_outcome, a.review_at, a.outcome_status, a.outcome_note,
+      COALESCE(a.client_name, c.name) as display_name
+    FROM client_activity a
+    LEFT JOIN sprint_clients c ON c.id = a.client_id
+    ${where}
+    ORDER BY a.created_at DESC
+    LIMIT 200
+  `;
+  const rows = await env.DB.prepare(stmt).bind(...binds).all();
+  const activity = (rows.results || []).map((r) => ({ ...r, client_name: r.display_name || r.client_name || null }));
+  return json({ activity });
+}
+__name(handleActivityFeed, "handleActivityFeed");
+async function handleActivityDue(request, env) {
+  // The review queue: activities whose review date has arrived and that have no recorded outcome yet.
+  const rows = await env.DB.prepare(`
+    SELECT a.id, a.client_id, a.client_name, a.tool, a.kind, a.score, a.summary, a.artifact_url, a.created_at,
+      a.expected_outcome, a.review_at,
+      COALESCE(a.client_name, c.name) as display_name
+    FROM client_activity a
+    LEFT JOIN sprint_clients c ON c.id = a.client_id
+    WHERE a.review_at IS NOT NULL AND a.review_at <= date('now') AND a.outcome_status IS NULL
+    ORDER BY a.review_at ASC
+    LIMIT 100
+  `).all();
+  const due = (rows.results || []).map((r) => ({ ...r, client_name: r.display_name || r.client_name || null }));
+  // Scoreboard: lifetime hit rate of everything already reviewed.
+  const tally = await env.DB.prepare(
+    "SELECT outcome_status, COUNT(*) as n FROM client_activity WHERE outcome_status IS NOT NULL GROUP BY outcome_status"
+  ).all();
+  const scoreboard = {};
+  for (const t of tally.results || []) scoreboard[t.outcome_status] = t.n;
+  return json({ due, scoreboard });
+}
+__name(handleActivityDue, "handleActivityDue");
+async function handleActivityOutcome(request, env, activityId) {
+  const body = await request.json().catch(() => ({}));
+  const status = body.status && String(body.status).trim();
+  const allowed = ["confirmed", "missed", "partial", "na"];
+  if (!status || !allowed.includes(status)) return json({ error: "status must be one of: " + allowed.join(", ") }, 400);
+  const note = body.note != null && String(body.note).trim() !== "" ? String(body.note).trim() : null;
+  const res = await env.DB.prepare(
+    "UPDATE client_activity SET outcome_status = ?1, outcome_note = ?2, outcome_recorded_at = datetime('now') WHERE id = ?3"
+  ).bind(status, note, Number(activityId)).run();
+  if (!res.meta || res.meta.changes === 0) return json({ error: "Activity not found" }, 404);
+  return json({ ok: true });
+}
+__name(handleActivityOutcome, "handleActivityOutcome");
 export {
   worker_default as default
 };
