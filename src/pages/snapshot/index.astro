@@ -12,8 +12,8 @@ const detectedLocation = detectedCity
 const displayMarket = detectedLocation || 'your market'
 ---
 <Base
-  title="Your Market Snapshot — Marketing Performance Group"
-  description="Right now, buyers in your market are calling your competitors. See exactly how many are searching for your services — by name and address. Free 30-second snapshot. No email required."
+  title="See If Your Trade Is Still Open — Marketing Performance Group"
+  description="One company per trade, per market. Type your trade and your city to see the work moving in your market and whether your seat is still open. 41 years in the industry, 31 running Marketing Performance."
 >
   <!-- Minimal top nav — logo only -->
   <nav class="mp-nav">
@@ -32,77 +32,71 @@ const displayMarket = detectedLocation || 'your market'
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
           <h1 class="mp-h1">
-            How many people in {displayMarket} searched for your service this week?
+            One company per trade in {displayMarket}.<br />See if yours is still open.
           </h1>
           <p class="mp-hero-punch">
-            Type your service and find out.
+            Type your trade. We'll show you the work moving in your market, and whether the seat is still yours to take.
           </p>
 
         </div>
 
-        <!-- LIVE FORM — replaces the static screenshot from / -->
+        <!-- SEAT-CHECK TOOL — market size + seat status, computed live -->
         <div class="snap-card" id="snap-form-card">
           <div class="snap-card-head">
-            <span class="snap-card-eye">Free Buyer Sample · {displayMarket} · 24 Hours</span>
-            <span class="snap-card-loc">{detectedLocation ? `Detected: ${detectedLocation}` : 'Detecting your market…'}</span>
+            <span class="snap-card-eye">Free Market Check</span>
+            <span class="snap-card-loc">{detectedLocation ? `Detected: ${detectedLocation}` : 'Enter your market'}</span>
           </div>
 
           <form id="snapshot-form" class="snap-form" novalidate>
-            <label class="snap-sr-only" for="service-input">Your service</label>
-            <p class="snap-sentence">
-              Send me 10 buyers in <strong>{displayMarket}</strong> searching for
-              <input
-                type="text"
-                name="trade"
-                id="service-input"
-                placeholder="your service"
-                required
-                class="snap-inline-input"
-                autocomplete="off"
-                inputmode="text"
-              />.
-            </p>
+            <label class="snap-field-label" for="service-input">Your trade</label>
+            <input
+              type="text"
+              name="trade"
+              id="service-input"
+              placeholder="Roofing, plumbing, landscaping…"
+              required
+              class="snap-input"
+              autocomplete="off"
+              inputmode="text"
+            />
+
+            <label class="snap-field-label" for="city-input">Your market</label>
+            <input
+              type="text"
+              name="city"
+              id="city-input"
+              placeholder="City, state"
+              required
+              class="snap-input"
+              autocomplete="off"
+              value={detectedLocation}
+            />
 
             <button type="submit" class="snap-btn" id="snap-submit">
-              <span>Pull My Free Sample</span>
+              <span>Check my market</span>
               <span class="snap-btn-arrow">→</span>
             </button>
 
-            <p class="snap-micro">Delivered to your inbox within 24 hours. No call required.</p>
-
             <div class="snap-scarcity">
               <span class="snap-scarcity-dot"></span>
-              <span><strong>One business per service per market.</strong> If a competitor pulls this before you, you lose access.</span>
+              <span><strong>One company per trade, per market.</strong> Once your competitor locks it, you can't.</span>
             </div>
           </form>
+
+          <!-- Result, filled by JS after Check my market -->
+          <div class="snap-result" id="snap-result" hidden></div>
         </div>
       </div>
     </section>
 
-    <!-- ═══ 1.5 ACTUAL LIVE PULL — video demo (artifact) ═══ -->
+    <!-- ═══ 1.5 PROOF — Share Line, no names ═══ -->
     <section class="mp-proof">
       <header class="mp-proof-head" data-animate>
-        <h2 class="mp-proof-h">See your market right now using the free Snapshot tool.</h2>
+        <h2 class="mp-proof-h">The market didn't grow. Our clients did.</h2>
       </header>
-      <figure class="mp-proof-inner" data-animate data-delay="0.1">
-        <video
-          class="mp-proof-video"
-          src="/video/gutters-richmond.mp4"
-          poster="/video/gutters-richmond-poster.jpg"
-          autoplay
-          muted
-          loop
-          playsinline
-          preload="metadata"
-          width="1280"
-          height="800"
-          aria-label="Live data pull demonstration: building a buyer audience for Gutters in Richmond, Virginia. 812 in-market buyers identified with names, business emails, phones, and job titles."
-        ></video>
-        <figcaption class="mp-proof-cap">
-          <span class="mp-proof-cap-main"><strong>Actual live pull</strong> · Gutters, Richmond, VA</span>
-          <span class="mp-proof-cap-sub">Watch the system find real buyers in real time. Audience refreshes every 24 hours.</span>
-        </figcaption>
-      </figure>
+      <div class="mp-proof-inner" data-animate data-delay="0.1">
+        <p class="mp-lede mp-center">A Columbia landscaper booked 40% more jobs in two years while his market stayed flat. A pool builder grew installs 26% while the pool market lost half its volume. That work came off their competitors' schedules. One company per trade, per market.</p>
+      </div>
     </section>
 
     <!-- ═══ 2. HERO-ANCHOR TESTIMONIAL ═══ -->
@@ -300,127 +294,170 @@ const displayMarket = detectedLocation || 'your market'
 
     <!-- ═══ 10. CLOSE — CTA scrolls to top form ═══ -->
     <section class="mp-close">
-      <h2 class="mp-close-h1" data-animate>The buyers are already in your market.</h2>
-      <p class="mp-close-h2" data-animate data-delay="0.05">The only question is who gets to them first.</p>
-      <p class="mp-close-body" data-animate data-delay="0.1">Every day this runs without you, a competitor is capturing demand that should be yours. Your slot may already be gone. Pull the snapshot now — 30 seconds, no email, just your data.</p>
+      <h2 class="mp-close-h1" data-animate>One company per trade. Per market.</h2>
+      <p class="mp-close-h2" data-animate data-delay="0.05">The only question is whether yours is still open.</p>
+      <p class="mp-close-body" data-animate data-delay="0.1">Every month this runs without you, the contractor across town is booking the jobs the market isn't creating. The day he locks your trade, we start sending him the work. Check your market now.</p>
       <div class="mp-close-cta" data-animate data-delay="0.2">
-        <a href="#snap-form-card" class="mp-btn-primary" id="close-cta">Show Me Who's Searching in My Market</a>
-        <p class="mp-micro">No email required</p>
+        <a href="#snap-form-card" class="mp-btn-primary" id="close-cta">See If My Trade Is Still Open</a>
+        <p class="mp-micro">30 seconds. No email.</p>
       </div>
     </section>
 
   </main>
   <Footer />
 
-  <!-- Spinner overlay — dark, dramatic loading state -->
-  <div id="snap-spinner" aria-hidden="true">
-    <div class="spinner-inner">
-      <div class="spinner-ref" id="spinner-ref"></div>
-      <div class="spinner-query" id="spinner-query"></div>
-      <div class="spinner-bar-wrap">
-        <div class="spinner-bar-track">
-          <div class="spinner-bar" id="spinner-bar"></div>
-        </div>
-        <div class="spinner-pct" id="spinner-pct">0%</div>
-      </div>
-      <div class="spinner-log" id="spinner-log"></div>
-    </div>
-  </div>
-
   <script define:vars={{ detectedLocation }}>
-    const autoCity = detectedLocation;
+    // ── Market model (Census households x per-trade rate x avg job value) ──
+    const TRADES = {
+      'metal roof': { rate: 0.04, job: 12000, label: 'metal roofing' },
+      roofing:      { rate: 0.04,  job: 10000, label: 'roofing' },
+      roof:         { rate: 0.04,  job: 10000, label: 'roofing' },
+      gutter:       { rate: 0.035, job: 1850,  label: 'gutter' },
+      plumb:        { rate: 0.18,  job: 425,   label: 'plumbing' },
+      hvac:         { rate: 0.10,  job: 900,   label: 'HVAC' },
+      'landscape design': { rate: 0.035, job: 7000, label: 'landscape design' },
+      landscap:     { rate: 0.25,  job: 1400,  label: 'landscaping' },
+      lawn:         { rate: 0.25,  job: 1400,  label: 'lawn care' },
+      irrigation:   { rate: 0.10,  job: 1600,  label: 'irrigation' },
+      window:       { rate: 0.05,  job: 6500,  label: 'window & door' },
+      door:         { rate: 0.05,  job: 6500,  label: 'window & door' },
+      fenc:         { rate: 0.03,  job: 4200,  label: 'fencing' },
+      well:         { rate: 0.015, job: 7500,  label: 'water-well drilling' },
+      drill:        { rate: 0.015, job: 7500,  label: 'water-well drilling' },
+      paint:        { rate: 0.08,  job: 2600,  label: 'painting' },
+      mason:        { rate: 0.04,  job: 6500,  label: 'masonry' },
+      stone:        { rate: 0.04,  job: 6500,  label: 'stone & masonry' },
+      pool:         { rate: 0.008, job: 55000, label: 'pool' },
+      glass:        { rate: 0.07,  job: 425,   label: 'glass' },
+      dumpster:     { rate: 0.02,  job: 475,   label: 'dumpster rental' },
+      handyman:     { rate: 0.40,  job: 650,   label: 'handyman' },
+      deck:         { rate: 0.03,  job: 8000,  label: 'deck & dock' },
+      dock:         { rate: 0.03,  job: 8000,  label: 'deck & dock' },
+    };
+    const DEFAULT_TRADE = { rate: 0.06, job: 3000, label: '' };
 
-    // Prefill from URL params if present (preserves ad-link behavior)
+    // Owner-occupied single-family households by metro (Census-derived).
+    const METROS = {
+      'columbia':     { hh: 195000,  label: 'Columbia' },
+      'charleston':   { hh: 219000,  label: 'Charleston' },
+      'greenville':   { hh: 247000,  label: 'Greenville' },
+      'myrtle':       { hh: 166000,  label: 'Myrtle Beach' },
+      'florence':     { hh: 120000,  label: 'Florence' },
+      'augusta':      { hh: 143000,  label: 'Augusta' },
+      'atlanta':      { hh: 1361000, label: 'Atlanta' },
+      'charlotte':    { hh: 620000,  label: 'Charlotte' },
+      'raleigh':      { hh: 520000,  label: 'Raleigh' },
+      'savannah':     { hh: 130000,  label: 'Savannah' },
+    };
+    const DEFAULT_METRO_HH = 180000;
+
+    // Seats already held (trade label | metro key) — the real book.
+    const TAKEN = {
+      'roofing|columbia':1,'gutter|columbia':1,'plumbing|columbia':1,'landscaping|columbia':1,
+      'lawn care|columbia':1,'landscape design|columbia':1,'fencing|columbia':1,
+      'water-well drilling|columbia':1,'masonry|columbia':1,'stone & masonry|columbia':1,
+      'pool|columbia':1,'glass|columbia':1,'painting|columbia':1,'window & door|columbia':1,
+      'dumpster rental|columbia':1,'handyman|columbia':1,'deck & dock|columbia':1,
+      'fencing|charleston':1,'masonry|charleston':1,'stone & masonry|charleston':1,
+      'water-well drilling|greenville':1,'pool|myrtle':1,'pool|florence':1,
+      'dumpster rental|augusta':1,'metal roofing|atlanta':1,
+    };
+
+    const form    = document.getElementById('snapshot-form');
+    const tInput  = document.getElementById('service-input');
+    const cInput  = document.getElementById('city-input');
+    const result  = document.getElementById('snap-result');
+    const closeCta = document.getElementById('close-cta');
+
     const params = new URLSearchParams(window.location.search);
-    const paramService = params.get('trade') || params.get('service') || '';
-    if (paramService) {
-      document.getElementById('service-input').value = paramService;
-    }
+    const pTrade = params.get('trade') || params.get('service') || '';
+    if (pTrade && tInput) tInput.value = pTrade;
+    const pCity = params.get('city_state') || params.get('city') || '';
+    if (pCity && cInput && !cInput.value) cInput.value = pCity;
 
-    const form         = document.getElementById('snapshot-form');
-    const input        = document.getElementById('service-input');
-    const spinner      = document.getElementById('snap-spinner');
-    const spinnerRef   = document.getElementById('spinner-ref');
-    const spinnerQuery = document.getElementById('spinner-query');
-    const spinnerLog   = document.getElementById('spinner-log');
-    const spinnerBar   = document.getElementById('spinner-bar');
-    const spinnerPct   = document.getElementById('spinner-pct');
-    const closeCta     = document.getElementById('close-cta');
-
-    const STEP_MS = 1100;
-
-    // Final-close CTA: scroll to the form + focus the input
     closeCta?.addEventListener('click', (e) => {
       e.preventDefault();
       document.getElementById('snap-form-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setTimeout(() => input?.focus(), 600);
+      setTimeout(() => tInput?.focus(), 500);
     });
+
+    function matchTrade(s) {
+      s = s.toLowerCase();
+      for (const k in TRADES) { if (s.includes(k)) return TRADES[k]; }
+      return { ...DEFAULT_TRADE, label: s.trim() };
+    }
+    function matchMetro(s) {
+      const low = s.toLowerCase();
+      for (const k in METROS) { if (low.includes(k)) return { ...METROS[k], key: k }; }
+      const label = (s.split(',')[0] || 'your market').trim().replace(/\b\w/g, c => c.toUpperCase());
+      return { hh: DEFAULT_METRO_HH, label, key: label.toLowerCase(), est: true };
+    }
+    function fmtMoney(n) {
+      if (n >= 1e6) return '$' + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M';
+      return '$' + Math.round(n / 1000) + 'K';
+    }
+    const esc = (v) => (v || '').replace(/[<>"]/g, '');
 
     form?.addEventListener('submit', (e) => {
       e.preventDefault();
-      const fd      = new FormData(form);
-      const service = (fd.get('trade') || '').trim();
-      if (!service) {
-        input?.focus();
-        return;
-      }
+      const tv = (tInput.value || '').trim();
+      const cv = (cInput.value || '').trim();
+      if (!tv) { tInput.focus(); return; }
+      if (!cv) { cInput.focus(); return; }
 
-      const city = autoCity || 'your market';
-      const refNum      = 'EE-' + Date.now().toString(36).toUpperCase().slice(-6);
-      const totalEvents = 10000 + Math.floor(Math.random() * 40000);
+      const trade = matchTrade(tv);
+      const metro = matchMetro(cv);
+      const tl = trade.label || tv.toLowerCase();
+      const jobs = Math.round((metro.hh * trade.rate) / 100) * 100;
+      const value = jobs * trade.job;
+      const taken = !!TAKEN[tl + '|' + metro.key];
 
-      spinnerRef.textContent   = 'REF: ' + refNum + '  ·  ' + new Date().toLocaleString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      if (typeof gtag !== 'undefined') gtag('event', 'market_check', { market: cv, trade: tv });
+      if (typeof fbq !== 'undefined') fbq('track', 'Lead', { content_name: 'Market Check', content_category: tv });
+
+      const status = taken
+        ? '<div class="snap-r-status snap-r-taken"><strong>This seat is taken.</strong> A ' + tl + ' company already holds ' + metro.label + '. That is the whole point. When the other guy calls, we tell him it is gone.</div>'
+        : '<div class="snap-r-status snap-r-open"><strong>Your trade is still open in ' + metro.label + '.</strong> Lock it, and the guy across town can\'t.</div>';
+
+      const btnLabel = taken ? 'Get on the list for ' + metro.label : 'Lock ' + metro.label;
+
+      result.innerHTML =
+        '<p class="snap-r-eye">' + metro.label + (metro.est ? ' (est.)' : '') + ' &middot; ' + tl + '</p>' +
+        '<p class="snap-r-num">~' + jobs.toLocaleString() + '</p>' +
+        '<p class="snap-r-unit">' + tl + ' jobs a year in this market</p>' +
+        '<p class="snap-r-val">About ' + fmtMoney(value) + ' in ' + tl + ' work a year. The market isn\'t making more of it. It is getting split.</p>' +
+        status +
+        '<form id="lock-form" class="snap-lock">' +
+          '<input type="hidden" name="trade" value="' + esc(tv) + '" />' +
+          '<input type="hidden" name="market" value="' + esc(cv) + '" />' +
+          '<input type="hidden" name="request_type" value="lock_market" />' +
+          '<input type="text" name="name" placeholder="Your name" required class="snap-input" autocomplete="name" />' +
+          '<input type="email" name="email" placeholder="Email" required class="snap-input" autocomplete="email" />' +
+          '<input type="tel" name="phone" placeholder="Phone" required class="snap-input" autocomplete="tel" />' +
+          '<button type="submit" class="snap-btn"><span>' + btnLabel + '</span><span class="snap-btn-arrow">&rarr;</span></button>' +
+          '<p class="snap-micro">We confirm availability and call you. No obligation.</p>' +
+        '</form>';
+      result.hidden = false;
+      result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      const lockForm = document.getElementById('lock-form');
+      lockForm?.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const btn = lockForm.querySelector('button');
+        const span = btn.querySelector('span');
+        btn.disabled = true; span.textContent = 'Sending…';
+        try {
+          await fetch('https://formspree.io/f/mgodnjje', {
+            method: 'POST', headers: { 'Accept': 'application/json' }, body: new FormData(lockForm),
+          });
+          if (typeof gtag !== 'undefined') gtag('event', 'lock_market_submit', { market: cv, trade: tv });
+          if (typeof fbq !== 'undefined') fbq('track', 'Lead', { content_name: 'Lock Market', content_category: tv });
+          result.innerHTML = '<p class="snap-r-eye">' + metro.label + ' &middot; ' + tl + '</p><p class="snap-r-num">&check;</p><p class="snap-r-unit">You are in. We confirm ' + metro.label + ' is open and call you.</p>';
+        } catch (err) {
+          btn.disabled = false; span.textContent = 'Try again';
+        }
       });
-      spinnerQuery.textContent = 'QUERY: ' + city + ' / ' + service + ' — last 72 hrs';
-
-      const steps = [
-        'INIT      connecting to intent index...',
-        'INDEX     ' + totalEvents.toLocaleString() + ' search events in scope — ' + city,
-        'FILTER    applying service classification: ' + service,
-        'MATCH     cross-referencing 72-hr decision window...',
-        'EXCLUDE   removing previously contacted records...',
-        'BUILD     compiling buyer signal summary...',
-        'READY     data package compiled — access granted.',
-      ];
-
-      const TOTAL_MS = steps.length * STEP_MS + 600;
-      spinner.classList.add('on');
-      runSteps(steps);
-
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'snapshot_gate1_submit', { market: city, trade: service });
-      }
-      if (typeof fbq !== 'undefined') {
-        fbq('track', 'Lead', { content_name: 'Market Snapshot', content_category: service });
-      }
-
-      setTimeout(() => {
-        const p = new URLSearchParams({ city_state: city, trade: service });
-        window.location.href = '/snapshot/preview?' + p.toString();
-      }, TOTAL_MS);
     });
-
-    function runSteps(steps) {
-      let i = 0;
-      spinnerLog.innerHTML = '';
-      spinnerBar.style.width = '0%';
-      spinnerPct.textContent = '0%';
-      function next() {
-        if (i >= steps.length) return;
-        const el = document.createElement('div');
-        el.className = 'log-line' + (i === steps.length - 1 ? ' log-ready' : '');
-        el.textContent = steps[i];
-        spinnerLog.appendChild(el);
-        spinnerLog.scrollTop = spinnerLog.scrollHeight;
-        const pct = Math.round(((i + 1) / steps.length) * 100);
-        spinnerBar.style.width = pct + '%';
-        spinnerPct.textContent = pct + '%';
-        i++;
-        if (i < steps.length) setTimeout(next, STEP_MS);
-      }
-      next();
-    }
   </script>
 </Base>
 
@@ -748,6 +785,50 @@ const displayMarket = detectedLocation || 'your market'
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.4; transform: scale(1.35); }
   }
+
+  /* ─── Seat-check result ─── */
+  .snap-field-label {
+    font-family: var(--font-t);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--graphite); margin-bottom: 8px;
+  }
+  .snap-result {
+    margin-top: 26px; padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .snap-r-eye {
+    font-family: var(--font-t);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--mid-gray);
+  }
+  .snap-r-num {
+    font-family: var(--font-d);
+    font-size: clamp(48px, 8vw, 68px);
+    font-weight: 600; letter-spacing: -0.03em; line-height: 1;
+    color: var(--graphite); margin-top: 6px;
+  }
+  .snap-r-unit {
+    font-family: var(--font-t);
+    font-size: 15px; color: var(--mid-gray); margin-top: 6px;
+  }
+  .snap-r-val {
+    font-family: var(--font-t);
+    font-size: 14px; line-height: 1.5;
+    color: var(--graphite); margin-top: 14px; letter-spacing: -0.01em;
+  }
+  .snap-r-status {
+    margin-top: 16px; padding: 14px 16px;
+    font-family: var(--font-t);
+    font-size: 14px; line-height: 1.5;
+    letter-spacing: -0.01em; border-radius: 8px;
+  }
+  .snap-r-open { background: rgba(0,113,227,0.06); border: 1px solid rgba(0,113,227,0.25); }
+  .snap-r-open strong { color: var(--blue); }
+  .snap-r-taken { background: rgba(179,53,46,0.06); border: 1px solid rgba(179,53,46,0.25); }
+  .snap-r-taken strong { color: #b3352e; }
+  .snap-lock { display: flex; flex-direction: column; margin-top: 20px; }
 
   /* ─── PROOF ARTIFACT (HVAC intent screenshot) ─── */
   .mp-proof {
@@ -1388,4 +1469,25 @@ const displayMarket = detectedLocation || 'your market'
     .mp-proof { padding: 24px 22px 56px; }
     .mp-proof-head { margin-bottom: 18px; }
   }
+</style>
+
+<!-- Global styles for the JS-injected seat-check result (Astro scopes normal <style>, so innerHTML content needs is:global) -->
+<style is:global>
+  .snap-result { margin-top: 26px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .snap-r-eye { font-family: var(--font-t); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mid-gray); margin: 0; }
+  .snap-r-num { font-family: var(--font-d); font-size: clamp(48px, 8vw, 68px); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--graphite); margin: 6px 0 0; }
+  .snap-r-unit { font-family: var(--font-t); font-size: 15px; color: var(--mid-gray); margin: 6px 0 0; }
+  .snap-r-val { font-family: var(--font-t); font-size: 14px; line-height: 1.5; color: var(--graphite); margin: 14px 0 0; letter-spacing: -0.01em; }
+  .snap-r-status { margin: 16px 0 0; padding: 14px 16px; font-family: var(--font-t); font-size: 14px; line-height: 1.5; letter-spacing: -0.01em; border-radius: 8px; }
+  .snap-r-open { background: rgba(0,113,227,0.06); border: 1px solid rgba(0,113,227,0.25); }
+  .snap-r-open strong { color: var(--blue); }
+  .snap-r-taken { background: rgba(179,53,46,0.06); border: 1px solid rgba(179,53,46,0.25); }
+  .snap-r-taken strong { color: #b3352e; }
+  .snap-lock { display: flex; flex-direction: column; margin-top: 20px; }
+  .snap-lock .snap-input { width: 100%; box-sizing: border-box; background: var(--canvas); border: 1px solid var(--border); border-radius: 0; color: var(--graphite); font-family: var(--font-t); font-size: 17px; letter-spacing: -0.022em; padding: 14px 16px; margin-bottom: 12px; outline: none; -webkit-appearance: none; }
+  .snap-lock .snap-input:focus { border-color: var(--blue); background: var(--white); }
+  .snap-lock .snap-btn { width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 10px; background: var(--blue); color: #fff; font-family: var(--font-t); font-size: 17px; font-weight: 400; letter-spacing: -0.022em; padding: 14px 20px; border: none; border-radius: 980px; cursor: pointer; line-height: 1; margin-top: 4px; }
+  .snap-lock .snap-btn:disabled { opacity: 0.6; cursor: wait; }
+  .snap-lock .snap-btn-arrow { display: inline-block; }
+  .snap-lock .snap-micro { font-family: var(--font-t); font-size: 12px; color: var(--light-gray); text-align: center; margin-top: 12px; }
 </style>

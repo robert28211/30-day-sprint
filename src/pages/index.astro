@@ -3,8 +3,8 @@ import Base from '../layouts/Base.astro'
 import Footer from '../components/Footer.astro'
 ---
 <Base
-  title="Marketing Performance Group — See Who's Buying in Your Market"
-  description="Right now, homeowners in your market are shopping for the exact job you do. We'll hand you their names this week. Name, phone, address. Not shared Angi leads. Not zip-code ad spray. Actual households researching your service, handed to you before they call anyone else. 2X revenue guarantee or we work free."
+  title="Marketing Performance Group — Your Market's Jobs, Minus Your Competitor"
+  description="The home-services market barely added a job in three years. The growth was price, not more work. Yet our clients booked double-digit more jobs, taken off their competitors' schedules. One company per trade, per market. 41 years in the industry, 31 running Marketing Performance."
 >
   <!-- Minimal top nav. Logo only. Everything else moved to footer. -->
   <nav class="mp-nav">
@@ -23,49 +23,93 @@ import Footer from '../components/Footer.astro'
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
           <h1 class="mp-h1">
-            <span class="hero-word">Right </span>
-            <span class="hero-word">now, </span>
-            <span class="hero-word">homeowners </span>
-            <span class="hero-word">in </span>
-            <span class="hero-word">your </span>
+            <span class="hero-word">Your </span>
             <span class="hero-word">market </span>
-            <span class="hero-word">are </span>
-            <span class="hero-word">shopping </span>
-            <span class="hero-word">for </span>
-            <span class="hero-word">the </span>
-            <span class="hero-word">exact </span>
-            <span class="hero-word">job </span>
-            <span class="hero-word">you </span>
-            <span class="hero-word">do. </span>
-            <span class="hero-word">We'll </span>
-            <span class="hero-word">hand </span>
-            <span class="hero-word">you </span>
-            <span class="hero-word">their </span>
-            <span class="hero-word">names </span>
-            <span class="hero-word">this </span>
-            <span class="hero-word">week.</span>
+            <span class="hero-word">didn't </span>
+            <span class="hero-word">grow </span>
+            <span class="hero-word">last </span>
+            <span class="hero-word">year.</span><br />
+            <span class="hero-word">Somebody's </span>
+            <span class="hero-word">schedule </span>
+            <span class="hero-word">did.</span>
           </h1>
           <div class="mp-hero-prose hero-sub">
-            <p>Name, phone, address. Not shared Angi leads you split four ways. Not a spray-the-whole-zip ad campaign praying the right person scrolls past. The actual households researching your service right now, pulled and handed to you before they call anyone else.</p>
+            <p>The growth everyone talks about is just prices going up. The number of actual jobs barely moved.</p>
+            <p>So when the guy across town gets busier, that work is coming off your schedule. We put it back on yours, and lock him out. One company per trade, per market.</p>
           </div>
 
           <div class="hero-cta mp-hero-cta-block">
-            <a href="/snapshot" class="mp-btn-primary">See Who's Buying in My Market</a>
-            <p class="mp-micro"><strong>31 years in this trade. Zero refunds.</strong></p>
+            <a href="/snapshot" class="mp-btn-primary">See if your trade is still open</a>
+            <p class="mp-micro"><strong>41 years in the industry. 31 running Marketing Performance.</strong></p>
           </div>
         </div>
 
-        <!-- Snapshot artifact. Actual buyer pull. -->
+        <!-- Divergence chart. Market flat, one contractor climbing. -->
         <figure class="mp-artifact">
-          <img
-            src="/img/snapshot-hvac.png"
-            alt="Buyer pull. Columbia, SC HVAC, last 72 hours. 233 active searchers identified, 85 multi-site visitors, 61 uncaptured with no provider contacted, competitor exposure locked until activation. Contact data preview blurred."
-            class="mp-artifact-img"
-            loading="eager"
-          />
-          <figcaption class="mp-artifact-cap">Actual buyer pull · Columbia, SC HVAC</figcaption>
+          <div class="mp-chart" role="img" aria-label="Chart. Over three years the market stays flat while one contractor's completed jobs climb about 40 percent higher.">
+            <svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+              <!-- title -->
+              <text x="34" y="42" class="mp-c-title">RELATIVE JOBS COMPLETED</text>
+              <text x="34" y="62" class="mp-c-sub">Indexed to start = 100</text>
+              <!-- legend -->
+              <line x1="34" y1="92" x2="66" y2="92" class="mp-c-line-you" />
+              <text x="74" y="97" class="mp-c-leg">THIS CONTRACTOR</text>
+              <line x1="250" y1="92" x2="282" y2="92" class="mp-c-line-mkt" />
+              <text x="290" y="97" class="mp-c-leg mp-c-leg-mkt">THE MARKET</text>
+              <!-- gridlines -->
+              <line x1="90" y1="140" x2="646" y2="140" class="mp-c-grid" />
+              <line x1="90" y1="252" x2="646" y2="252" class="mp-c-grid mp-c-grid-base" />
+              <line x1="90" y1="364" x2="646" y2="364" class="mp-c-grid" />
+              <!-- market line: flat -->
+              <polyline points="90,252 275,254 460,258 620,252" class="mp-c-line-mkt" fill="none" />
+              <circle cx="620" cy="252" r="4" class="mp-c-dot-mkt" />
+              <!-- contractor line: climbing -->
+              <polyline points="90,252 275,196 460,156 620,124" class="mp-c-line-you" fill="none" />
+              <circle cx="620" cy="124" r="5" class="mp-c-dot-you" />
+              <!-- callout -->
+              <g class="mp-c-callout">
+                <rect x="452" y="70" width="196" height="46" rx="6" />
+                <text x="466" y="93" class="mp-c-call-1">+40% more jobs.</text>
+                <text x="466" y="108" class="mp-c-call-2">Same market. Same prices.</text>
+              </g>
+              <!-- x labels -->
+              <text x="90" y="404" class="mp-c-x">START</text>
+              <text x="275" y="404" class="mp-c-x" text-anchor="middle">YEAR 1</text>
+              <text x="460" y="404" class="mp-c-x" text-anchor="middle">YEAR 2</text>
+              <text x="620" y="404" class="mp-c-x" text-anchor="end">YEAR 3</text>
+            </svg>
+          </div>
+          <figcaption class="mp-artifact-cap">Verified client. Jobs completed, not revenue.</figcaption>
         </figure>
       </div>
+    </section>
+
+    <!-- ═══ 1b. PROOF CARDS (Share Line) ═══ -->
+    <section class="mp-proofband">
+      <div class="mp-proofband-inner">
+        <article class="mp-pcard" data-animate>
+          <p class="mp-pcard-trade">Landscaping</p>
+          <p class="mp-pcard-city">Columbia, SC</p>
+          <p class="mp-pcard-market mp-flat">Market flat</p>
+          <p class="mp-pcard-num">+40%</p>
+          <p class="mp-pcard-unit">jobs completed</p>
+        </article>
+        <article class="mp-pcard" data-animate data-delay="0.05">
+          <p class="mp-pcard-trade">Pools</p>
+          <p class="mp-pcard-city">Midlands</p>
+          <p class="mp-pcard-market mp-down">&#8595; Market down ~50%</p>
+          <p class="mp-pcard-num">+26%</p>
+          <p class="mp-pcard-unit">installs</p>
+        </article>
+        <article class="mp-pcard" data-animate data-delay="0.1">
+          <p class="mp-pcard-trade">Metal roofing</p>
+          <p class="mp-pcard-city">SC &amp; GA</p>
+          <p class="mp-pcard-market mp-down">&#8595; Market down 15&#8211;25%</p>
+          <p class="mp-pcard-num">+30%</p>
+          <p class="mp-pcard-unit">material sold</p>
+        </article>
+      </div>
+      <p class="mp-proofband-foot">Every job they booked came off a competitor's schedule. One company per trade, per market.</p>
     </section>
 
     <!-- ═══ 2. PROBLEM ═══ -->
@@ -370,6 +414,81 @@ import Footer from '../components/Footer.astro'
   }
   @media (max-width: 1023px) {
     .mp-artifact { max-width: 100%; }
+  }
+
+  /* Divergence chart (replaces snapshot image) */
+  .mp-chart {
+    width: 100%;
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
+    padding: 20px 24px 8px;
+  }
+  .mp-chart svg { width: 100%; height: auto; display: block; }
+  .mp-c-title { font-family: var(--font-t); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; fill: var(--graphite); }
+  .mp-c-sub   { font-family: var(--font-t); font-size: 12px; fill: var(--light-gray); }
+  .mp-c-leg   { font-family: var(--font-t); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; fill: var(--graphite); }
+  .mp-c-leg-mkt { fill: var(--mid-gray); font-weight: 500; }
+  .mp-c-x     { font-family: var(--font-t); font-size: 11px; letter-spacing: 0.04em; fill: var(--light-gray); }
+  .mp-c-grid  { stroke: #ececec; stroke-width: 1; }
+  .mp-c-grid-base { stroke: #dedede; stroke-dasharray: 3 4; }
+  .mp-c-line-you { stroke: var(--graphite); stroke-width: 2.75; stroke-linecap: round; stroke-linejoin: round; }
+  .mp-c-line-mkt { stroke: #c4c4c4; stroke-width: 2.75; stroke-linecap: round; stroke-linejoin: round; }
+  .mp-c-dot-you { fill: var(--graphite); }
+  .mp-c-dot-mkt { fill: #c4c4c4; }
+  .mp-c-callout rect { fill: var(--white); stroke: var(--border); stroke-width: 1; }
+  .mp-c-call-1 { font-family: var(--font-t); font-size: 14px; font-weight: 700; fill: var(--graphite); }
+  .mp-c-call-2 { font-family: var(--font-t); font-size: 12px; fill: var(--mid-gray); }
+
+  /* ─── 1b. PROOF CARDS (Share Line) ─── */
+  .mp-proofband { padding: 0 32px 28px; background: var(--canvas); }
+  .mp-proofband-inner {
+    max-width: 1320px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr; gap: 20px;
+  }
+  @media (min-width: 720px) {
+    .mp-proofband-inner { grid-template-columns: repeat(3, 1fr); }
+  }
+  .mp-pcard {
+    background: var(--white);
+    box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
+    padding: 26px 28px 30px;
+  }
+  .mp-pcard-trade {
+    font-family: var(--font-t); font-size: 13px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--graphite);
+  }
+  .mp-pcard-city {
+    font-family: var(--font-t); font-size: 13px; color: var(--mid-gray);
+    margin-top: 2px;
+  }
+  .mp-pcard-market {
+    font-family: var(--font-t); font-size: 13px; font-weight: 600;
+    letter-spacing: 0.01em; margin-top: 18px;
+    padding-top: 16px; border-top: 1px solid var(--border);
+  }
+  .mp-flat { color: var(--mid-gray); }
+  .mp-down { color: #b3352e; }
+  .mp-pcard-num {
+    font-family: var(--font-d); font-size: clamp(44px, 6vw, 60px);
+    font-weight: 600; letter-spacing: -0.03em; line-height: 1;
+    color: var(--graphite); margin-top: 12px;
+  }
+  .mp-pcard-unit {
+    font-family: var(--font-t); font-size: 13px; color: var(--mid-gray);
+    margin-top: 6px;
+  }
+  .mp-proofband-foot {
+    max-width: 1320px; margin: 22px auto 0;
+    font-family: var(--font-t); font-size: 15px; line-height: 1.5;
+    letter-spacing: -0.01em; color: var(--mid-gray);
+  }
+  @media (max-width: 768px) {
+    .mp-proofband { padding: 0 22px 24px; }
+    /* Chart is too tall on phones and buries the cards below the fold.
+       Drop it on mobile; the cards carry the proof there. */
+    .mp-artifact { display: none; }
+    .mp-hero { padding-bottom: 8px; }
   }
 
   /* ─── 2. PROBLEM ─── */
