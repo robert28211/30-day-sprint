@@ -69,7 +69,7 @@ const $$Base = createComponent(($$result, $$props, $$slots) => {
       // Stubs so gtag/fbq calls before load don't throw
       window.fbq = window.fbq || function(){(window._fbq=window._fbq||[]).push(arguments)};
       window._fbq = window._fbq || [];
-    <\/script>`, "</head> <body> ", ' <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1362717861424529&ev=PageView&noscript=1"></noscript> ', "</body></html>"])), title, addAttribute(description, "content"), renderHead(), renderSlot($$result, $$slots["default"]), renderScript($$result, "/Users/robbiebutt/.claude/worktrees/youthful-tu/src/layouts/Base.astro?astro&type=script&index=0&lang.ts"));
-}, "/Users/robbiebutt/.claude/worktrees/youthful-tu/src/layouts/Base.astro", void 0);
+    <\/script>`, "</head> <body> ", ' <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1362717861424529&ev=PageView&noscript=1"></noscript> ', "</body></html>"])), title, addAttribute(description, "content"), renderHead(), renderSlot($$result, $$slots["default"]), renderScript($$result, "/Users/robbiebutt/.claude/worktrees/video-hub/src/layouts/Base.astro?astro&type=script&index=0&lang.ts"));
+}, "/Users/robbiebutt/.claude/worktrees/video-hub/src/layouts/Base.astro", void 0);
 
 export { $$Base as $ };

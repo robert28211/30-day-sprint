@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 import { renderers } from './renderers.mjs';
 import { c as createExports, s as serverEntrypointModule } from './chunks/_@astrojs-ssr-adapter_CrZyF4mt.mjs';
-import { manifest } from './manifest_L5K0Fu8b.mjs';
+import { manifest } from './manifest_DqjjpT0V.mjs';
 
 const serverIslandMap = new Map();;
 
@@ -35,7 +35,8 @@ const _page26 = () => import('./pages/snapshot/_id_.astro.mjs');
 const _page27 = () => import('./pages/snapshot.astro.mjs');
 const _page28 = () => import('./pages/the-build.astro.mjs');
 const _page29 = () => import('./pages/toolkit.astro.mjs');
-const _page30 = () => import('./pages/index.astro.mjs');
+const _page30 = () => import('./pages/videos.astro.mjs');
+const _page31 = () => import('./pages/index.astro.mjs');
 const pageMap = new Map([
     ["node_modules/@astrojs/cloudflare/dist/entrypoints/image-endpoint.js", _page0],
     ["src/pages/api/onboarding.ts", _page1],
@@ -67,7 +68,8 @@ const pageMap = new Map([
     ["src/pages/snapshot/index.astro", _page27],
     ["src/pages/the-build.astro", _page28],
     ["src/pages/toolkit/index.astro", _page29],
-    ["src/pages/index.astro", _page30]
+    ["src/pages/videos.astro", _page30],
+    ["src/pages/index.astro", _page31]
 ]);
 
 const _manifest = Object.assign(manifest, {

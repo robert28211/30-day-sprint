@@ -8,14 +8,11 @@ const videos = [
   { id: '07f7b5', file: 'Captions_07F7B5', title: '', script: '' },
   { id: '186e2b', file: 'Captions_186E2B', title: '', script: '' },
   { id: '41465c', file: 'Captions_41465C', title: '', script: '' },
-  { id: '43ee2f', file: 'Captions_43EE2F', title: '', script: '' },
   { id: 'af561e', file: 'Captions_AF561E', title: '', script: '' },
   { id: 'b1d9bc', file: 'Captions_B1D9BC', title: '', script: '' },
   { id: 'b8dd4c', file: 'Captions_B8DD4C', title: '', script: '' },
   { id: 'c317bc', file: 'Captions_C317BC', title: '', script: '' },
   { id: 'c51ded', file: 'Captions_C51DED', title: '', script: '' },
-  { id: 'd797d2', file: 'Captions_D797D2', title: '', script: '' },
-  { id: 'f0aefe', file: 'Captions_F0AEFE', title: '', script: '' },
 ]
 ---
 <Base
@@ -101,8 +98,8 @@ const videos = [
 
   .vh-grid-section { background: #ffffff; padding: 64px 0 80px; }
   .vh-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 40px 32px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 36px 24px; max-width: 960px; margin: 0 auto;
   }
   .vh-card { display: flex; flex-direction: column; }
   .vh-player { position: relative; aspect-ratio: 9 / 16; background: #1d1d1f; overflow: hidden; border-radius: 8px; box-shadow: rgba(0,0,0,0.22) 3px 5px 30px 0px; }
@@ -133,6 +130,6 @@ const videos = [
 
   @media (max-width: 640px) {
     .vh-hero { padding: 64px 0 40px; }
-    .vh-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 28px 20px; }
+    .vh-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 24px 16px; }
   }
 </style>
