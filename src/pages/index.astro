@@ -14,6 +14,7 @@ const homeCards = [
   { trade: 'Gutters',          loc: 'Columbia & Florence',   num: '+22%', unit: 'more jobs',     market: 'in a flat market', down: false },
   { trade: 'Painting',         loc: 'Columbia',              num: '+20%', unit: 'more jobs',     market: 'in a flat market', down: false },
   { trade: 'Windows & doors',  loc: 'Columbia',              num: '+16%', unit: 'more jobs',     market: 'while the market shrank', down: true },
+  { trade: 'Pools',            loc: 'Midlands',              num: '+26%', unit: 'more installs', market: 'while pools fell 50%', down: true },
   { trade: 'Metal roofing',    loc: 'SC & GA',               num: '+30%', unit: 'more sold',     market: 'while the market shrank 15–25%', down: true },
 ];
 ---
@@ -59,50 +60,14 @@ const homeCards = [
           </div>
         </div>
 
-        <!-- Divergence chart. Market flat, one contractor climbing. -->
-        <figure class="mp-artifact">
-          <div class="mp-chart" role="img" aria-label="Chart. Over three years the market stays flat while one contractor's completed jobs climb about 40 percent higher.">
-            <svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-              <defs>
-                <linearGradient id="mpYouFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#0071e3" stop-opacity="0.16" />
-                  <stop offset="100%" stop-color="#0071e3" stop-opacity="0" />
-                </linearGradient>
-              </defs>
-              <!-- title -->
-              <text x="34" y="42" class="mp-c-title">RELATIVE JOBS COMPLETED</text>
-              <text x="34" y="62" class="mp-c-sub">Indexed to start = 100</text>
-              <!-- legend -->
-              <line x1="34" y1="92" x2="66" y2="92" class="mp-c-line-you" />
-              <text x="74" y="97" class="mp-c-leg">THIS CONTRACTOR</text>
-              <line x1="250" y1="92" x2="282" y2="92" class="mp-c-line-mkt" />
-              <text x="290" y="97" class="mp-c-leg mp-c-leg-mkt">THE MARKET</text>
-              <!-- gridlines -->
-              <line x1="90" y1="140" x2="646" y2="140" class="mp-c-grid" />
-              <line x1="90" y1="252" x2="646" y2="252" class="mp-c-grid mp-c-grid-base" />
-              <line x1="90" y1="364" x2="646" y2="364" class="mp-c-grid" />
-              <!-- market line: flat -->
-              <polyline points="90,252 275,254 460,258 620,252" class="mp-c-line-mkt" fill="none" />
-              <circle cx="620" cy="252" r="4" class="mp-c-dot-mkt" />
-              <!-- area fill under contractor line -->
-              <polygon points="90,252 275,196 460,156 620,124 620,364 90,364" fill="url(#mpYouFill)" />
-              <!-- contractor line: climbing -->
-              <polyline points="90,252 275,196 460,156 620,124" class="mp-c-line-you" fill="none" />
-              <circle cx="620" cy="124" r="5" class="mp-c-dot-you" />
-              <!-- callout -->
-              <g class="mp-c-callout">
-                <rect x="452" y="70" width="196" height="46" rx="6" />
-                <text x="466" y="93" class="mp-c-call-1">+40% more jobs.</text>
-                <text x="466" y="108" class="mp-c-call-2">Same market. Same prices.</text>
-              </g>
-              <!-- x labels -->
-              <text x="90" y="404" class="mp-c-x">START</text>
-              <text x="275" y="404" class="mp-c-x" text-anchor="middle">YEAR 1</text>
-              <text x="460" y="404" class="mp-c-x" text-anchor="middle">YEAR 2</text>
-              <text x="620" y="404" class="mp-c-x" text-anchor="end">YEAR 3</text>
-            </svg>
+        <!-- Hero VSL. Autoplays muted; burned-in captions carry it, controls allow unmute. -->
+        <figure class="mp-artifact mp-artifact-video">
+          <div class="mp-hero-video">
+            <video autoplay muted loop playsinline controls poster="/video/hub/hero-vsl-poster.jpg">
+              <source src="/video/hub/hero-vsl.mp4" type="video/mp4" />
+            </video>
           </div>
-          <figcaption class="mp-artifact-cap">Verified client. Jobs completed, not revenue.</figcaption>
+          <figcaption class="mp-artifact-cap">60 seconds. Why your phone isn't ringing.</figcaption>
         </figure>
       </div>
     </section>
@@ -110,7 +75,6 @@ const homeCards = [
     <!-- ═══ 1b. PROOF CARDS (Share Line) ═══ -->
     <ProofCards
       cards={homeCards}
-      video={{ src: '/video/hub/hero-vsl.mp4', poster: '/video/hub/hero-vsl-poster.jpg', label: 'Watch: why your phone isn’t ringing · 60 seconds' }}
       foot="Every one of those jobs came off a competitor's schedule. One company per trade, per market."
     />
 
@@ -338,35 +302,21 @@ const homeCards = [
     .mp-artifact { max-width: 100%; }
   }
 
-  /* Divergence chart (replaces snapshot image) */
-  .mp-chart {
+  /* Hero VSL (replaces the divergence chart) */
+  .mp-hero-video {
     width: 100%;
-    background: var(--white);
+    background: #1d1d1f;
     border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
     box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
-    padding: 20px 24px 8px;
   }
-  .mp-chart svg { width: 100%; height: auto; display: block; }
-  .mp-c-title { font-family: var(--font-t); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; fill: var(--graphite); }
-  .mp-c-sub   { font-family: var(--font-t); font-size: 12px; fill: var(--light-gray); }
-  .mp-c-leg   { font-family: var(--font-t); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; fill: var(--graphite); }
-  .mp-c-leg-mkt { fill: var(--mid-gray); font-weight: 500; }
-  .mp-c-x     { font-family: var(--font-t); font-size: 11px; letter-spacing: 0.04em; fill: var(--light-gray); }
-  .mp-c-grid  { stroke: #ececec; stroke-width: 1; }
-  .mp-c-grid-base { stroke: #dedede; stroke-dasharray: 3 4; }
-  .mp-c-line-you { stroke: var(--blue); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-  .mp-c-line-mkt { stroke: #c4c4c4; stroke-width: 2.75; stroke-linecap: round; stroke-linejoin: round; }
-  .mp-c-dot-you { fill: var(--blue); }
-  .mp-c-dot-mkt { fill: #c4c4c4; }
-  .mp-c-callout rect { fill: var(--white); stroke: var(--border); stroke-width: 1; }
-  .mp-c-call-1 { font-family: var(--font-t); font-size: 14px; font-weight: 700; fill: var(--graphite); }
-  .mp-c-call-2 { font-family: var(--font-t); font-size: 12px; fill: var(--mid-gray); }
+  .mp-hero-video video { width: 100%; height: 100%; display: block; }
 
   /* Proof-card styles now live in ProofCards.astro (shared by / and /snapshot). */
   @media (max-width: 768px) {
-    /* Chart is too tall on phones and buries the cards below the fold.
-       Drop it on mobile; the cards carry the proof there. */
-    .mp-artifact { display: none; }
+    /* Unlike the old chart, the video stays on mobile — 16:9 is short enough
+       not to bury the proof cards. */
     .mp-hero { padding-bottom: 8px; }
   }
 
