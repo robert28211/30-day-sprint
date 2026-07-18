@@ -1,0 +1,138 @@
+---
+import Base from '../layouts/Base.astro'
+import Nav from '../components/Nav.astro'
+import Footer from '../components/Footer.astro'
+
+// Map each video to its title + script when matched. Leave title empty until matched.
+const videos = [
+  { id: '07f7b5', file: 'Captions_07F7B5', title: '', script: '' },
+  { id: '186e2b', file: 'Captions_186E2B', title: '', script: '' },
+  { id: '41465c', file: 'Captions_41465C', title: '', script: '' },
+  { id: '43ee2f', file: 'Captions_43EE2F', title: '', script: '' },
+  { id: 'af561e', file: 'Captions_AF561E', title: '', script: '' },
+  { id: 'b1d9bc', file: 'Captions_B1D9BC', title: '', script: '' },
+  { id: 'b8dd4c', file: 'Captions_B8DD4C', title: '', script: '' },
+  { id: 'c317bc', file: 'Captions_C317BC', title: '', script: '' },
+  { id: 'c51ded', file: 'Captions_C51DED', title: '', script: '' },
+  { id: 'd797d2', file: 'Captions_D797D2', title: '', script: '' },
+  { id: 'f0aefe', file: 'Captions_F0AEFE', title: '', script: '' },
+]
+---
+<Base
+  title="Watch — You're Not Short on Leads. You're Short on Calls. | EngageEngine™"
+  description="Short films on why interested buyers never become phone calls. The behavioral science behind the calls you never received."
+>
+  <Nav />
+  <main>
+
+    <section class="vh-hero">
+      <div class="vh-wrap">
+        <span class="vh-eyebrow">The Series</span>
+        <h1>You're not short on leads.<br />You're short on calls.</h1>
+        <p class="vh-sub">Short films on the invisible steps where interested buyers stop before they ever dial. Each one is built on a real study of how people actually decide.</p>
+      </div>
+    </section>
+
+    <section class="vh-grid-section">
+      <div class="vh-wrap">
+        <div class="vh-grid">
+          {videos.map((v, i) => (
+            <article class="vh-card">
+              <div class="vh-player" data-src={`/video/hub/v-${v.id}.mp4`}>
+                <video
+                  poster={`/video/hub/v-${v.id}-poster.jpg`}
+                  preload="none"
+                  playsinline
+                  controls
+                >
+                  <source src={`/video/hub/v-${v.id}.mp4`} type="video/mp4" />
+                </video>
+              </div>
+              <div class="vh-meta">
+                <h3>{v.title || `Video ${i + 1}`}</h3>
+                {!v.title && <p class="vh-file">{v.file}</p>}
+                {v.script && (
+                  <details class="vh-script">
+                    <summary>Read the script</summary>
+                    <div class="vh-script-body" set:html={v.script.split('\n\n').map(p => `<p>${p}</p>`).join('')} />
+                  </details>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="vh-cta">
+      <div class="vh-wrap">
+        <h2>Want more calls?</h2>
+        <p>Find out where your buyers stop before they dial.</p>
+        <a href="/snapshot" class="btn-blue">See Who's Buying in My Market</a>
+      </div>
+    </section>
+
+  </main>
+  <Footer />
+</Base>
+
+<script is:inline>
+  // Pause all other videos when one starts playing
+  document.addEventListener('play', (e) => {
+    if (e.target.tagName !== 'VIDEO') return
+    document.querySelectorAll('video').forEach(v => { if (v !== e.target) v.pause() })
+  }, true)
+</script>
+
+<style>
+  .vh-wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  .vh-hero { background: #f5f5f7; padding: 96px 0 64px; text-align: center; }
+  .vh-eyebrow {
+    display: inline-block; font-size: 14px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #0071e3; margin-bottom: 16px;
+  }
+  .vh-hero h1 {
+    font-family: var(--font-d, -apple-system, sans-serif);
+    font-size: clamp(34px, 5vw, 56px); line-height: 1.08; letter-spacing: -0.022em;
+    color: #1d1d1f; margin: 0 0 20px;
+  }
+  .vh-sub { max-width: 560px; margin: 0 auto; font-size: 18px; line-height: 1.5; color: #333333; }
+
+  .vh-grid-section { background: #ffffff; padding: 64px 0 80px; }
+  .vh-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 40px 32px;
+  }
+  .vh-card { display: flex; flex-direction: column; }
+  .vh-player { position: relative; aspect-ratio: 9 / 16; background: #1d1d1f; overflow: hidden; border-radius: 8px; box-shadow: rgba(0,0,0,0.22) 3px 5px 30px 0px; }
+  .vh-player video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .vh-meta { padding: 16px 4px 0; }
+  .vh-meta h3 { font-size: 17px; font-weight: 600; color: #1d1d1f; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .vh-file { font-family: var(--font-m, monospace); font-size: 12px; color: #858585; margin: 0; }
+
+  .vh-script { margin-top: 10px; }
+  .vh-script summary {
+    cursor: pointer; font-size: 14px; font-weight: 500; color: #0066cc; list-style: none;
+  }
+  .vh-script summary::-webkit-details-marker { display: none; }
+  .vh-script summary::after { content: ' +'; }
+  .vh-script[open] summary::after { content: ' −'; }
+  .vh-script-body { margin-top: 8px; font-size: 14px; line-height: 1.55; color: #333333; }
+  .vh-script-body :global(p) { margin: 0 0 10px; }
+
+  .vh-cta { background: #f5f5f7; padding: 80px 0 96px; text-align: center; }
+  .vh-cta h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.02em; color: #1d1d1f; margin: 0 0 12px; }
+  .vh-cta p { font-size: 18px; color: #333333; margin: 0 0 28px; }
+  .btn-blue {
+    display: inline-block; background: #0071e3; color: #ffffff; font-size: 17px; font-weight: 500;
+    padding: 14px 32px; border-radius: 980px; text-decoration: none;
+  }
+  .btn-blue:hover { background: #0066cc; }
+
+  @media (max-width: 640px) {
+    .vh-hero { padding: 64px 0 40px; }
+    .vh-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 28px 20px; }
+  }
+</style>
