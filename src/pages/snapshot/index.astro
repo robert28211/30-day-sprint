@@ -2,6 +2,22 @@
 export const prerender = false
 import Base from '../../layouts/Base.astro'
 import Footer from '../../components/Footer.astro'
+import ProofCards from '../../components/ProofCards.astro'
+
+// The OTHER 9 trades (not shown on the home page), so a cold visitor sees the
+// whole book winning, not the same nine. Numbers = jobs 2023 -> 2025 total growth
+// from share-line-job-counts-variable-growth.csv (verified; market-volume comparator).
+const snapshotCards = [
+  { trade: 'Pools',            loc: 'Columbia',            num: '+26%', unit: 'more installs', market: 'while pools fell 50%',      down: true },
+  { trade: 'Docks & decks',    loc: 'Santee Cooper',       num: '+23%', unit: 'more builds',   market: 'while the market shrank',   down: true },
+  { trade: 'Masonry',          loc: 'Columbia',            num: '+18%', unit: 'more jobs',      market: 'in a flat market',         down: false },
+  { trade: 'Landscape design', loc: 'Columbia',            num: '+21%', unit: 'more jobs',      market: 'in a flat market',         down: false },
+  { trade: 'Water-well',       loc: 'Columbia',            num: '+14%', unit: 'more jobs',      market: 'in a flat market',         down: false },
+  { trade: 'Handyman',         loc: 'Columbia',            num: '+23%', unit: 'more jobs',      market: 'in a flat market',         down: false },
+  { trade: 'Plumbing',         loc: 'Columbia',            num: '+27%', unit: 'more jobs',      market: 'in a slow market',         down: false },
+  { trade: 'Glass',            loc: 'Columbia',            num: '+16%', unit: 'more jobs',      market: 'in a slow market',         down: false },
+  { trade: 'Dumpster rental',  loc: 'Columbia & Augusta',  num: '+23%', unit: 'more hauls',     market: 'in a flat market',         down: false },
+];
 
 const cf = (Astro.locals as any).runtime?.cf
 const detectedCity   = cf?.city   || ''
@@ -89,208 +105,15 @@ const displayMarket = detectedLocation || 'your market'
       </div>
     </section>
 
-    <!-- ═══ 1.5 PROOF — Share Line, no names ═══ -->
+    <!-- ═══ 1.5 PROOF — Share-Line wall (the other 9 trades, not the home page's) ═══ -->
     <section class="mp-proof">
       <header class="mp-proof-head" data-animate>
         <h2 class="mp-proof-h">The market didn't grow. Our clients did.</h2>
       </header>
-      <div class="mp-proof-inner" data-animate data-delay="0.1">
-        <p class="mp-lede mp-center">A Columbia landscaper booked 40% more jobs in two years while his market stayed flat. A pool builder grew installs 26% while the pool market lost half its volume. That work came off their competitors' schedules. One company per trade, per market.</p>
-      </div>
     </section>
+    <ProofCards cards={snapshotCards} foot="Nine different trades. Same story: the market isn't making new jobs, so every extra one came off a competitor's schedule." />
 
-    <!-- ═══ 2. HERO-ANCHOR TESTIMONIAL ═══ -->
-    <section class="mp-anchor">
-      <div class="mp-anchor-inner" data-animate>
-        <div class="mp-anchor-photo">
-          <img src="/img/rogerson.jpg" alt="McClintock HVAC" width="80" height="80" loading="lazy" decoding="async" />
-        </div>
-        <div class="mp-anchor-body">
-          <p class="mp-anchor-quote">"Our cost per click dropped over 70%, clicks and engagement went up on our website, and in 30 days we doubled our booked appointments."</p>
-          <p class="mp-anchor-attr"><strong>McClintock HVAC</strong> · Charlotte, NC</p>
-          <div class="mp-anchor-stats">
-            <span><strong>70%</strong> lower cost per click</span>
-            <span class="mp-dot">·</span>
-            <span><strong>2×</strong> booked appointments</span>
-            <span class="mp-dot">·</span>
-            <span>30 days</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 3. FOUNDER ═══ -->
-    <section class="mp-founder">
-      <div class="mp-founder-inner" data-animate>
-        <img src="/img/robbie-butt.jpg" alt="Robbie Butt, Founder of EngageEngine™" class="mp-founder-photo" loading="lazy" decoding="async" width="280" height="527" />
-        <div class="mp-founder-body">
-          <p class="mp-founder-eye">The Founder</p>
-          <h2 class="mp-founder-name">Robbie Butt</h2>
-          <p class="mp-founder-title">Founder, EngageEngine™ · 41 years in this industry</p>
-          <p class="mp-founder-quote">"I personally sign every client. If it doesn't work, I keep working. That's been the deal for 31 years."</p>
-          <p class="mp-founder-cred"><strong>31 years in business. Zero refunds.</strong> Not because we don't offer them — because we don't need to.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 4. PRODUCT CLARITY ═══ -->
-    <section class="mp-clarity">
-      <div class="mp-section-head">
-        <p class="mp-eye" data-animate>What This Is</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">EngageEngine™ is a fully managed service.</h2>
-        <p class="mp-lede" data-animate data-delay="0.1">Not software. Not a dashboard. Not another platform to learn. We do the work. You tell us your market and your service — we handle audience building, ad placement, optimization, and reporting.</p>
-      </div>
-
-      <div class="mp-intel-wrap" data-animate data-delay="0.15">
-        <img src="/img/intelligence-layer.webp" alt="The Intelligence Layer — input data, the engine, and the outputs that find buyers before they call" class="mp-intel" loading="lazy" decoding="async" width="1536" height="1024" />
-      </div>
-
-      <div class="mp-do-grid" data-animate data-delay="0.2">
-        <div class="mp-do-col mp-do-yes">
-          <p class="mp-do-h">Here's what you do</p>
-          <ul>
-            <li><span class="mp-do-mark">✓</span> Tell us your service area</li>
-            <li><span class="mp-do-mark">✓</span> Tell us what a good job looks like</li>
-            <li><span class="mp-do-mark">✓</span> Answer the calls</li>
-          </ul>
-        </div>
-        <div class="mp-do-col mp-do-no">
-          <p class="mp-do-h">Here's what you don't</p>
-          <ul>
-            <li><span class="mp-do-mark mp-mark-x">✕</span> Manage campaigns</li>
-            <li><span class="mp-do-mark mp-mark-x">✕</span> Build audiences</li>
-            <li><span class="mp-do-mark mp-mark-x">✕</span> Touch the platform</li>
-            <li><span class="mp-do-mark mp-mark-x">✕</span> Learn another dashboard</li>
-          </ul>
-        </div>
-      </div>
-
-      <p class="mp-fit-line" data-animate data-delay="0.25">Built for service businesses doing <strong>$500K–$5M/year in revenue</strong>.</p>
-    </section>
-
-    <!-- ═══ 5. HOW IT WORKS ═══ -->
-    <section class="mp-engine">
-      <div class="mp-section-head">
-        <p class="mp-eye" data-animate>Inside The Engine</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">Five layers. One engine.</h2>
-      </div>
-
-      <img src="/ee-explode.webp" alt="EngageEngine — five-layer system" class="mp-explode" loading="lazy" decoding="async" width="1536" height="1024" data-animate data-delay="0.15" />
-
-      <div class="mp-modules" data-animate data-delay="0.2">
-        <div class="mp-mod">
-          <div class="mp-mod-num">01</div>
-          <div class="mp-mod-name">We find them</div>
-          <div class="mp-mod-desc">45,000+ data sources tell us who in your market is searching for your service this week.</div>
-        </div>
-        <div class="mp-mod">
-          <div class="mp-mod-num">02</div>
-          <div class="mp-mod-name">We match them</div>
-          <div class="mp-mod-desc">Custom audiences built daily — matched to your service, your geography, and the kind of job you want.</div>
-        </div>
-        <div class="mp-mod">
-          <div class="mp-mod-num">03</div>
-          <div class="mp-mod-name">We reach them</div>
-          <div class="mp-mod-desc">Your ads run on Google, Meta, and programmatic — in front of the same people, across every channel.</div>
-        </div>
-        <div class="mp-mod">
-          <div class="mp-mod-num">04</div>
-          <div class="mp-mod-name">We learn from them</div>
-          <div class="mp-mod-desc">Every closed job feeds back in. The system gets sharper every week about what a real customer looks like.</div>
-        </div>
-        <div class="mp-mod">
-          <div class="mp-mod-num">05</div>
-          <div class="mp-mod-name">We prove it</div>
-          <div class="mp-mod-desc">Every lead traced from first signal to closed job. You always see exactly what's working — and what it cost.</div>
-        </div>
-      </div>
-
-      <p class="mp-timeline" data-animate data-delay="0.25"><strong>Most clients are live within 72 hours of the diagnostic.</strong></p>
-
-      <div class="mp-status" data-animate data-delay="0.3">
-        <p class="mp-status-cap">Live system performance — across all active client accounts</p>
-        <div class="mp-status-rows">
-          <div class="mp-status-row"><span>System Status</span><span class="mp-status-v">ACTIVE</span></div>
-          <div class="mp-status-row"><span>Cost Reduction vs. Platform-Native</span><span class="mp-status-v">67–90%</span></div>
-          <div class="mp-status-row"><span>Attribution</span><span class="mp-status-v">CLOSED LOOP</span></div>
-          <div class="mp-status-row"><span>Audiences</span><span class="mp-status-v">REFRESHED DAILY</span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 6. MECHANISM TESTIMONIAL — removed pending replacement ═══ -->
-
-    <!-- ═══ 7. RESULTS ═══ -->
-    <section class="mp-results">
-      <div class="mp-section-head mp-center">
-        <p class="mp-eye" data-animate>Results</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">Four service businesses. Same system. Different verticals.</h2>
-        <p class="mp-lede" data-animate data-delay="0.1">These are working businesses you can verify. Ask us for contact info — they've agreed to talk to qualified prospects.</p>
-      </div>
-
-      <div class="mp-results-grid">
-        <article class="mp-result" data-animate>
-          <p class="mp-result-headline">$440K in sales. One week.</p>
-          <p class="mp-result-quote">"We diagnosed the problem — buyers found us but didn't trust what they saw. We tightened the trust signals. A hundred and twenty days later, we did $440,000 in sales in one week. Same traffic. Different result."</p>
-          <p class="mp-result-attr"><strong>Landscape Charleston</strong> · Charleston, SC</p>
-        </article>
-        <article class="mp-result" data-animate data-delay="0.1">
-          <p class="mp-result-headline">Monthly sales tripled. Ad spend cut 60%.</p>
-          <p class="mp-result-quote">"We fixed the right problem. Monthly sales tripled. We're spending 60% less than before."</p>
-          <p class="mp-result-attr"><strong>King's Fencing</strong> · Nashville, TN</p>
-        </article>
-        <article class="mp-result" data-animate data-delay="0.2">
-          <p class="mp-result-headline">Phones ring year-round. Zero extra spend.</p>
-          <p class="mp-result-quote">"The phones ring. The jobs book. We don't have seasonal slowdowns anymore. And we're not spending any more than we were."</p>
-          <p class="mp-result-attr"><strong>Carolina Stone Craftsman</strong> · Columbia, SC</p>
-        </article>
-        <article class="mp-result" data-animate data-delay="0.1">
-          <p class="mp-result-headline">Close rate jumped. Price resistance disappeared.</p>
-          <p class="mp-result-quote">"Our close rates jumped. The price conversations got easier. Buyers just stopped pushing back."</p>
-          <p class="mp-result-attr"><strong>Orange County Garage Doors</strong> · Tustin, CA</p>
-        </article>
-      </div>
-    </section>
-
-    <!-- ═══ 8. MARKET EXCLUSIVITY ═══ -->
-    <section class="mp-exclusivity">
-      <div class="mp-exclusivity-inner" data-animate>
-        <p class="mp-excl-eye">Market Exclusivity</p>
-        <h2 class="mp-excl-h">One business per service category per market.</h2>
-        <p class="mp-excl-body">We only take one roofing company in Columbia. One HVAC company. One landscaper. One fencing company. When that slot closes, it closes — until the current client leaves or the market is reopened.</p>
-        <div class="mp-excl-warn">
-          <p class="mp-excl-warn-h">Your competitor may have already pulled this snapshot.</p>
-          <p>If they did, they're already running ads to the buyers who were supposed to call you. The snapshot takes 30 seconds. No email. No call.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 9. GUARANTEE + PRICING ═══ -->
-    <section class="mp-guarantee">
-      <div class="mp-section-head mp-center">
-        <p class="mp-eye" data-animate>The Guarantee</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">The guarantee nobody else in this industry will make.</h2>
-      </div>
-
-      <div class="mp-guarantee-card" data-animate data-delay="0.1">
-        <div class="mp-guarantee-badge">
-          <span class="mp-badge-check">✓</span>
-          <span>2X Revenue Guarantee</span>
-        </div>
-        <p class="mp-guarantee-lead">We stay until it works. That's the deal.</p>
-        <p class="mp-guarantee-body">If EngageEngine™ doesn't deliver at least <strong>2X our fee in closed revenue within 30 days</strong> — we keep working until it does. Free. No refund and disappear. We stay. We fix. We run it until the number is there.</p>
-        <p class="mp-guarantee-closer">Because if we can't find the buyers, we don't deserve to get paid.</p>
-
-        <div class="mp-pricing">
-          <p class="mp-pricing-eye">Pricing</p>
-          <p class="mp-pricing-headline">
-            <span class="mp-pricing-num">$3,500</span><span class="mp-pricing-per">/month</span>
-            <span class="mp-pricing-plus">+ ad spend</span>
-          </p>
-          <p class="mp-pricing-body">The guarantee is on our fee — not your ad spend. <strong>$3,500 in → at least $7,000 in closed revenue within 30 days</strong>, or we keep working until it does. Free.</p>
-        </div>
-      </div>
-    </section>
+    <!-- Sections 2-9 removed 2026-07-17: this is a lean landing page supporting the home page, not a second site. Proof/founder/engine/results/guarantee/pricing all live on / now. -->
 
     <!-- ═══ 10. CLOSE — CTA scrolls to top form ═══ -->
     <section class="mp-close">
@@ -832,7 +655,7 @@ const displayMarket = detectedLocation || 'your market'
 
   /* ─── PROOF ARTIFACT (HVAC intent screenshot) ─── */
   .mp-proof {
-    padding: 32px 32px 80px;
+    padding: 56px 32px 8px;
     background: var(--canvas);
   }
   .mp-proof-head {

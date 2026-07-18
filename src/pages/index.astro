@@ -1,6 +1,22 @@
 ---
 import Base from '../layouts/Base.astro'
 import Footer from '../components/Footer.astro'
+import DemandEngine from '../components/DemandEngine.astro'
+import ProofCards from '../components/ProofCards.astro'
+
+// Share-Line proof wall (home). Numbers sourced from share-line-job-counts-variable-growth.csv
+// (jobs 2023 -> 2025 total growth). Verified, market-volume comparator flat-to-contracting.
+const homeCards = [
+  { trade: 'Landscaping',      loc: 'Columbia',              num: '+40%', unit: 'more jobs',     market: 'in a flat market', down: false },
+  { trade: 'Roofing',          loc: 'Columbia',              num: '+23%', unit: 'more jobs',     market: 'in a flat market', down: false },
+  { trade: 'Plumbing',         loc: 'Columbia',              num: '+29%', unit: 'more jobs',     market: 'in a flat market', down: false },
+  { trade: 'Fencing',          loc: 'Columbia & Charleston', num: '+25%', unit: 'more jobs',     market: 'in a flat market', down: false },
+  { trade: 'Gutters',          loc: 'Columbia & Florence',   num: '+22%', unit: 'more jobs',     market: 'in a flat market', down: false },
+  { trade: 'Painting',         loc: 'Columbia',              num: '+20%', unit: 'more jobs',     market: 'in a flat market', down: false },
+  { trade: 'Windows & doors',  loc: 'Columbia',              num: '+16%', unit: 'more jobs',     market: 'while the market shrank', down: true },
+  { trade: 'Pools',            loc: 'Midlands',              num: '+26%', unit: 'more installs', market: 'while pools fell 50%', down: true },
+  { trade: 'Metal roofing',    loc: 'SC & GA',               num: '+30%', unit: 'more sold',     market: 'while the market shrank 15–25%', down: true },
+];
 ---
 <Base
   title="Marketing Performance Group — Your Market's Jobs, Minus Your Competitor"
@@ -48,6 +64,12 @@ import Footer from '../components/Footer.astro'
         <figure class="mp-artifact">
           <div class="mp-chart" role="img" aria-label="Chart. Over three years the market stays flat while one contractor's completed jobs climb about 40 percent higher.">
             <svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="mpYouFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#0071e3" stop-opacity="0.16" />
+                  <stop offset="100%" stop-color="#0071e3" stop-opacity="0" />
+                </linearGradient>
+              </defs>
               <!-- title -->
               <text x="34" y="42" class="mp-c-title">RELATIVE JOBS COMPLETED</text>
               <text x="34" y="62" class="mp-c-sub">Indexed to start = 100</text>
@@ -63,6 +85,8 @@ import Footer from '../components/Footer.astro'
               <!-- market line: flat -->
               <polyline points="90,252 275,254 460,258 620,252" class="mp-c-line-mkt" fill="none" />
               <circle cx="620" cy="252" r="4" class="mp-c-dot-mkt" />
+              <!-- area fill under contractor line -->
+              <polygon points="90,252 275,196 460,156 620,124 620,364 90,364" fill="url(#mpYouFill)" />
               <!-- contractor line: climbing -->
               <polyline points="90,252 275,196 460,156 620,124" class="mp-c-line-you" fill="none" />
               <circle cx="620" cy="124" r="5" class="mp-c-dot-you" />
@@ -85,44 +109,19 @@ import Footer from '../components/Footer.astro'
     </section>
 
     <!-- ═══ 1b. PROOF CARDS (Share Line) ═══ -->
-    <section class="mp-proofband">
-      <div class="mp-proofband-inner">
-        <article class="mp-pcard" data-animate>
-          <p class="mp-pcard-trade">Landscaping</p>
-          <p class="mp-pcard-city">Columbia, SC</p>
-          <p class="mp-pcard-market mp-flat">Market flat</p>
-          <p class="mp-pcard-num">+40%</p>
-          <p class="mp-pcard-unit">jobs completed</p>
-        </article>
-        <article class="mp-pcard" data-animate data-delay="0.05">
-          <p class="mp-pcard-trade">Pools</p>
-          <p class="mp-pcard-city">Midlands</p>
-          <p class="mp-pcard-market mp-down">&#8595; Market down ~50%</p>
-          <p class="mp-pcard-num">+26%</p>
-          <p class="mp-pcard-unit">installs</p>
-        </article>
-        <article class="mp-pcard" data-animate data-delay="0.1">
-          <p class="mp-pcard-trade">Metal roofing</p>
-          <p class="mp-pcard-city">SC &amp; GA</p>
-          <p class="mp-pcard-market mp-down">&#8595; Market down 15&#8211;25%</p>
-          <p class="mp-pcard-num">+30%</p>
-          <p class="mp-pcard-unit">material sold</p>
-        </article>
-      </div>
-      <p class="mp-proofband-foot">Every job they booked came off a competitor's schedule. One company per trade, per market.</p>
-    </section>
+    <ProofCards cards={homeCards} foot="Every one of those jobs came off a competitor's schedule. One company per trade, per market." />
 
     <!-- ═══ 2. PROBLEM ═══ -->
     <section class="mp-problem">
       <div class="mp-problem-inner">
         <p class="mp-eye" data-animate>The Problem</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">You don't have a lead problem. You have a shared-lead problem.</h2>
+        <h2 class="mp-h2" data-animate data-delay="0.05">The market isn't making new work. Everyone's fighting over the same jobs.</h2>
         <div class="mp-problem-prose" data-animate data-delay="0.1">
-          <p>You've run the gauntlet. Angi, HomeAdvisor, Thumbtack. You pay for a "lead" that already sold to four competitors before your phone stopped ringing. So you race to dial first, quote against three guys who'll always go cheaper, and close maybe one in five. And the one you close is the price-shopper who walks the second someone undercuts you.</p>
-          <p>Or you went the old-ad route. You blast a whole zip code and pay Google and Facebook to put your ad in front of renters, tire-kickers, and the guy who replaced his roof last spring.</p>
-          <p>Here's the math nobody puts on the sales call. In a typical service market, fewer than <strong>3 in 100</strong> households will hire your trade this quarter. Old-way advertising pays to reach all 100. Shared-lead platforms make you knife-fight over the 3.</p>
+          <p>The number of homeowners hiring your trade barely moved in three years. The growth everyone talks about was just prices going up. So the work is basically fixed, and everybody is scrambling for the same slice.</p>
+          <p>Angi and HomeAdvisor sell the same lead to four of you at once, so you race to dial first and quote against three guys who'll always go cheaper. Zip-code ads pay Google and Facebook to put you in front of renters, tire-kickers, and the guy who replaced his roof last spring.</p>
+          <p>Here's the math nobody puts on the sales call. Fewer than <strong>3 in 100</strong> households will hire your trade this quarter. Old-way ads pay to reach all 100. Shared-lead platforms make you knife-fight over the 3.</p>
         </div>
-        <p class="mp-problem-punch" data-animate data-delay="0.15">Both models are built so the platform gets paid whether you close a job or not. You're not their customer. You're their inventory.</p>
+        <p class="mp-problem-punch" data-animate data-delay="0.15">Both models get paid whether you close a job or not. You're not their customer. You're their inventory. Meanwhile the contractor who locked his market is quietly booking the jobs off everyone else's schedule.</p>
       </div>
     </section>
 
@@ -130,102 +129,22 @@ import Footer from '../components/Footer.astro'
     <section class="mp-solution">
       <div class="mp-solution-inner">
         <p class="mp-eye" data-animate>The Solution</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">We stopped guessing who might buy. We find who's already deciding.</h2>
+        <h2 class="mp-h2" data-animate data-delay="0.05">We lock your market. Then we point the work at you.</h2>
         <div class="mp-solution-prose" data-animate data-delay="0.1">
-          <p>Every homeowner leaves a trail before they call anyone. The searches. The review pages. The three websites they check in a week. That trail used to be invisible. It isn't anymore.</p>
-          <p><strong>EngageEngine™</strong> reads that activity and resolves it to real, named people in your service area. Then it puts your ads in front of those people and nobody else, on Google, on Facebook, on YouTube, everywhere they scroll. You stop paying to reach the 97 households that were never going to call, and start reaching the 3 that will.</p>
-          <p><strong>Why it works:</strong> a homeowner who's about to hire behaves nothing like one who isn't. They binge reviews. They compare maps. They pull up competitor sites back to back. We buy only that behavior, and refuse to spend a dollar of yours on anyone not showing it.</p>
-          <p>And they're <strong>yours alone.</strong> One company per trade, per market. The day you lock your territory is the day your competitor can't. That isn't a bonus. It's the product.</p>
-        </div>
-        <p class="mp-solution-more" data-animate data-delay="0.2">
-          <a href="/how-it-works" class="mp-text-link">Look inside the engine <span class="mp-text-link-arrow">→</span></a>
-        </p>
-      </div>
-    </section>
-
-    <!-- ═══ 4. PROOF ═══ -->
-    <section class="mp-proof-section">
-      <div class="mp-proof-block">
-        <p class="mp-eye mp-center" data-animate>The Proof</p>
-        <h2 class="mp-h2 mp-center" data-animate data-delay="0.05">"In 30 days we doubled our booked appointments."</h2>
-        <div class="mp-proof-feature" data-animate data-delay="0.1">
-          <div class="mp-anchor-photo">
-            <img src="/img/rogerson.jpg" alt="McClintock HVAC" width="80" height="80" loading="lazy" decoding="async" />
-          </div>
-          <div class="mp-anchor-body">
-            <p class="mp-anchor-attr"><strong>McClintock HVAC</strong> · Charlotte, NC</p>
-            <div class="mp-anchor-stats">
-              <span><strong>70%</strong> lower cost per click</span>
-              <span class="mp-dot">·</span>
-              <span><strong>2×</strong> booked appointments</span>
-              <span class="mp-dot">·</span>
-              <span>30 days</span>
-            </div>
-          </div>
-        </div>
-        <ul class="mp-proof-stack" data-animate data-delay="0.15">
-          <li><strong>31 years</strong> in this industry. <strong>Zero refunds ever issued.</strong></li>
-          <li>Serving service businesses across HVAC, plumbing, roofing, fencing, drilling, landscaping and more. <strong>$500K–$10M revenue.</strong></li>
-          <li class="mp-proof-founder">
-            <img src="/img/robbie-butt.jpg" alt="Robbie Butt, Founder" class="mp-proof-founder-photo" loading="lazy" decoding="async" />
-            <div>
-              <p class="mp-proof-founder-quote">"I personally sign every client. If it doesn't work, I keep working. That's been the deal for 31 years."</p>
-              <p class="mp-proof-founder-attr"><strong>Robbie Butt</strong>, Founder</p>
-            </div>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- ═══ 5. VALUE STACK ═══ -->
-    <section class="mp-offer">
-      <div class="mp-offer-inner">
-        <p class="mp-eye mp-center" data-animate>What You Get</p>
-        <h2 class="mp-h2 mp-center" data-animate data-delay="0.05">What you get when you take your market.</h2>
-        <ul class="mp-stack" data-animate data-delay="0.1">
-          <li class="mp-stack-item">
-            <div class="mp-stack-head">Engine 1. Your Buyer List, refreshed daily.</div>
-            <p class="mp-stack-body">Every in-market homeowner in your territory by name, phone, and address. Rebuilt every morning, so you're always working today's buyers, not a list that went cold three weeks ago.</p>
-            <p class="mp-stack-body mp-stack-emphasis"><strong><em>This is the same compliant identity data Fortune 500 brands buy. You just couldn't access it until now.</em></strong></p>
-            <p class="mp-stack-body">Data brokers sell this exact feed for $5,000/mo. We'll show you the invoice.</p>
-            <figure class="mp-stack-invoice">
-              <img src="/img/broker-invoice.png" alt="Redacted Zeta Residential Leads invoice — one month of compliant residential consumer identity data at $5,400." class="mp-stack-invoice-img" loading="lazy" decoding="async" />
-              <figcaption class="mp-stack-invoice-cap">Redacted vendor invoice. Real spend, monthly.</figcaption>
-            </figure>
-            <div class="mp-stack-anchor">Value: <strong>$5,000/mo</strong></div>
-          </li>
-          <li class="mp-stack-item">
-            <div class="mp-stack-head">Done-for-you campaigns, pointed only at those buyers.</div>
-            <p class="mp-stack-body">We build, run, and optimize your Google, Facebook, and YouTube, aimed at the named people on your list instead of everyone inside a 20-mile circle. You approve, we execute, you answer the phone.</p>
-            <div class="mp-stack-anchor">Value: <strong>$6,500/mo</strong></div>
-          </li>
-          <li class="mp-stack-item">
-            <div class="mp-stack-head">Engine 2. The Invisible-Visitor Pixel.</div>
-            <p class="mp-stack-body">97 of every 100 people who hit your site leave without calling. We tell you who they were and follow up automatically, before they book the other guy. This is a second engine, not a feature of the first. It works on the people already on your site, not the ones searching your market.</p>
-            <div class="mp-stack-anchor">Sold on its own: <strong>$1,500/mo</strong></div>
-          </li>
-          <li class="mp-stack-item">
-            <div class="mp-stack-head">Market Exclusivity.</div>
-            <p class="mp-stack-body">Your trade, your territory, locked. One operator per market. When your competitor calls us, we tell them the seat's taken.</p>
-            <div class="mp-stack-anchor"><em>Priceless. Ask the guy who called too late.</em></div>
-          </li>
-          <li class="mp-stack-item">
-            <div class="mp-stack-head">One number that matters.</div>
-            <p class="mp-stack-body">Leads, source, and cost per booked job. One monthly report. No dashboard to learn.</p>
-          </li>
-        </ul>
-
-        <div class="mp-stack-total" data-animate data-delay="0.2">
-          <p class="mp-stack-total-head">This is what you'd pay to build it yourself.</p>
-          <p class="mp-stack-total-body">
-            Buyer List broker: <strong>$5,000</strong>. Agency retainer: <strong>$6,500</strong>. Pixel tool: <strong>$1,500</strong>. That's <span class="mp-stack-total-strike">$13,000/mo</span> to assemble &mdash; and you'd still be missing the one thing your competitors can't buy: your market.
-          </p>
-          <p class="mp-stack-total-close"><strong>Your fee is a fraction of that.</strong> We'll show you on the call.</p>
+          <p><strong>One company per trade, per market.</strong> The day you claim yours, your competitor can't. That is the product, not a bonus.</p>
+          <p>Here's how we deliver it. Every homeowner leaves a trail before they call anyone: the searches, the review pages, the three sites they check in a week. <strong>EngageEngine™</strong> reads who in your area is actually deciding right now and puts your ads in front of only them, on Google, on Facebook, on YouTube. You stop paying to reach the 97 who were never going to call and reach the few who will.</p>
+          <p>And because the seat is yours alone, every job it produces is a job the guy across town didn't get. That is what taking your market looks like.</p>
         </div>
       </div>
     </section>
 
-    <!-- ═══ 6. GUARANTEE ═══ -->
+    <!-- ═══ 4. THE ENGINE (interactive mechanism reveal) ═══ -->
+    <DemandEngine />
+
+    <!-- Founder block removed 2026-07-17: off-aesthetic, belongs to a deeper page. -->
+    <!-- Value Stack removed 2026-07-17: discounty price-anchor + names pitch, off the new positioning. -->
+
+    <!-- ═══ 5. GUARANTEE ═══ -->
     <section class="mp-guarantee">
       <div class="mp-section-head mp-center">
         <p class="mp-eye" data-animate>The Guarantee</p>
@@ -246,9 +165,9 @@ import Footer from '../components/Footer.astro'
     <section class="mp-close">
       <h2 class="mp-close-h1" data-animate>One company per trade, per market.</h2>
       <p class="mp-close-h2" data-animate data-delay="0.05">Is your territory still open?</p>
-      <p class="mp-close-body" data-animate data-delay="0.1">We can't sell your market twice. That's the whole point. If your competitor claims it first, we'll be sending <em>them</em> the buyers.</p>
+      <p class="mp-close-body" data-animate data-delay="0.1">We can't sell your market twice. That's the whole point. If your competitor claims it first, we start sending <em>him</em> the work.</p>
       <div class="mp-close-cta" data-animate data-delay="0.2">
-        <a href="/snapshot" class="mp-btn-primary">See Who's Buying in My Market</a>
+        <a href="/snapshot" class="mp-btn-primary">See If My Trade Is Still Open</a>
         <p class="mp-micro">Free. No email required. Takes 30 seconds.</p>
       </div>
     </section>
@@ -432,59 +351,16 @@ import Footer from '../components/Footer.astro'
   .mp-c-x     { font-family: var(--font-t); font-size: 11px; letter-spacing: 0.04em; fill: var(--light-gray); }
   .mp-c-grid  { stroke: #ececec; stroke-width: 1; }
   .mp-c-grid-base { stroke: #dedede; stroke-dasharray: 3 4; }
-  .mp-c-line-you { stroke: var(--graphite); stroke-width: 2.75; stroke-linecap: round; stroke-linejoin: round; }
+  .mp-c-line-you { stroke: var(--blue); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
   .mp-c-line-mkt { stroke: #c4c4c4; stroke-width: 2.75; stroke-linecap: round; stroke-linejoin: round; }
-  .mp-c-dot-you { fill: var(--graphite); }
+  .mp-c-dot-you { fill: var(--blue); }
   .mp-c-dot-mkt { fill: #c4c4c4; }
   .mp-c-callout rect { fill: var(--white); stroke: var(--border); stroke-width: 1; }
   .mp-c-call-1 { font-family: var(--font-t); font-size: 14px; font-weight: 700; fill: var(--graphite); }
   .mp-c-call-2 { font-family: var(--font-t); font-size: 12px; fill: var(--mid-gray); }
 
-  /* ─── 1b. PROOF CARDS (Share Line) ─── */
-  .mp-proofband { padding: 0 32px 28px; background: var(--canvas); }
-  .mp-proofband-inner {
-    max-width: 1320px; margin: 0 auto;
-    display: grid; grid-template-columns: 1fr; gap: 20px;
-  }
-  @media (min-width: 720px) {
-    .mp-proofband-inner { grid-template-columns: repeat(3, 1fr); }
-  }
-  .mp-pcard {
-    background: var(--white);
-    box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
-    padding: 26px 28px 30px;
-  }
-  .mp-pcard-trade {
-    font-family: var(--font-t); font-size: 13px; font-weight: 600;
-    letter-spacing: 0.06em; text-transform: uppercase; color: var(--graphite);
-  }
-  .mp-pcard-city {
-    font-family: var(--font-t); font-size: 13px; color: var(--mid-gray);
-    margin-top: 2px;
-  }
-  .mp-pcard-market {
-    font-family: var(--font-t); font-size: 13px; font-weight: 600;
-    letter-spacing: 0.01em; margin-top: 18px;
-    padding-top: 16px; border-top: 1px solid var(--border);
-  }
-  .mp-flat { color: var(--mid-gray); }
-  .mp-down { color: #b3352e; }
-  .mp-pcard-num {
-    font-family: var(--font-d); font-size: clamp(44px, 6vw, 60px);
-    font-weight: 600; letter-spacing: -0.03em; line-height: 1;
-    color: var(--graphite); margin-top: 12px;
-  }
-  .mp-pcard-unit {
-    font-family: var(--font-t); font-size: 13px; color: var(--mid-gray);
-    margin-top: 6px;
-  }
-  .mp-proofband-foot {
-    max-width: 1320px; margin: 22px auto 0;
-    font-family: var(--font-t); font-size: 15px; line-height: 1.5;
-    letter-spacing: -0.01em; color: var(--mid-gray);
-  }
+  /* Proof-card styles now live in ProofCards.astro (shared by / and /snapshot). */
   @media (max-width: 768px) {
-    .mp-proofband { padding: 0 22px 24px; }
     /* Chart is too tall on phones and buries the cards below the fold.
        Drop it on mobile; the cards carry the proof there. */
     .mp-artifact { display: none; }
