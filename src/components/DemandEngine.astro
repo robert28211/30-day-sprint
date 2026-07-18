@@ -1,0 +1,265 @@
+---
+---
+<!-- Interactive 5-layer Demand Engine. Shared source of truth for / and /how-it-works. -->
+  <style is:global>
+    .ds-band{
+      --ds-blue:#0071e3; --ds-blue-soft:#3a93ee; --ds-aiv:#f25dad; --ds-att:#2e8bff; --ds-con:#1fb6a6; --ds-cap:#ff7a3d; --ds-mea:#9b7bff;
+      --ds-txt:#eef2f8; --ds-mut:#8a93a6; --ds-line:rgba(255,255,255,.08);
+      position:relative;overflow:hidden;
+      background:radial-gradient(1100px 760px at 50% 36%, #12203a 0%, #0a1019 42%, #06080d 80%),#06080d;
+    }
+    .ds-band .ds-grid{position:absolute;inset:0;pointer-events:none;opacity:.32;
+      background-image:linear-gradient(var(--ds-line) 1px,transparent 1px),linear-gradient(90deg,var(--ds-line) 1px,transparent 1px);
+      background-size:46px 46px;
+      -webkit-mask-image:radial-gradient(900px 640px at 50% 42%, #000 0%, transparent 72%);
+              mask-image:radial-gradient(900px 640px at 50% 42%, #000 0%, transparent 72%)}
+    .ds-band .ds-bookend{position:absolute;left:0;right:0;height:120px;z-index:4;pointer-events:none}
+    .ds-band .ds-bookend.top{top:0;background:linear-gradient(180deg,#ffffff 0%,rgba(6,8,13,.55) 55%,rgba(6,8,13,0) 100%)}
+    .ds-band .ds-bookend.bottom{bottom:0;background:linear-gradient(0deg,#ffffff 0%,rgba(6,8,13,.55) 55%,rgba(6,8,13,0) 100%)}
+    .ds-band .ds-inner{max-width:1040px;margin:0 auto;padding:118px 22px 132px;position:relative;z-index:1;
+      font-family:var(--font-t),'SF Pro Text',system-ui,sans-serif;color:var(--ds-txt)}
+    .ds-band .ds-head{text-align:center;margin-bottom:14px}
+    .ds-band .ds-eyebrow{font-size:13px;font-weight:600;letter-spacing:.4px;color:var(--ds-blue-soft);text-transform:uppercase}
+    .ds-band .ds-h2{font-size:clamp(28px,4vw,42px);font-weight:600;letter-spacing:-.6px;line-height:1.08;margin:12px 0 4px;color:#fff}
+    .ds-band .ds-h2 .b{color:var(--ds-blue-soft)}
+    .ds-band .ds-sub{color:var(--ds-mut);font-size:16px;line-height:1.5;max-width:580px;margin:10px auto 0}
+    .ds-band .ds-stage{position:relative;width:100%;height:600px;margin:30px auto 0;perspective:1200px}
+    .ds-band .ds-field{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .25s ease-out}
+    .ds-band .ds-orbit{position:absolute;top:50%;left:50%;border-radius:50%;border:1px solid var(--ds-line);transform:translate(-50%,-50%)}
+    .ds-band .ds-orbit.o1{width:480px;height:480px}
+    .ds-band .ds-orbit.o2{width:368px;height:368px;border-style:dashed;border-color:rgba(58,147,238,.22);animation:dsspin 38s linear infinite}
+    @keyframes dsspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+    .ds-band .ds-loop{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:480px;height:480px;overflow:visible}
+    .ds-band .ds-loop circle{fill:none;stroke:url(#dsflow);stroke-width:2;stroke-linecap:round;stroke-dasharray:6 16;filter:drop-shadow(0 0 6px rgba(0,113,227,.55));animation:dsfl 5.5s linear infinite}
+    @keyframes dsfl{to{stroke-dashoffset:-220}}
+    .ds-band .ds-core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:188px;height:188px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:6;cursor:pointer}
+    .ds-band .ds-disc{position:absolute;inset:24px;border-radius:50%;background:radial-gradient(circle at 50% 38%, #15233d 0%, #0b1220 70%);border:1px solid rgba(120,170,255,.30);
+      box-shadow:0 0 0 1px rgba(0,113,227,.25),0 18px 50px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.10),inset 0 0 42px rgba(0,113,227,.30);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+    .ds-band .ds-disc b{font-size:21px;font-weight:600;letter-spacing:-.4px;line-height:1}
+    .ds-band .ds-disc .tag{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ds-blue-soft);margin-top:7px}
+    .ds-band .ds-dot{width:8px;height:8px;border-radius:50%;background:var(--ds-blue);box-shadow:0 0 12px 3px rgba(0,113,227,.9);margin-bottom:8px;animation:dsbeat 2.2s ease-in-out infinite}
+    @keyframes dsbeat{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.55);opacity:.45}}
+    .ds-band .ds-halo{position:absolute;inset:6px;border-radius:50%;background:conic-gradient(from 0deg, transparent 0deg, rgba(0,113,227,0) 40%, rgba(58,147,238,.85) 80%, rgba(120,190,255,1) 92%, transparent 100%);
+      -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px));animation:dsspin2 4.4s linear infinite;opacity:.9}
+    @keyframes dsspin2{to{transform:rotate(360deg)}}
+    .ds-band .ds-pulse{position:absolute;top:50%;left:50%;width:188px;height:188px;border-radius:50%;border:1.5px solid rgba(0,113,227,.55);transform:translate(-50%,-50%) scale(1);opacity:0;animation:dspulse 3.4s ease-out infinite}
+    .ds-band .ds-pulse.p2{animation-delay:1.13s}.ds-band .ds-pulse.p3{animation-delay:2.26s}
+    @keyframes dspulse{0%{transform:translate(-50%,-50%) scale(.62);opacity:.7}70%{opacity:.18}100%{transform:translate(-50%,-50%) scale(2.55);opacity:0}}
+    .ds-band .ds-node{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:118px;height:118px;border-radius:22px;
+      background:linear-gradient(180deg, rgba(20,26,38,.92), rgba(11,15,23,.92));border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 16px 38px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;z-index:5;
+      transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s,border-color .22s;color:var(--ds-txt)}
+    .ds-band .ds-node .ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--nc) 18%, transparent);border:1px solid color-mix(in srgb,var(--nc) 45%,transparent);color:var(--nc)}
+    .ds-band .ds-node .ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+    .ds-band .ds-node .lbl{font-size:13px;font-weight:600;letter-spacing:-.2px}
+    .ds-band .ds-node .sub{font-size:10px;color:var(--ds-mut);margin-top:-4px}
+    .ds-band .ds-node .badge{position:absolute;top:-8px;right:-8px;font-size:8.5px;font-weight:700;letter-spacing:.6px;padding:3px 7px;border-radius:7px;background:var(--nc);color:#0a0a12;box-shadow:0 5px 14px color-mix(in srgb,var(--nc) 60%,transparent)}
+    .ds-band .ds-node:hover{transform:translate(-50%,-50%) translateY(-4px) scale(1.05);border-color:color-mix(in srgb,var(--nc) 55%,transparent);box-shadow:0 22px 48px rgba(0,0,0,.55), 0 0 26px color-mix(in srgb,var(--nc) 40%,transparent), inset 0 1px 0 rgba(255,255,255,.1)}
+    .ds-band .ds-node.on{border-color:var(--nc);box-shadow:0 22px 52px rgba(0,0,0,.6), 0 0 34px color-mix(in srgb,var(--nc) 60%,transparent), inset 0 1px 0 rgba(255,255,255,.12)}
+    .ds-band .ds-node.on .ic{background:color-mix(in srgb,var(--nc) 30%,transparent)}
+    .ds-band .ds-field.dim .ds-node:not(.on){opacity:.42;filter:saturate(.6)}
+    .ds-band .n-aiv{margin-top:-240px}.ds-band .n-att{margin-left:228px;margin-top:-74px}.ds-band .n-con{margin-left:141px;margin-top:194px}.ds-band .n-cap{margin-left:-141px;margin-top:194px}.ds-band .n-mea{margin-left:-228px;margin-top:-74px}
+    .ds-band .ds-panel{max-width:780px;margin:26px auto 0;border-radius:22px;position:relative;z-index:2;text-align:left;
+      background:linear-gradient(180deg, rgba(18,24,36,.80), rgba(10,14,22,.80));border:1px solid var(--ds-line);
+      box-shadow:0 24px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);padding:30px 34px;transition:border-color .3s, box-shadow .3s}
+    .ds-band .elabel{font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--pc,var(--ds-blue))}
+    .ds-band .ds-panel h3{font-size:25px;font-weight:600;letter-spacing:-.5px;margin:6px 0 2px;color:var(--ds-txt)}
+    .ds-band .lead{color:var(--ds-mut);font-size:14.5px;line-height:1.55;margin:8px 0 0;max-width:630px}
+    .ds-band .stat{display:flex;align-items:center;gap:18px;margin:20px 0 18px;padding:16px 20px;border-radius:16px;background:color-mix(in srgb,var(--pc,var(--ds-blue)) 9%, transparent);border:1px solid color-mix(in srgb,var(--pc,var(--ds-blue)) 24%, transparent)}
+    .ds-band .stat .num{font-size:48px;font-weight:700;line-height:.9;letter-spacing:-1.5px;color:var(--pc,var(--ds-blue));text-shadow:0 0 24px color-mix(in srgb,var(--pc,var(--ds-blue)) 55%, transparent);min-width:118px}
+    .ds-band .stat .cap{font-size:13.5px;color:var(--ds-txt);line-height:1.5}
+    .ds-band .ask{font-size:17px;line-height:1.55;font-weight:500;color:#fff;border-left:3px solid var(--pc,var(--ds-blue));padding-left:16px;margin:0 0 20px}
+    .ds-band .svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .ds-band .svc{padding:15px 17px;border-radius:14px;background:rgba(255,255,255,.028);border:1px solid var(--ds-line);transition:.2s;position:relative}
+    .ds-band .svc.wide{grid-column:1/-1}
+    .ds-band .svc.hero{background:color-mix(in srgb,var(--pc) 10%, transparent);border-color:color-mix(in srgb,var(--pc) 38%, transparent)}
+    .ds-band .svc.hero::after{content:attr(data-badge);position:absolute;top:13px;right:14px;font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--pc)}
+    .ds-band .svc:hover{border-color:color-mix(in srgb,var(--pc,var(--ds-blue)) 40%, transparent);background:rgba(255,255,255,.05);transform:translateY(-2px)}
+    .ds-band .svc h4{font-size:14.5px;font-weight:600;margin:0 0 6px;letter-spacing:-.2px;color:var(--ds-txt)}
+    .ds-band .svc p{font-size:12.5px;color:var(--ds-mut);line-height:1.5;margin:0 0 9px}
+    .ds-band .svc .out{font-size:12.5px;color:var(--ds-txt);line-height:1.45;display:flex;gap:8px;font-weight:500}
+    .ds-band .svc .out .a{color:var(--pc,var(--ds-blue));font-weight:700;margin-top:-1px}
+    .ds-band .svc .inside{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;align-items:center}
+    .ds-band .svc .inside .il{font-size:10.5px;color:var(--ds-mut);font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+    .ds-band .svc .ichip{font-size:11px;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--pc,var(--ds-blue)) 14%,transparent);border:1px solid color-mix(in srgb,var(--pc,var(--ds-blue)) 28%,transparent);color:var(--ds-txt)}
+    .ds-band .pay{margin-top:18px;font-size:14px;color:var(--ds-mut);line-height:1.6;display:flex;gap:10px;align-items:flex-start}
+    .ds-band .pay .arr{color:var(--pc,var(--ds-blue));font-weight:700;margin-top:1px}
+    .ds-band .cta{display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:13px 24px;border-radius:999px;background:var(--pc,var(--ds-blue));color:#fff;font-weight:600;font-size:14px;letter-spacing:-.1px;text-decoration:none;box-shadow:0 10px 30px color-mix(in srgb,var(--pc,var(--ds-blue)) 45%,transparent);transition:transform .2s, box-shadow .2s}
+    .ds-band .cta:hover{transform:translateY(-2px);box-shadow:0 16px 40px color-mix(in srgb,var(--pc,var(--ds-blue)) 62%,transparent)}
+    .ds-band .cta-wrap{text-align:center}
+    .ds-band .ov{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:12px;margin:20px 0 6px}
+    .ds-band .ov .c{padding:16px 18px;border-radius:15px;background:rgba(255,255,255,.03);border:1px solid var(--ds-line);transition:.2s;cursor:pointer}
+    .ds-band .ov .c:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--oc) 50%, transparent);background:rgba(255,255,255,.055)}
+    .ds-band .ov .c .t{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:600;margin-bottom:5px;color:var(--ds-txt)}
+    .ds-band .ov .c .d{width:9px;height:9px;border-radius:50%;background:var(--oc);box-shadow:0 0 10px 1px var(--oc)}
+    .ds-band .ov .c .stg{font-size:10px;color:var(--ds-mut);font-weight:500;margin-left:auto;letter-spacing:.4px}
+    .ds-band .ov .c p{margin:0;font-size:12.5px;color:var(--ds-mut);line-height:1.5}
+    .ds-band .loopline{margin-top:16px;text-align:center;font-size:13px;color:var(--ds-mut);letter-spacing:.2px}
+    .ds-band .loopline b{color:var(--ds-blue-soft);font-weight:600}
+    .ds-band .ds-foot{text-align:center;color:var(--ds-mut);font-size:12.5px;margin-top:34px;letter-spacing:.4px;line-height:1.7}
+    .ds-band .ds-foot b{color:var(--ds-txt);font-weight:600}
+    @media(max-width:760px){
+      .ds-band .ds-stage{height:auto;display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:10px}
+      .ds-band .ds-orbit,.ds-band .ds-loop{display:none}
+      .ds-band .ds-field{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px;transform:none!important}
+      .ds-band .ds-core,.ds-band .ds-node{position:relative;top:auto;left:auto;transform:none;margin:0!important}
+      .ds-band .ds-node{width:100%;max-width:340px;height:auto;flex-direction:row;justify-content:flex-start;gap:14px;padding:14px 18px;border-radius:16px}
+      .ds-band .ds-pulse{display:none}.ds-band .svc-grid,.ds-band .ov{grid-template-columns:1fr}
+      .ds-band .stat{flex-direction:column;align-items:flex-start;gap:8px}.ds-band .stat .num{min-width:0}
+      .ds-band .ds-inner{padding:96px 20px 110px}
+    }
+  </style>
+  <section class="engine ds-band" id="ds-engine">
+    <div class="ds-grid"></div>
+    <div class="ds-bookend top"></div>
+    <div class="ds-inner">
+      <div class="ds-head">
+        <span class="ds-eyebrow">How It Works</span>
+        <h2 class="ds-h2">We don't guess who might buy from you.<br><span class="b">We already know who's looking.</span></h2>
+        <p class="ds-sub">Your marketing isn't one tactic. It's a system — five layers that close the gap where you're losing customers, then keep the loop running.</p>
+      </div>
+
+      <div class="ds-stage">
+        <div class="ds-field">
+          <div class="ds-orbit o1"></div>
+          <div class="ds-orbit o2"></div>
+          <svg class="ds-loop" viewBox="0 0 480 480" aria-hidden="true">
+            <defs><linearGradient id="dsflow" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f25dad"/><stop offset="0.4" stop-color="#2e8bff"/><stop offset="0.7" stop-color="#1fb6a6"/><stop offset="1" stop-color="#9b7bff"/>
+            </linearGradient></defs>
+            <circle cx="240" cy="240" r="240"/>
+          </svg>
+          <div class="ds-pulse"></div><div class="ds-pulse p2"></div><div class="ds-pulse p3"></div>
+          <div class="ds-core" role="button" tabindex="0" aria-label="EngageEngine overview">
+            <div class="ds-halo"></div>
+            <div class="ds-disc"><span class="ds-dot"></span><b>EngageEngine</b><span class="tag">The Engine</span></div>
+          </div>
+          <button class="ds-node n-aiv" data-k="aiv" style="--nc:var(--ds-aiv)">
+            <span class="badge">NEW</span>
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.7 4.6L18.4 9l-4.7 1.4L12 15l-1.7-4.6L5.6 9l4.7-1.4z"/><path d="M18.5 14l.7 1.9 1.9.6-1.9.7-.7 1.8-.7-1.8-1.9-.7 1.9-.6z"/></svg></span>
+            <span class="lbl">AI Visibility</span><span class="sub">be cited</span></button>
+          <button class="ds-node n-att" data-k="att" style="--nc:var(--ds-att)">
+            <span class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></span>
+            <span class="lbl">Attract</span><span class="sub">be found</span></button>
+          <button class="ds-node n-con" data-k="con" style="--nc:var(--ds-con)">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M7 11v9H4v-9z"/><path d="M7 11l4-7a2 2 0 013 2l-1 5h5a2 2 0 012 2.3l-1.3 6A2 2 0 0117 21H7"/></svg></span>
+            <span class="lbl">Convert</span><span class="sub">be chosen</span></button>
+          <button class="ds-node n-cap" data-k="cap" style="--nc:var(--ds-cap)">
+            <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
+            <span class="lbl">Capture</span><span class="sub">get the call</span></button>
+          <button class="ds-node n-mea" data-k="mea" style="--nc:var(--ds-mea)">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/></svg></span>
+            <span class="lbl">Measure</span><span class="sub">know what works</span></button>
+        </div>
+      </div>
+
+      <div class="ds-panel" id="ds-panel"></div>
+      <div class="ds-foot">AI Visibility → Attract → Convert → Capture → Measure → the engine learns and feeds the best signal back to the top.<br><b>That loop is what competitors can't copy.</b></div>
+    </div>
+    <div class="ds-bookend bottom"></div>
+  </section>
+  <script is:inline>
+  (function(){
+    var BAND=document.getElementById('ds-engine');if(!BAND)return;
+    var C={aiv:'var(--ds-aiv)',att:'var(--ds-att)',con:'var(--ds-con)',cap:'var(--ds-cap)',mea:'var(--ds-mea)'};
+    var DATA={
+     aiv:{c:C.aiv,label:'The Frontier · Be the answer',title:'AI Visibility',
+      stat:{num:25,suffix:'%',cap:'of buyers now use AI tools like ChatGPT and Google’s AI Overviews to find and vet local businesses — and most companies have no idea whether those tools recommend them or skip them.'},
+      ask:'When someone asks ChatGPT, Gemini, or Google’s AI for the best business like yours nearby — does it name you, or your competitor?',
+      svc:[
+       {hero:true,badge:'DVS',h:'Demand Visibility Score (DVS)',p:'Our proprietary diagnostic scores exactly where you appear — and where you vanish — across ChatGPT, Perplexity, Gemini, and Google AI Overviews.',o:'A clear score and the precise gaps keeping you out of AI answers.'},
+       {h:'Generative Engine Optimization',p:'AI engines only cite sources they can read and trust. GEO restructures your content so they quote you by name.',o:'Named as the recommended option when buyers ask AI.'},
+       {h:'Schema & Entity Markup',p:'Make your business legible to machines — who you are, what you do, exactly who you serve.',o:'AI understands and represents you accurately, not vaguely.'},
+       {h:'AI Citation & Authority',p:'AI recommends the businesses the wider web vouches for. We build the trust signals it looks for.',o:'Become the answer AI gives, not the one it skips.'}
+      ],
+      pay:'Get cited as the answer when buyers ask AI — the front door most of your competitors don’t even know exists yet.',
+      cta:{label:'See if your trade is still open',href:'/snapshot'}},
+     att:{c:C.att,label:'Stage 1 · Be found',title:'Attract',
+      stat:{num:46,suffix:'%',cap:'of all Google searches are people looking for a local business. An unoptimized presence means you’re invisible the moment they’re ready.'},
+      ask:'When someone searches for what you do right now — do they find you, or your competitor?',
+      svc:[
+       {h:'Search Engine Optimization',p:'Paid ads stop the second you stop paying. SEO builds equity that compounds while you sleep.',o:'Inbound leads that cost nothing per click and grow every month.'},
+       {h:'Google Pay-Per-Click',p:'The highest-intent buyers go to Google first, at the exact moment they’re ready to act.',o:'Immediate, measurable lead flow — every dollar tracked.'},
+       {h:'Meta Advertising',p:'Your customers spend 30+ minutes a day on Facebook and Instagram. If you’re not there, someone else is.',o:'Top-of-mind awareness so you’re the first call.'},
+       {h:'Google Business Profile',p:'Half of all searches are local. A weak profile loses the call before it’s made.',o:'More calls and clicks from people already searching for you.'},
+       {h:'Location-Based Targeting',p:'Reach people by where they physically go — competitors’ lots, trade shows, specific neighborhoods.',o:'Ads served on verified real-world behavior, not guesswork.'},
+       {h:'Custom Intent Data',p:'Most businesses market to a whole zip code and reach no one ready to buy. Intent data finds who’s shopping now.',o:'The highest-quality leads in your market, before rivals know.'}
+      ],
+      pay:'Get in front of buyers the moment they’re looking — and the ones shopping before they even search.'},
+     con:{c:C.con,label:'Stage 2 · Be chosen',title:'Convert',
+      stat:{num:75,suffix:'%',cap:'of buyers judge a business’s credibility on its website alone. Attention you can’t convert is attention you paid for and lost.'},
+      ask:'If your best prospect landed on your site right now, would they instantly know why to choose you?',
+      svc:[
+       {h:'Website Design & Build',p:'Your 24/7 salesperson. If it’s slow, confusing, or dated, it’s actively costing you business.',o:'A site built to turn visitors into inquiries.'},
+       {h:'Review Generation',p:'Your star rating is the first thing a buyer sees, before they ever reach your site.',o:'Fresh reviews on autopilot, building trust monthly.'},
+       {h:'Competitive Positioning',p:'If you can’t say why you’re better in one sentence, neither can your customer.',o:'A crisp "why us" you use in every proposal and call.'},
+       {h:'Directory & Citations',p:'Inconsistent name, address, or phone makes Google trust — and rank — you less.',o:'Accurate listings across 50+ directories.'}
+      ],
+      pay:'Turn attention into trust — so the click becomes a call instead of a bounce.'},
+     cap:{c:C.cap,label:'Stage 3 · Get the call',title:'Capture',
+      stat:{num:97,suffix:'%',cap:'of website visitors leave without ever filling out a form — and for most businesses, they’re gone forever.'},
+      ask:'Do you know who visited your website this week — even the ones who never called or filled out a form?',
+      svc:[
+       {h:'Identity-Resolution Pixel',p:'Up to 97% of visitors vanish anonymously. This pixel puts a name to them.',o:'Real names, emails, and phone numbers from invisible traffic.'},
+       {h:'Email Drip Campaigns',p:'The average sale takes 5–12 touches; most businesses follow up once, maybe twice.',o:'Automated follow-up that turns cold leads warm.'},
+       {h:'Intent-Driven Ad Integration',p:'Intent data alone is just a list. The power is feeding it into every channel at once.',o:'Ads, email, and retargeting all hitting the same buyers.'}
+      ],
+      pay:'Catch the 97% who leave without calling, and follow up automatically until they buy.'},
+     mea:{c:C.mea,label:'Stage 4 · Know what works',title:'Measure',
+      stat:{num:50,suffix:'%',cap:'of the average marketing budget is wasted — the problem is never knowing which half. Measurement is what closes the loop.'},
+      ask:'If a lead called you last Tuesday from an ad — would you know which one?',
+      svc:[
+       {hero:true,wide:true,badge:'ALL-IN-ONE',h:'Business App Pro',p:'The command center you log into — one login for your whole marketing operation. Most owners can’t even tell you where their last 10 leads came from; this closes that gap.',o:'One dashboard: every lead source, plus the tools that act on them.',inside:['Social Media Management','Reputation AI','AI Workforce']},
+       {h:'Lead Source Tracking',p:'Every call, form, and click traced back to the campaign that earned it.',o:'Know exactly what to scale and what to cut.'},
+       {h:'Growth Reporting',p:'Marketing you can’t measure is marketing you can’t improve.',o:'A monthly read that feeds the best signal back to the top.'}
+      ],
+      pay:'See where every lead comes from — so the engine learns and sends the best back to the top.'}
+    };
+    var INTRO={c:'var(--ds-blue)',label:'The System',title:'One engine. Five moving parts.',
+      lead:'We don’t sell marketing. We solve the reason your marketing stops working. Each stage closes a specific gap in your demand system — starting with the one most businesses don’t even know they’re losing: AI. We start where your gap is biggest.',
+      ov:[
+       {k:'aiv',c:C.aiv,name:'AI Visibility',stg:'Be cited',d:'Get named when buyers ask ChatGPT or Google’s AI. Our DVS shows where you stand and gets you cited.'},
+       {k:'att',c:C.att,name:'Attract',stg:'Be found',d:'Get in front of buyers the moment they search — and the ones shopping before they search.'},
+       {k:'con',c:C.con,name:'Convert',stg:'Be chosen',d:'Turn that attention into trust so the click becomes a call, not a bounce.'},
+       {k:'cap',c:C.cap,name:'Capture',stg:'Get the call',d:'Identify the 97% who leave anonymously and follow up until they buy.'},
+       {k:'mea',c:C.mea,name:'Measure',stg:'Know what works',d:'See where every lead comes from, then feed the best signal back to the top.'}
+      ],
+      cta:{label:'See if your trade is still open',href:'/snapshot'}};
+    var panel=BAND.querySelector('#ds-panel'),field=BAND.querySelector('.ds-field'),core=BAND.querySelector('.ds-core');
+    var nodes=[].slice.call(BAND.querySelectorAll('.ds-node'));var countTimer=null;
+    function paintAccent(c){panel.style.setProperty('--pc',c);panel.style.borderColor='color-mix(in srgb,'+c+' 30%, transparent)';
+      panel.style.boxShadow='0 24px 60px rgba(0,0,0,.5), 0 0 0 1px color-mix(in srgb,'+c+' 22%, transparent), inset 0 1px 0 rgba(255,255,255,.06)';}
+    function countUp(el,target,suffix){if(countTimer)cancelAnimationFrame(countTimer);var start=performance.now(),dur=900;
+      function step(t){var p=Math.min((t-start)/dur,1),e=1-Math.pow(1-p,3);el.textContent=Math.round(e*target)+suffix;if(p<1)countTimer=requestAnimationFrame(step);}
+      countTimer=requestAnimationFrame(step);setTimeout(function(){el.textContent=target+suffix;},dur+80);}
+    function renderStage(k){var d=DATA[k];paintAccent(d.c);
+      panel.innerHTML='<div class="elabel">'+d.label+'</div><h3>'+d.title+'</h3>'+
+        '<div class="stat"><div class="num" id="ds-statnum">0'+d.stat.suffix+'</div><div class="cap">'+d.stat.cap+'</div></div>'+
+        '<p class="ask">'+d.ask+'</p>'+
+        '<div class="svc-grid">'+d.svc.map(function(s){return '<div class="svc'+(s.hero?' hero':'')+(s.wide?' wide':'')+'"'+(s.badge?' data-badge="'+s.badge+'"':'')+'><h4>'+s.h+'</h4><p>'+s.p+'</p><div class="out"><span class="a">→</span><span>'+s.o+'</span></div>'+(s.inside?'<div class="inside"><span class="il">Inside:</span>'+s.inside.map(function(x){return '<span class="ichip">'+x+'</span>';}).join('')+'</div>':'')+'</div>';}).join('')+'</div>'+
+        '<div class="pay"><span class="arr">▶</span><span>'+d.pay+'</span></div>'+
+        (d.cta?'<a class="cta" href="'+d.cta.href+'">'+d.cta.label+' →</a>':'');
+      countUp(panel.querySelector('#ds-statnum'),d.stat.num,d.stat.suffix);}
+    function renderIntro(){paintAccent(INTRO.c);
+      panel.innerHTML='<div class="elabel">'+INTRO.label+'</div><h3>'+INTRO.title+'</h3>'+
+        '<p class="lead">'+INTRO.lead+'</p>'+
+        '<div class="ov">'+INTRO.ov.map(function(o){return '<div class="c" data-go="'+o.k+'" style="--oc:'+o.c+'"><div class="t"><span class="d"></span>'+o.name+'<span class="stg">'+o.stg+'</span></div><p>'+o.d+'</p></div>';}).join('')+'</div>'+
+        '<div class="loopline">Tap a stage to look inside. The whole system runs as one loop — and it now starts where buyers do: <b>with AI.</b></div>'+
+        (INTRO.cta?'<div class="cta-wrap"><a class="cta" href="'+INTRO.cta.href+'">'+INTRO.cta.label+' →</a></div>':'');
+      [].slice.call(panel.querySelectorAll('.c[data-go]')).forEach(function(c){c.addEventListener('click',function(){var n=nodes.filter(function(x){return x.getAttribute('data-k')===c.getAttribute('data-go');})[0];if(n)select(n);});});}
+    function select(node){var k=node.getAttribute('data-k'),active=node.classList.contains('on');
+      nodes.forEach(function(x){x.classList.remove('on');});field.classList.remove('dim');
+      if(active){renderIntro();return;}
+      node.classList.add('on');field.classList.add('dim');renderStage(k);}
+    nodes.forEach(function(n){n.addEventListener('click',function(){select(n);});});
+    core.addEventListener('click',function(){nodes.forEach(function(x){x.classList.remove('on');});field.classList.remove('dim');renderIntro();});
+    core.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();core.click();}});
+    renderIntro();
+    var stage=BAND.querySelector('.ds-stage');
+    stage.addEventListener('mousemove',function(e){if(window.innerWidth<760)return;var r=stage.getBoundingClientRect();
+      var dx=(e.clientX-r.left-r.width/2)/r.width,dy=(e.clientY-r.top-r.height/2)/r.height;field.style.transform='rotateY('+(dx*7)+'deg) rotateX('+(-dy*7)+'deg)';});
+    stage.addEventListener('mouseleave',function(){field.style.transform='';});
+  })();
+  </script>
