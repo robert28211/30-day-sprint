@@ -109,7 +109,11 @@ const homeCards = [
     </section>
 
     <!-- ═══ 1b. PROOF CARDS (Share Line) ═══ -->
-    <ProofCards cards={homeCards} foot="Every one of those jobs came off a competitor's schedule. One company per trade, per market." />
+    <ProofCards
+      cards={homeCards}
+      video={{ src: '/video/hub/hero-vsl.mp4', poster: '/video/hub/hero-vsl-poster.jpg', label: 'Watch: why your phone isn’t ringing · 60 seconds' }}
+      foot="Every one of those jobs came off a competitor's schedule. One company per trade, per market."
+    />
 
     <!-- ═══ 2. PROBLEM ═══ -->
     <section class="mp-problem">

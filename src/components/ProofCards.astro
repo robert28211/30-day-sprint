@@ -1,17 +1,31 @@
 ---
 // Shared Share-Line proof wall. One card design, fed different data per page.
 // card = { trade, loc, num, unit, market, down }  (down => red "market shrank" treatment)
-const { cards = [], foot = '' } = Astro.props;
+// Optional video = { src, poster, label } renders as the second tile (middle of row 1),
+// so the wall reads: card | video | card, then the remaining cards below.
+const { cards = [], foot = '', video = null } = Astro.props;
 ---
 <section class="mp-proofband">
   <div class="mp-proofband-inner">
     {cards.map((c, i) => (
-      <article class="mp-pcard" data-animate data-delay={(i * 0.03).toFixed(2)}>
-        <p class="mp-pcard-trade">{c.trade} {c.loc && <span class="mp-pcard-loc">{c.loc}</span>}</p>
-        <p class="mp-pcard-num">{c.num}</p>
-        <p class="mp-pcard-unit">{c.unit}</p>
-        <p class={`mp-pcard-market ${c.down ? 'mp-down' : 'mp-flat'}`}>{c.market}</p>
-      </article>
+      <>
+        {video && i === 1 && (
+          <article class="mp-pcard mp-pcard-video" data-animate data-delay="0.03">
+            <div class="mp-pcard-video-frame">
+              <video poster={video.poster} preload="none" playsinline controls>
+                <source src={video.src} type="video/mp4" />
+              </video>
+            </div>
+            <p class="mp-pcard-video-label">{video.label}</p>
+          </article>
+        )}
+        <article class="mp-pcard" data-animate data-delay={(i * 0.03).toFixed(2)}>
+          <p class="mp-pcard-trade">{c.trade} {c.loc && <span class="mp-pcard-loc">{c.loc}</span>}</p>
+          <p class="mp-pcard-num">{c.num}</p>
+          <p class="mp-pcard-unit">{c.unit}</p>
+          <p class={`mp-pcard-market ${c.down ? 'mp-down' : 'mp-flat'}`}>{c.market}</p>
+        </article>
+      </>
     ))}
   </div>
   {foot && <p class="mp-proofband-foot">{foot}</p>}
@@ -58,6 +72,18 @@ const { cards = [], foot = '' } = Astro.props;
     padding-top: 15px; border-top: 1px solid var(--border);
   }
   .mp-pcard-market.mp-flat { color: var(--mid-gray); }
+
+  /* Video tile: same white card shell, video where the number goes */
+  .mp-pcard-video { padding: 14px 14px 16px; justify-content: flex-start; }
+  .mp-pcard-video-frame {
+    background: #1d1d1f; border-radius: 6px; overflow: hidden; aspect-ratio: 16 / 9;
+  }
+  .mp-pcard-video-frame video { width: 100%; height: 100%; display: block; }
+  .mp-pcard-video-label {
+    font-family: var(--font-t); font-size: 13px; font-weight: 600;
+    letter-spacing: -0.01em; color: var(--graphite);
+    margin-top: 12px; text-align: center;
+  }
   .mp-pcard-market.mp-down { color: #b3352e; font-weight: 500; }
   .mp-proofband-foot {
     max-width: 1160px; margin: 24px auto 0;
