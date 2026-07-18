@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 import { e as createComponent, k as renderComponent, r as renderTemplate, h as createAstro, n as defineScriptVars, g as addAttribute, m as maybeRenderHead } from '../chunks/astro/server_CdzYR9DH.mjs';
 import { $ as $$Base } from '../chunks/Base_BSRx0yRe.mjs';
-import { $ as $$Footer } from '../chunks/Footer_DLRzZr3t.mjs';
+import { $ as $$Footer } from '../chunks/Footer_C93osjOD.mjs';
 /* empty css                                 */
 export { renderers } from '../renderers.mjs';
 
