@@ -1,0 +1,70 @@
+---
+// Shared Share-Line proof wall. One card design, fed different data per page.
+// card = { trade, loc, num, unit, market, down }  (down => red "market shrank" treatment)
+const { cards = [], foot = '' } = Astro.props;
+---
+<section class="mp-proofband">
+  <div class="mp-proofband-inner">
+    {cards.map((c, i) => (
+      <article class="mp-pcard" data-animate data-delay={(i * 0.03).toFixed(2)}>
+        <p class="mp-pcard-trade">{c.trade} {c.loc && <span class="mp-pcard-loc">{c.loc}</span>}</p>
+        <p class="mp-pcard-num">{c.num}</p>
+        <p class="mp-pcard-unit">{c.unit}</p>
+        <p class={`mp-pcard-market ${c.down ? 'mp-down' : 'mp-flat'}`}>{c.market}</p>
+      </article>
+    ))}
+  </div>
+  {foot && <p class="mp-proofband-foot">{foot}</p>}
+</section>
+
+<style>
+  /* Proof wall: elevated white cards floating on Canvas (Apple depth, not flat) */
+  .mp-proofband { padding: 8px 32px 52px; background: var(--canvas); }
+  .mp-proofband-inner {
+    max-width: 1160px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr; gap: 22px;
+  }
+  @media (min-width: 620px) { .mp-proofband-inner { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 940px) { .mp-proofband-inner { grid-template-columns: repeat(3, 1fr); } }
+  .mp-pcard {
+    background: var(--white);
+    padding: 32px 32px 34px;
+    display: flex; flex-direction: column;
+    box-shadow: rgba(0,0,0,0.05) 0 2px 8px, rgba(0,0,0,0.06) 0 10px 30px;
+    transition: box-shadow 0.28s ease, transform 0.28s ease;
+  }
+  .mp-pcard:hover {
+    box-shadow: rgba(0,0,0,0.06) 0 4px 12px, rgba(0,0,0,0.10) 0 18px 44px;
+    transform: translateY(-4px);
+  }
+  .mp-pcard-trade {
+    font-family: var(--font-t); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--graphite);
+    line-height: 1.4;
+  }
+  .mp-pcard-loc { color: var(--light-gray); font-weight: 400; }
+  .mp-pcard-num {
+    font-family: var(--font-d); font-size: clamp(42px, 4.4vw, 52px);
+    font-weight: 600; letter-spacing: -0.03em; line-height: 1;
+    color: var(--graphite); margin-top: 20px;
+  }
+  .mp-pcard-unit {
+    font-family: var(--font-t); font-size: 14px; color: var(--mid-gray);
+    letter-spacing: -0.01em; margin-top: 8px;
+  }
+  .mp-pcard-market {
+    font-family: var(--font-t); font-size: 13px;
+    letter-spacing: -0.01em; margin-top: 16px;
+    padding-top: 15px; border-top: 1px solid var(--border);
+  }
+  .mp-pcard-market.mp-flat { color: var(--mid-gray); }
+  .mp-pcard-market.mp-down { color: #b3352e; font-weight: 500; }
+  .mp-proofband-foot {
+    max-width: 1160px; margin: 24px auto 0;
+    font-family: var(--font-t); font-size: 15px; line-height: 1.5;
+    letter-spacing: -0.01em; color: var(--mid-gray);
+  }
+  @media (max-width: 768px) {
+    .mp-proofband { padding: 0 22px 24px; }
+  }
+</style>
