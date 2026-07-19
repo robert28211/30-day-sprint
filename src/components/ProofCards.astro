@@ -19,7 +19,7 @@ const { cards = [], foot = '', video = null } = Astro.props;
             <p class="mp-pcard-video-label">{video.label}</p>
           </article>
         )}
-        <article class="mp-pcard" data-animate data-delay={(i * 0.03).toFixed(2)}>
+        <article class={`mp-pcard ${c.featured ? 'mp-pcard-featured' : ''}`} data-animate data-delay={(i * 0.03).toFixed(2)}>
           <p class="mp-pcard-trade">{c.trade} {c.loc && <span class="mp-pcard-loc">{c.loc}</span>}</p>
           <p class="mp-pcard-num">{c.num}</p>
           <p class="mp-pcard-unit">{c.unit}</p>
@@ -53,15 +53,25 @@ const { cards = [], foot = '', video = null } = Astro.props;
   }
   .mp-pcard-trade {
     font-family: var(--font-t); font-size: 12px; font-weight: 600;
-    letter-spacing: 0.07em; text-transform: uppercase; color: var(--graphite);
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--blue, #0071e3);
     line-height: 1.4;
   }
   .mp-pcard-loc { color: var(--light-gray); font-weight: 400; }
   .mp-pcard-num {
     font-family: var(--font-d); font-size: clamp(42px, 4.4vw, 52px);
     font-weight: 600; letter-spacing: -0.03em; line-height: 1;
-    color: var(--graphite); margin-top: 20px;
+    color: var(--blue, #0071e3); margin-top: 20px;
   }
+
+  /* Featured card: dark graphite monster spanning 2 columns */
+  .mp-pcard-featured { background: var(--graphite, #1d1d1f); }
+  @media (min-width: 940px) { .mp-pcard-featured { grid-column: span 2; } }
+  .mp-pcard-featured .mp-pcard-trade { color: #6e9eff; }
+  .mp-pcard-featured .mp-pcard-num {
+    color: #ffffff; font-size: clamp(56px, 6vw, 76px);
+  }
+  .mp-pcard-featured .mp-pcard-unit { color: rgba(255,255,255,0.72); font-size: 16px; }
+  .mp-pcard-featured .mp-pcard-market { color: rgba(255,255,255,0.55); border-top-color: rgba(255,255,255,0.14); }
   .mp-pcard-unit {
     font-family: var(--font-t); font-size: 14px; color: var(--mid-gray);
     letter-spacing: -0.01em; margin-top: 8px;

@@ -7,15 +7,17 @@ import ProofCards from '../components/ProofCards.astro'
 // Share-Line proof wall (home). Numbers sourced from share-line-job-counts-variable-growth.csv
 // (jobs 2023 -> 2025 total growth). Verified, market-volume comparator flat-to-contracting.
 const homeCards = [
+  { trade: 'Well drilling',    loc: '',                      num: '9¢',   unit: 'per click',     market: 'in an industry that averages $7.85 a click', down: false, featured: true },
+  { trade: 'Glass',            loc: '',                      num: '1 in 8', unit: 'clicks become leads', market: 'most campaigns convert 3–5%', down: false },
   { trade: 'Landscaping',      loc: 'Columbia',              num: '+40%', unit: 'more jobs',     market: 'in a flat market', down: false },
   { trade: 'Roofing',          loc: 'Columbia',              num: '+23%', unit: 'more jobs',     market: 'in a flat market', down: false },
-  { trade: 'Plumbing',         loc: 'Columbia',              num: '+29%', unit: 'more jobs',     market: 'in a flat market', down: false },
+  { trade: 'Plumbing',         loc: '',                      num: '1 in 3', unit: 'clicks become calls', market: 'in the off-season', down: false },
   { trade: 'Fencing',          loc: 'Columbia & Charleston', num: '+25%', unit: 'more jobs',     market: 'in a flat market', down: false },
   { trade: 'Gutters',          loc: 'Columbia & Florence',   num: '+22%', unit: 'more jobs',     market: 'in a flat market', down: false },
-  { trade: 'Painting',         loc: 'Columbia',              num: '+20%', unit: 'more jobs',     market: 'in a flat market', down: false },
-  { trade: 'Windows & doors',  loc: 'Columbia',              num: '+16%', unit: 'more jobs',     market: 'while the market shrank', down: true },
+  { trade: 'Windows & doors',  loc: '',                      num: '16.1%', unit: 'click-through rate', market: 'the industry benchmark is 6.47%', down: false },
   { trade: 'Pools',            loc: 'Midlands',              num: '+26%', unit: 'more installs', market: 'while pools fell 50%', down: true },
   { trade: 'Metal roofing',    loc: 'SC & GA',               num: '+30%', unit: 'more sold',     market: 'while the market shrank 15–25%', down: true },
+  { trade: 'Stone',            loc: 'Columbia',              num: '+232%', unit: 'more demand',  market: 'in the off-season', down: false },
 ];
 ---
 <Base
@@ -111,6 +113,21 @@ const homeCards = [
     <!-- Founder block removed 2026-07-17: off-aesthetic, belongs to a deeper page. -->
     <!-- Value Stack removed 2026-07-17: discounty price-anchor + names pitch, off the new positioning. -->
 
+    <!-- ═══ 4b. WE CATCH IT BEFORE IT COSTS YOU ═══ -->
+    <section class="mp-catch">
+      <div class="mp-catch-inner">
+        <p class="mp-eye" data-animate>After the Launch</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">We catch it before it costs you.</h2>
+        <p class="mp-catch-lede" data-animate data-delay="0.1">Campaigns don't fail loudly. They fail quietly, in ways you'd never see on an invoice. Every account gets watched every week. Recent catches:</p>
+        <ul class="mp-catch-list" data-animate data-delay="0.15">
+          <li>A plumbing client's campaign delivery collapsed 90% overnight. Caught the same day, diagnosed as a campaign issue, not a market issue, and restored — conversions never dipped.</li>
+          <li>An email campaign started silently dropping one in four sends. Caught before the next send went out, fixed before the client ever saw it.</li>
+          <li>Visitors on three client sites were clicking buttons that didn't respond — at the exact moment they were trying to act. Found it in the behavior recordings. Fixed it.</li>
+        </ul>
+        <p class="mp-catch-foot" data-animate data-delay="0.2">The launch is the easy part. The watching is what you're paying for.</p>
+      </div>
+    </section>
+
     <!-- ═══ 5. GUARANTEE ═══ -->
     <section class="mp-guarantee">
       <div class="mp-section-head mp-center">
@@ -132,7 +149,8 @@ const homeCards = [
     <section class="mp-close">
       <h2 class="mp-close-h1" data-animate>One company per trade, per market.</h2>
       <p class="mp-close-h2" data-animate data-delay="0.05">Is your territory still open?</p>
-      <p class="mp-close-body" data-animate data-delay="0.1">We can't sell your market twice. That's the whole point. If your competitor claims it first, we start sending <em>him</em> the work.</p>
+      <p class="mp-close-body" data-animate data-delay="0.1">Our clients buy clicks for nine cents in an industry that averages $7.85. That's what in-market data does.</p>
+      <p class="mp-close-body" data-animate data-delay="0.15">We can't sell your market twice. That's the whole point. If your competitor claims it first, we start sending <em>him</em> the work.</p>
       <div class="mp-close-cta" data-animate data-delay="0.2">
         <a href="/snapshot" class="mp-btn-primary">See If My Trade Is Still Open</a>
         <p class="mp-micro">Free. No email required. Takes 30 seconds.</p>
@@ -318,6 +336,31 @@ const homeCards = [
     /* Unlike the old chart, the video stays on mobile — 16:9 is short enough
        not to bury the proof cards. */
     .mp-hero { padding-bottom: 8px; }
+  }
+
+  /* ─── 4b. CATCH ─── */
+  .mp-catch { padding: 110px 32px; background: var(--white); border-top: 1px solid var(--border); }
+  .mp-catch-inner { max-width: 760px; margin: 0 auto; }
+  .mp-catch-lede {
+    font-family: var(--font-t); font-size: 19px; line-height: 1.5;
+    letter-spacing: -0.02em; color: var(--mid-gray); margin-bottom: 34px;
+  }
+  .mp-catch-list { list-style: none; padding: 0; margin: 0 0 34px; }
+  .mp-catch-list li {
+    font-family: var(--font-t); font-size: 17px; line-height: 1.55;
+    letter-spacing: -0.015em; color: var(--graphite);
+    padding: 20px 0 20px 34px; position: relative;
+    border-top: 1px solid var(--border);
+  }
+  .mp-catch-list li:last-child { border-bottom: 1px solid var(--border); }
+  .mp-catch-list li::before {
+    content: ''; position: absolute; left: 4px; top: 29px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--blue, #0071e3);
+  }
+  .mp-catch-foot {
+    font-family: var(--font-t); font-size: 17px; font-weight: 600;
+    letter-spacing: -0.015em; color: var(--graphite);
   }
 
   /* ─── 2. PROBLEM ─── */
