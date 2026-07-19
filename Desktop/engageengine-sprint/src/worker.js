@@ -117,6 +117,8 @@ var ROUTES = [
   { method: "GET", re: /^\/api\/clients\/([^/]+)\/activity$/, handler: (r, e, m) => handleClientActivity(r, e, m[1]) },
   // Firm-wide cross-client activity feed (session gated)
   { method: "GET", re: /^\/api\/activity$/, handler: handleActivityFeed },
+  // Cloud-agent status feed — reads agent_launches (shared command-center D1, written by engageengine-agents worker)
+  { method: "GET", re: /^\/api\/agents$/, handler: handleAgentsFeed },
   // Outcome loop — activities due for review + record what actually happened (session gated)
   { method: "GET", re: /^\/api\/activity\/due$/, handler: handleActivityDue },
   { method: "POST", re: /^\/api\/activity\/([0-9]+)\/outcome$/, handler: (r, e, m) => handleActivityOutcome(r, e, m[1]) },
@@ -413,16 +415,19 @@ async function handleJobAssign(request, env, jobId) {
 __name(handleJobAssign, "handleJobAssign");
 async function handleJobUpdate(request, env, jobId) {
   const body = await request.json().catch(() => ({}));
+  const fields = [];
+  const vals = [];
   const name = (body.name || "").trim();
-  if (name) {
-    await env.DB.prepare(
-      `UPDATE sprint_jobs SET name=?, assigned_to=?, due_date=?, updated_at=date('now') WHERE id=?`
-    ).bind(name, body.assigned_to || "", body.due_date || "", jobId).run();
-  } else {
-    await env.DB.prepare(
-      `UPDATE sprint_jobs SET assigned_to=?, due_date=?, updated_at=date('now') WHERE id=?`
-    ).bind(body.assigned_to || "", body.due_date || "", jobId).run();
-  }
+  if (name) { fields.push("name=?"); vals.push(name); }
+  if (body.assigned_to !== void 0) { fields.push("assigned_to=?"); vals.push(body.assigned_to || ""); }
+  if (body.due_date !== void 0) { fields.push("due_date=?"); vals.push(body.due_date || ""); }
+  if (body.notes !== void 0) { fields.push("notes=?"); vals.push(body.notes || ""); }
+  if (!fields.length) return json({ success: true });
+  fields.push("updated_at=date('now')");
+  vals.push(jobId);
+  await env.DB.prepare(
+    `UPDATE sprint_jobs SET ${fields.join(", ")} WHERE id=?`
+  ).bind(...vals).run();
   return json({ success: true });
 }
 __name(handleJobUpdate, "handleJobUpdate");
@@ -1839,6 +1844,19 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min
 .job-assign-select{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);padding:3px 8px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:11px;cursor:pointer;outline:none;transition:border-color 0.15s}
 .job-assign-select:hover,.job-assign-select:focus{border-color:var(--accent)}
 .job-assign-select.has-assignee{color:var(--accent);border-color:var(--accent)}
+.job-notes-btn{font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--text-dim);cursor:pointer;font-family:"JetBrains Mono",monospace;transition:all 0.15s}
+.job-notes-btn:hover{border-color:var(--accent);color:var(--accent)}
+.job-notes-btn.has-notes{color:var(--accent);border-color:var(--accent);background:var(--surface2)}
+.job-notes-panel{background:var(--surface);border:1px solid var(--border);border-top:none;padding:12px 16px}
+.job-notes-panel.hidden{display:none}
+.job-notes-input{width:100%;min-height:70px;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-family:"DM Sans",sans-serif;font-size:13px;line-height:1.6;resize:vertical;outline:none;transition:border-color 0.15s}
+.job-notes-input:focus{border-color:var(--accent)}
+.job-notes-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
+.job-notes-save{font-size:11px;padding:4px 14px;border-radius:4px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:"JetBrains Mono",monospace}
+.job-notes-cancel{font-size:11px;padding:4px 12px;border-radius:4px;border:1px solid var(--border);background:none;color:var(--text-dim);cursor:pointer;font-family:"JetBrains Mono",monospace}
+.job-notes-cancel:hover{border-color:var(--text-dim);color:var(--text)}
+.job-notes-saved{font-size:11px;color:var(--green);opacity:0;transition:opacity 0.3s}
+.job-notes-saved.show{opacity:1}
 /* \u2500\u2500 Tasks \u2500\u2500 */
 .task-list{border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden}
 .task-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:14px;transition:background 0.1s;position:relative}
@@ -2182,6 +2200,7 @@ body{padding-bottom:80px}
       <button class="mode-tab" id="modeMaintenanceBtn" data-action="mode-maintenance">Maintenance</button>
       <button class="mode-tab" id="modeHealthBtn" data-action="mode-health">Health</button>
       <button class="mode-tab" id="modeActivityBtn" data-action="mode-activity">Activity</button>
+      <button class="mode-tab" id="modeAgentsBtn" data-action="mode-agents">Agents</button>
     </div>
   </div>
   <div class="header-right">
@@ -2256,6 +2275,11 @@ body{padding-bottom:80px}
 <!-- Activity mode -->
 <div id="activityMode" class="hidden">
   <div id="activityContent"><div class="loading">Loading...</div></div>
+</div>
+
+<!-- Agents mode -->
+<div id="agentsMode" class="hidden">
+  <div id="agentsContent"><div class="loading">Loading...</div></div>
 </div>
 
 </div><!-- /container -->
@@ -2352,6 +2376,7 @@ document.addEventListener('click', function(e) {
   else if (act === 'mode-maintenance') { switchMode('maintenance'); }
   else if (act === 'mode-health') { switchMode('health'); }
   else if (act === 'mode-activity') { switchMode('activity'); }
+  else if (act === 'mode-agents') { switchMode('agents'); }
   else if (act === 'allwork-tab') { switchAllWorkTab(val); }
   else if (act === 'allwork-goto-client') { switchMode('jobs'); loadClient(id); }
   else if (act === 'allwork-job-complete') { completeAllWorkJob(id); }
@@ -2372,6 +2397,9 @@ document.addEventListener('click', function(e) {
   else if (act === 'job-edit') { openJobEdit(id); }
   else if (act === 'job-save') { saveJobEdit(id); }
   else if (act === 'job-cancel-edit') { cancelJobEdit(id); }
+  else if (act === 'job-notes') { toggleJobNotes(id); }
+  else if (act === 'job-notes-save') { saveJobNotes(id); }
+  else if (act === 'job-notes-cancel') { cancelJobNotes(id); }
   else if (act === 'toggle-add-job') { toggleAddJob(id); }
   else if (act === 'create-job') { createJob(id); }
   else if (act === 'toggle-add-task') { toggleAddTask(id); }
@@ -2428,6 +2456,7 @@ function switchMode(mode) {
   document.getElementById('modeMaintenanceBtn').classList.toggle('active', mode === 'maintenance');
   document.getElementById('modeHealthBtn').classList.toggle('active', mode === 'health');
   document.getElementById('modeActivityBtn').classList.toggle('active', mode === 'activity');
+  document.getElementById('modeAgentsBtn').classList.toggle('active', mode === 'agents');
   document.getElementById('jobsMode').classList.toggle('hidden', mode !== 'jobs');
   document.getElementById('sprintMode').classList.toggle('hidden', mode !== 'sprint');
   document.getElementById('allWorkMode').classList.toggle('hidden', mode !== 'allwork');
@@ -2435,6 +2464,7 @@ function switchMode(mode) {
   document.getElementById('maintenanceMode').classList.toggle('hidden', mode !== 'maintenance');
   document.getElementById('healthMode').classList.toggle('hidden', mode !== 'health');
   document.getElementById('activityMode').classList.toggle('hidden', mode !== 'activity');
+  document.getElementById('agentsMode').classList.toggle('hidden', mode !== 'agents');
   document.getElementById('navBack').style.display = 'none';
   if (mode === 'jobs') {
     document.getElementById('headerStats').style.display = '';
@@ -2457,6 +2487,9 @@ function switchMode(mode) {
   } else if (mode === 'activity') {
     document.getElementById('headerStats').style.display = 'none';
     loadActivityFeed();
+  } else if (mode === 'agents') {
+    document.getElementById('headerStats').style.display = 'none';
+    loadAgentsFeed();
   }
 }
 
@@ -2773,8 +2806,17 @@ function renderJobSection(job, tasks, clientId, today, collapsed) {
   html += '<option value="">Assign...</option>' + teamOptionsSelected(job.assigned_to || '');
   html += '</select>';
   if (job.due_date) html += '<span class="task-due ' + dueClass + '">' + formatDate(job.due_date) + '</span>';
+  var hasNotes = job.notes && String(job.notes).trim();
+  html += '<button class="job-notes-btn' + (hasNotes ? ' has-notes' : '') + '" data-action="job-notes" data-id="' + job.id + '" title="' + (hasNotes ? 'View / edit notes' : 'Add notes') + '">&#128221; Notes</button>';
   if (isActive) html += '<button class="task-edit-btn" data-action="job-edit" data-id="' + job.id + '" title="Edit job">&#9998;</button>';
   html += btnHtml + '<span class="job-badge ' + (isActive ? 'active' : 'complete') + '">' + job.status + '</span>';
+  html += '</div></div>';
+  html += '<div class="job-notes-panel hidden" id="jobNotes-' + job.id + '">';
+  html += '<textarea class="job-notes-input" id="jobNotesInput-' + job.id + '" placeholder="What is this job? Scope, context, key details...">' + esc(job.notes || '') + '</textarea>';
+  html += '<div class="job-notes-actions">';
+  html += '<button class="job-notes-save" data-action="job-notes-save" data-id="' + job.id + '">Save</button>';
+  html += '<button class="job-notes-cancel" data-action="job-notes-cancel" data-id="' + job.id + '">Cancel</button>';
+  html += '<span class="job-notes-saved" id="jobNotesSaved-' + job.id + '">Saved</span>';
   html += '</div></div>';
   html += '<div class="task-list' + (collapsed ? ' hidden' : '') + '">';
   for (var i = 0; i < tasks.length; i++) {
@@ -2984,6 +3026,50 @@ function cancelJobEdit(jobId) {
   var row = document.getElementById('job-row-' + jobId);
   if (editRow) editRow.remove();
   if (row) { var header = row.querySelector('.job-header'); if (header) header.classList.remove('hidden'); }
+}
+
+// \\u2500\\u2500 Job notes \\u2500\\u2500
+function toggleJobNotes(jobId) {
+  var panel = document.getElementById('jobNotes-' + jobId);
+  if (!panel) return;
+  var opening = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  if (opening) {
+    var ta = document.getElementById('jobNotesInput-' + jobId);
+    if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  }
+}
+
+async function saveJobNotes(jobId) {
+  var ta = document.getElementById('jobNotesInput-' + jobId);
+  if (!ta) return;
+  var notes = ta.value;
+  var savedEl = document.getElementById('jobNotesSaved-' + jobId);
+  try {
+    var res = await fetch(API + '/api/jobs/' + jobId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes: notes })
+    });
+    if (!res.ok) throw new Error('save failed');
+    // reflect saved state on the button without a full reload
+    var row = document.getElementById('job-row-' + jobId);
+    if (row) {
+      var btn = row.querySelector('.job-notes-btn');
+      if (btn) {
+        if (notes.trim()) { btn.classList.add('has-notes'); btn.title = 'View / edit notes'; }
+        else { btn.classList.remove('has-notes'); btn.title = 'Add notes'; }
+      }
+    }
+    if (savedEl) { savedEl.classList.add('show'); setTimeout(function(){ savedEl.classList.remove('show'); }, 1500); }
+  } catch (err) {
+    if (savedEl) { savedEl.textContent = 'Save failed'; savedEl.style.color = 'var(--red)'; savedEl.classList.add('show'); }
+  }
+}
+
+function cancelJobNotes(jobId) {
+  var panel = document.getElementById('jobNotes-' + jobId);
+  if (panel) panel.classList.add('hidden');
 }
 
 // \u2500\u2500 Task delete + undo \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -4794,6 +4880,64 @@ function renderClientActivity(rows){
   wrap.innerHTML=html;
 }
 
+// ── Cloud Agent Feed (engageengine-agents) ─────────────────
+var agentsFeedData=[];
+
+async function loadAgentsFeed(){
+  var wrap=document.getElementById('agentsContent');
+  if(!wrap)return;
+  wrap.innerHTML='<div class="loading">Loading...</div>';
+  try{
+    var res=await fetch(API+'/api/agents');
+    if(res.status===401){showLoginScreen();return;}
+    if(!res.ok){wrap.innerHTML='<div class="loading">Failed to load agents.</div>';return;}
+    var data=await res.json();
+    agentsFeedData=data.agents||[];
+    renderAgentsFeed();
+  }catch(e){wrap.innerHTML='<div class="loading">Failed to load agents.</div>';}
+}
+
+function agentAgo(ts){
+  if(!ts)return'';
+  var s=Math.max(0,Math.round((Date.now()-ts)/1000));
+  if(s<60)return s+'s ago';
+  var m=Math.round(s/60);
+  if(m<60)return m+'m ago';
+  var h=Math.round(m/60);
+  if(h<24)return h+'h ago';
+  return Math.round(h/24)+'d ago';
+}
+
+function renderAgentsFeed(){
+  var wrap=document.getElementById('agentsContent');
+  if(!wrap)return;
+  var rows=agentsFeedData||[];
+  var meta={launched:['Launched','#8668ff'],active:['Working','#00a1b3'],quiet:['Quiet','#ed6300'],completed:['Done','#0071e3'],error:['Error','#b64400']};
+  var html='<div class="section-title">Cloud Agents</div>';
+  html+='<div style="font-size:13px;color:var(--text-dim);margin-bottom:14px">Live status from claude.ai/code cloud runs reporting to the engageengine-agents feed.</div>';
+  if(!rows.length){
+    html+='<div class="loading">No agent runs yet.</div>';
+    wrap.innerHTML=html;
+    return;
+  }
+  html+='<div class="activity-list">';
+  for(var k=0;k<rows.length;k++){
+    var r=rows[k];
+    var m=meta[r.view_state]||meta.active;
+    html+='<div class="activity-item" style="padding:10px 12px;margin-bottom:10px;border:1px solid var(--border);border-left:4px solid '+m[1]+';border-radius:10px;background:var(--surface)">';
+    html+='<div style="font-size:12px;color:var(--text-dim)"><span style="color:'+m[1]+';font-weight:600">'+m[0]+'</span> · '+agentAgo(r.last_event_at||r.created_at)+(r.repos?' · '+esc(r.repos):'')+'</div>';
+    html+='<div style="font-size:14px;font-weight:600;margin-top:3px">'+esc(r.title||r.run_id)+'</div>';
+    if(r.detail)html+='<div style="font-size:13px;color:var(--text-dim);margin-top:2px">'+esc(r.detail)+'</div>';
+    var links='';
+    if(r.session_url)links+='<a href="'+esc(r.session_url)+'" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;margin-right:12px">Open session ↗</a>';
+    if(r.pr_urls){var prs=String(r.pr_urls).split(',').join(' ').split(' ');for(var p=0;p<prs.length;p++){if(prs[p])links+='<a href="'+esc(prs[p])+'" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;margin-right:12px">PR ↗</a>';}}
+    if(links)html+='<div style="margin-top:8px">'+links+'</div>';
+    html+='</div>';
+  }
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+
 // ── Firm-wide Activity Feed ─────────────────────────────────
 
 async function loadActivityFeed(){
@@ -5318,6 +5462,20 @@ async function handleActivityFeed(request, env) {
   return json({ activity });
 }
 __name(handleActivityFeed, "handleActivityFeed");
+async function handleAgentsFeed(request, env) {
+  const res = await env.DB.prepare(
+    "SELECT run_id, title, repos, state, detail, session_url, pr_urls, created_at, last_event_at FROM agent_launches ORDER BY COALESCE(last_event_at, created_at) DESC LIMIT 100"
+  ).all().catch(() => ({ results: [] }));
+  const now = Date.now();
+  const QUIET_MS = 12 * 60 * 1000;
+  const agents = (res.results || []).map((r) => {
+    let view = r.state;
+    if (r.state === "active" && r.last_event_at && now - r.last_event_at > QUIET_MS) view = "quiet";
+    return Object.assign({}, r, { view_state: view });
+  });
+  return json({ agents, now });
+}
+__name(handleAgentsFeed, "handleAgentsFeed");
 async function handleActivityDue(request, env) {
   // The review queue: activities whose review date has arrived and that have no recorded outcome yet.
   const rows = await env.DB.prepare(`
