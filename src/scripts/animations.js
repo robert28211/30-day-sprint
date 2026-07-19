@@ -4,16 +4,21 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
 
 // ─── Scroll-reveal: any element with [data-animate] ───────────────────────────
-gsap.utils.toArray('[data-animate]').forEach((el) => {
-  gsap.from(el, {
-    scrollTrigger: { trigger: el, start: 'top 85%', once: true },
-    opacity: 0,
-    y: 50,
-    duration: 0.9,
-    delay: parseFloat(el.dataset.delay) || 0,
-    ease: 'power3.out',
+// Respect prefers-reduced-motion: skip the slide/fade entirely so content is
+// never hidden behind an animation for motion-sensitive users.
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+if (!prefersReducedMotion) {
+  gsap.utils.toArray('[data-animate]').forEach((el) => {
+    gsap.from(el, {
+      scrollTrigger: { trigger: el, start: 'top 85%', once: true },
+      opacity: 0,
+      y: 50,
+      duration: 0.9,
+      delay: parseFloat(el.dataset.delay) || 0,
+      ease: 'power3.out',
+    })
   })
-})
+}
 
 // ─── Hero: CSS handles the animation — no JS opacity:0 on LCP elements ───────
 // Hero words and sub-copy use @keyframes defined in global.css.

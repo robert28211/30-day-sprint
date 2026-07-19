@@ -32,7 +32,7 @@ const { cards = [], foot = '', video = null } = Astro.props;
 </section>
 
 <style>
-  /* Proof wall: elevated white cards floating on Canvas (Apple depth, not flat) */
+  /* Proof wall: dark graphite receipts on the light Canvas — high-contrast "wall" */
   .mp-proofband { padding: 8px 32px 52px; background: var(--canvas); }
   .mp-proofband-inner {
     max-width: 1160px; margin: 0 auto;
@@ -41,60 +41,64 @@ const { cards = [], foot = '', video = null } = Astro.props;
   @media (min-width: 620px) { .mp-proofband-inner { grid-template-columns: repeat(2, 1fr); } }
   @media (min-width: 940px) { .mp-proofband-inner { grid-template-columns: repeat(3, 1fr); } }
   .mp-pcard {
-    background: var(--white);
+    background: #1d1d1f;
+    border: 1px solid rgba(255,255,255,0.09);
     padding: 32px 32px 34px;
     display: flex; flex-direction: column;
-    box-shadow: rgba(0,0,0,0.05) 0 2px 8px, rgba(0,0,0,0.06) 0 10px 30px;
-    transition: box-shadow 0.28s ease, transform 0.28s ease;
+    box-shadow: rgba(0,0,0,0.10) 0 2px 8px, rgba(0,0,0,0.16) 0 14px 34px;
+    transition: box-shadow 0.28s ease, transform 0.28s ease, border-color 0.28s ease;
   }
   .mp-pcard:hover {
-    box-shadow: rgba(0,0,0,0.06) 0 4px 12px, rgba(0,0,0,0.10) 0 18px 44px;
+    border-color: rgba(110,158,255,0.45);
+    box-shadow: rgba(0,0,0,0.12) 0 6px 16px, rgba(0,0,0,0.22) 0 22px 50px;
     transform: translateY(-4px);
   }
   .mp-pcard-trade {
     font-family: var(--font-t); font-size: 12px; font-weight: 600;
-    letter-spacing: 0.07em; text-transform: uppercase; color: var(--blue, #0071e3);
+    letter-spacing: 0.07em; text-transform: uppercase; color: #6e9eff;
     line-height: 1.4;
   }
-  .mp-pcard-loc { color: var(--light-gray); font-weight: 400; }
+  .mp-pcard-loc { color: rgba(255,255,255,0.5); font-weight: 400; }
   .mp-pcard-num {
     font-family: var(--font-d); font-size: clamp(42px, 4.4vw, 52px);
     font-weight: 600; letter-spacing: -0.03em; line-height: 1;
-    color: var(--blue, #0071e3); margin-top: 20px;
+    color: #ffffff; margin-top: 20px;
   }
 
-  /* Featured card: dark graphite monster spanning 2 columns */
-  .mp-pcard-featured { background: var(--graphite, #1d1d1f); }
-  @media (min-width: 940px) { .mp-pcard-featured { grid-column: span 2; } }
-  .mp-pcard-featured .mp-pcard-trade { color: #6e9eff; }
-  .mp-pcard-featured .mp-pcard-num {
-    color: #ffffff; font-size: clamp(56px, 6vw, 76px);
+  /* Featured card: near-black hero, blue hairline + glow, spanning 2 columns */
+  .mp-pcard-featured {
+    background: #0a0a0c;
+    border-color: rgba(110,158,255,0.40);
+    box-shadow: rgba(0,0,0,0.28) 0 18px 44px, rgba(110,158,255,0.12) 0 0 0 1px;
   }
-  .mp-pcard-featured .mp-pcard-unit { color: rgba(255,255,255,0.72); font-size: 16px; }
-  .mp-pcard-featured .mp-pcard-market { color: rgba(255,255,255,0.55); border-top-color: rgba(255,255,255,0.14); }
+  @media (min-width: 940px) { .mp-pcard-featured { grid-column: span 2; } }
+  .mp-pcard-featured .mp-pcard-num {
+    font-size: clamp(56px, 6vw, 76px);
+  }
+  .mp-pcard-featured .mp-pcard-unit { font-size: 16px; }
   .mp-pcard-unit {
-    font-family: var(--font-t); font-size: 14px; color: var(--mid-gray);
+    font-family: var(--font-t); font-size: 15px; color: rgba(255,255,255,0.72);
     letter-spacing: -0.01em; margin-top: 8px;
   }
   .mp-pcard-market {
-    font-family: var(--font-t); font-size: 13px;
+    font-family: var(--font-t); font-size: 14px;
     letter-spacing: -0.01em; margin-top: 16px;
-    padding-top: 15px; border-top: 1px solid var(--border);
+    padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.12);
   }
-  .mp-pcard-market.mp-flat { color: var(--mid-gray); }
+  .mp-pcard-market.mp-flat { color: rgba(255,255,255,0.62); }
 
-  /* Video tile: same white card shell, video where the number goes */
+  /* Video tile: same dark card shell, video where the number goes */
   .mp-pcard-video { padding: 14px 14px 16px; justify-content: flex-start; }
   .mp-pcard-video-frame {
-    background: #1d1d1f; border-radius: 6px; overflow: hidden; aspect-ratio: 16 / 9;
+    background: #000; border-radius: 6px; overflow: hidden; aspect-ratio: 16 / 9;
   }
   .mp-pcard-video-frame video { width: 100%; height: 100%; display: block; }
   .mp-pcard-video-label {
     font-family: var(--font-t); font-size: 13px; font-weight: 600;
-    letter-spacing: -0.01em; color: var(--graphite);
+    letter-spacing: -0.01em; color: rgba(255,255,255,0.85);
     margin-top: 12px; text-align: center;
   }
-  .mp-pcard-market.mp-down { color: #b3352e; font-weight: 500; }
+  .mp-pcard-market.mp-down { color: #ff6b61; font-weight: 500; }
   .mp-proofband-foot {
     max-width: 1160px; margin: 24px auto 0;
     font-family: var(--font-t); font-size: 15px; line-height: 1.5;
