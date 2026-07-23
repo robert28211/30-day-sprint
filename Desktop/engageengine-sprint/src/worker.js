@@ -4403,6 +4403,7 @@ var SERVICE_COLS = [
   {key:'pipeline',     label:'Pipeline'},
   {key:'pixel',        label:'Pixel'},
   {key:'gbp',          label:'GBP'},
+  {key:'crm',          label:'Vendasta'},
   {key:'social',       label:'Social'},
   {key:'website',      label:'Website'},
   {key:'seo',          label:'SEO'},
