@@ -84,6 +84,9 @@ var ROUTES = [
   { method: "GET", re: /^\/api\/sprint\/([^/]+)$/, handler: (r, e, m) => handleSprintGet(r, e, m[1]) },
   { method: "POST", re: /^\/api\/sprint\/toggle$/, handler: handleSprintToggle },
   { method: "POST", re: /^\/api\/sprint\/activate$/, handler: handleSprintActivate },
+  // Routine engine — recurring per-client operating loop (cadence-driven)
+  { method: "POST", re: /^\/api\/routine\/generate$/, handler: handleRoutineGenerate },
+  { method: "GET", re: /^\/api\/routine\/status$/, handler: handleRoutineStatus },
   // Gmail OAuth
   { method: "GET", re: /^\/api\/gmail\/auth$/, handler: handleGmailAuth },
   { method: "GET", re: /^\/api\/gmail\/callback$/, handler: handleGmailCallback, public: true },
@@ -510,6 +513,99 @@ async function handleSprintActivate(request, env) {
   return json({ success: true });
 }
 __name(handleSprintActivate, "handleSprintActivate");
+// ── Routine engine ────────────────────────────────────────────────────────────
+// Recurring per-client operating loop. Routine templates (is_routine=1) with a
+// cadence auto-generate a Job + Tasks per eligible client, once per cadence period.
+// Eligibility: applies_when empty = all sprint clients; otherwise the client must
+// have at least one of the listed services active in client_services.
+function routineAddDays(today, n) {
+  const d = new Date(today + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().split("T")[0];
+}
+__name(routineAddDays, "routineAddDays");
+function routineIsoWeek(today) {
+  const d = new Date(today + "T00:00:00Z");
+  const day = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - day + 3);
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((d.getTime() - firstThu.getTime()) / 864e5 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
+  return d.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
+}
+__name(routineIsoWeek, "routineIsoWeek");
+function routinePeriodKey(cadence, today) {
+  if (cadence === "weekly") return routineIsoWeek(today);
+  if (cadence === "monthly") return today.slice(0, 7);
+  if (cadence === "45day") return "45-" + Math.floor(new Date(today + "T00:00:00Z").getTime() / 864e5 / 45);
+  return today;
+}
+__name(routinePeriodKey, "routinePeriodKey");
+async function generateRoutineJobs(env, opts = {}) {
+  const dryRun = !!opts.dry_run;
+  const onlyClient = opts.client_id || null;
+  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+  const dueDays = { daily: 1, weekly: 7, monthly: 30, "45day": 45 };
+  const tmpls = (await env.DB.prepare(
+    "SELECT * FROM sprint_templates WHERE is_routine=1 AND cadence IN ('daily','weekly','monthly','45day') ORDER BY sort_order"
+  ).all()).results;
+  let clientSql = "SELECT id, name FROM sprint_clients WHERE has_sprint=1 AND archived=0";
+  const cb = [];
+  if (onlyClient) { clientSql += " AND id=?"; cb.push(onlyClient); }
+  const clients = (await env.DB.prepare(clientSql).bind(...cb).all()).results;
+  const svcRows = (await env.DB.prepare("SELECT client_id, service FROM client_services WHERE status NOT IN ('none','')").all()).results;
+  const svcByClient = {};
+  for (const s of svcRows) { (svcByClient[s.client_id] = svcByClient[s.client_id] || /* @__PURE__ */ new Set()).add(s.service); }
+  const report = [];
+  for (const t of tmpls) {
+    const period = routinePeriodKey(t.cadence, today);
+    const dueDate = routineAddDays(today, dueDays[t.cadence] || 7);
+    const applies = (t.applies_when || "").split(",").map((s) => s.trim()).filter(Boolean);
+    const tasks = (await env.DB.prepare("SELECT * FROM sprint_template_tasks WHERE template_id=? ORDER BY sort_order").bind(t.id).all()).results;
+    for (const c of clients) {
+      if (applies.length) {
+        const svc = svcByClient[c.id] || /* @__PURE__ */ new Set();
+        if (!applies.some((a) => svc.has(a))) continue;
+      }
+      const existing = await env.DB.prepare(
+        "SELECT job_id FROM routine_generation WHERE template_id=? AND client_id=? AND period_key=?"
+      ).bind(t.id, c.id, period).first();
+      if (existing) { report.push({ template: t.name, client: c.name, period, action: "exists" }); continue; }
+      if (dryRun) { report.push({ template: t.name, client: c.name, period, action: "would_create" }); continue; }
+      const jobId = genId("job");
+      const stmts = [
+        env.DB.prepare("INSERT INTO sprint_jobs (id, client_id, name, status, assigned_to, due_date, created_at, updated_at) VALUES (?, ?, ?, 'Active', ?, ?, date('now'), date('now'))").bind(jobId, c.id, `${t.name} — ${period}`, "", dueDate)
+      ];
+      for (const tt of tasks) {
+        stmts.push(
+          env.DB.prepare("INSERT INTO sprint_tasks (id, job_id, client_id, task_id, notes, status, assigned_to, due_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'Not Started', ?, ?, date('now'), date('now'))").bind(genId("task"), jobId, c.id, tt.id, tt.notes, tt.assigned_to_role || "", dueDate)
+        );
+      }
+      stmts.push(
+        env.DB.prepare("INSERT OR IGNORE INTO routine_generation (template_id, client_id, period_key, job_id) VALUES (?, ?, ?, ?)").bind(t.id, c.id, period, jobId)
+      );
+      await env.DB.batch(stmts);
+      report.push({ template: t.name, client: c.name, period, action: "created", job_id: jobId });
+    }
+  }
+  return report;
+}
+__name(generateRoutineJobs, "generateRoutineJobs");
+async function handleRoutineGenerate(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const report = await generateRoutineJobs(env, { client_id: body.client_id || null, dry_run: !!body.dry_run });
+  return json({ ok: true, created: report.filter((r) => r.action === "created").length, count: report.length, report });
+}
+__name(handleRoutineGenerate, "handleRoutineGenerate");
+async function handleRoutineStatus(request, env) {
+  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+  const tmpls = (await env.DB.prepare("SELECT id, name, cadence, applies_when, sort_order FROM sprint_templates WHERE is_routine=1 ORDER BY sort_order").all()).results;
+  const gen = (await env.DB.prepare("SELECT template_id, COUNT(*) n, MAX(period_key) last_period, MAX(created_at) last_at FROM routine_generation GROUP BY template_id").all()).results;
+  const byT = {};
+  for (const g of gen) byT[g.template_id] = g;
+  const out = tmpls.map((t) => ({ ...t, generated_total: byT[t.id]?.n || 0, last_period: byT[t.id]?.last_period || null, last_at: byT[t.id]?.last_at || null }));
+  return json({ today, templates: out });
+}
+__name(handleRoutineStatus, "handleRoutineStatus");
 async function callClaude(env, messages, model = "claude-sonnet-5", system = null) {
   if (!env.ANTHROPIC_API_KEY)
     throw new Error("ANTHROPIC_API_KEY not set");
@@ -1323,6 +1419,16 @@ var worker_default = {
         ).bind(err.message, "main").run().catch(() => {
         });
         await writeSprintGmailHeartbeat(env, err.message);
+      }
+      // Routine engine: generate recurring per-client jobs once per day.
+      try {
+        const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+        const st = await env.DB.prepare("SELECT v FROM routine_state WHERE k='last_gen_date'").first().catch(() => null);
+        if (!st || st.v !== today) {
+          await generateRoutineJobs(env, {});
+          await env.DB.prepare("INSERT INTO routine_state (k, v) VALUES ('last_gen_date', ?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").bind(today).run();
+        }
+      } catch (e) {
       }
     })());
   },
@@ -5429,7 +5535,24 @@ async function handleActivityIngest(request, env) {
     `INSERT INTO client_activity (client_id, client_name, tool, kind, score, summary, artifact_url, expected_outcome, review_at)
      VALUES (?,?,?,?,?,?,?,?, CASE WHEN ?9 IS NULL THEN NULL ELSE date('now', '+' || ?9 || ' days') END)`
   ).bind(clientId, clientName, tool, kind, score, summary, artifactUrl, expectedOutcome, reviewDays).run();
-  return json({ ok: true, id: ins.meta?.last_row_id ?? null, resolved });
+  // Routine auto-completion: if a routine step is tagged with this tool, mark the
+  // client's open instances of that step Complete (best-effort; exact tool match).
+  let autoCompleted = 0;
+  if (clientId && tool) {
+    try {
+      const tks = (await env.DB.prepare("SELECT id FROM sprint_template_tasks WHERE tool_key!='' AND LOWER(tool_key)=LOWER(?)").bind(tool).all()).results;
+      if (tks.length) {
+        const ids = tks.map((r) => r.id);
+        const ph = ids.map(() => "?").join(",");
+        const upd = await env.DB.prepare(
+          `UPDATE sprint_tasks SET status='Complete', completed_date=date('now'), updated_at=date('now') WHERE client_id=? AND status!='Complete' AND task_id IN (${ph})`
+        ).bind(clientId, ...ids).run();
+        autoCompleted = upd.meta?.changes || 0;
+      }
+    } catch (e) {
+    }
+  }
+  return json({ ok: true, id: ins.meta?.last_row_id ?? null, resolved, auto_completed: autoCompleted });
 }
 __name(handleActivityIngest, "handleActivityIngest");
 async function handleClientActivity(request, env, clientId) {
