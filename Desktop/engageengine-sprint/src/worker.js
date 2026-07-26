@@ -5515,15 +5515,19 @@ async function auditGadsToken(env) {
   return d.access_token;
 }
 __name(auditGadsToken, "auditGadsToken");
+// Direct-billed accounts (client pays Google direct; NOT under our MCC 7536541386).
+// Do NOT send login-customer-id=MCC for these — it fails. See Credentials Index.
+var AUDIT_DIRECT_ACCOUNTS = /* @__PURE__ */ new Set(["6952791370", "1134268807"]);
 async function auditGAQL(token, env, custId, query) {
+  const headers = {
+    "Authorization": `Bearer ${token}`,
+    "developer-token": env.GADS_DEVELOPER_TOKEN,
+    "Content-Type": "application/json"
+  };
+  if (!AUDIT_DIRECT_ACCOUNTS.has(String(custId))) headers["login-customer-id"] = "7536541386";
   const resp = await fetch(`https://googleads.googleapis.com/v21/customers/${custId}/googleAds:search`, {
     method: "POST",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "developer-token": env.GADS_DEVELOPER_TOKEN,
-      "login-customer-id": "7536541386",
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify({ query })
   });
   if (!resp.ok) {
