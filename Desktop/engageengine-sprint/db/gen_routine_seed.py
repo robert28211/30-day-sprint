@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 # Generates the EngageEngine client-operating-routine seed for the Sprint Tracker.
 # Emits idempotent SQL: clears prior routine rows (id prefix 'rt-') then re-inserts.
 
@@ -69,7 +70,7 @@ TEMPLATES = [
    ("Verify no conversion-tracking regressions after changes", "Staff", ""),
  ]),
  ("rt-daily", "Daily Ops (all clients)", "daily", "", 80, [
-   ("Run /adcheck pulse — act on flags only (CPL spikes, spend anomalies, traffic drops)", "Staff", "adcheck"),
+   ("Run `/adcheck top` daily (top-spender Google Ads pulse); full `/adcheck` sweep (all clients + Meta + GA4) Mon/Wed/Fri — act on flags only", "Staff", "adcheck"),
    ("Run /morning inbox sweep → today's action items", "Staff", ""),
    ("Lead-recap → Neo Drafts (never auto-sends)", "Staff", ""),
    ("Verify the intent pipeline ran today", "Staff", ""),
@@ -117,6 +118,6 @@ for tid, name, cadence, applies, sort, tasks in TEMPLATES:
           f"VALUES ('{ttid}','{tid}','{esc(notes)}','{role}',{i+1},'{tool}');"
         )
 sql = "\n".join(lines) + "\n"
-open("/private/tmp/claude-501/-Users-robbiebutt/4ad80d1c-d1ec-4a54-87ab-19fd289a39c0/scratchpad/routine_seed.sql","w").write(sql)
+open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"routine_seed.sql"),"w").write(sql)
 n_t = len(TEMPLATES); n_tasks = sum(len(t[5]) for t in TEMPLATES)
 print(f"Generated {n_t} templates, {n_tasks} tasks -> routine_seed.sql")
