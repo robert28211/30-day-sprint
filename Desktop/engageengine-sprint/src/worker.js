@@ -87,6 +87,8 @@ var ROUTES = [
   // Routine engine — recurring per-client operating loop (cadence-driven)
   { method: "POST", re: /^\/api\/routine\/generate$/, handler: handleRoutineGenerate },
   { method: "GET", re: /^\/api\/routine\/status$/, handler: handleRoutineStatus },
+  { method: "GET", re: /^\/api\/routine\/board$/, handler: handleRoutineBoard },
+  { method: "GET", re: /^\/api\/routine\/job\/([^/]+)\/tasks$/, handler: (r, e, m) => handleRoutineJobTasks(r, e, m[1]) },
   // Gmail OAuth
   { method: "GET", re: /^\/api\/gmail\/auth$/, handler: handleGmailAuth },
   { method: "GET", re: /^\/api\/gmail\/callback$/, handler: handleGmailCallback, public: true },
@@ -606,6 +608,77 @@ async function handleRoutineStatus(request, env) {
   return json({ today, templates: out });
 }
 __name(handleRoutineStatus, "handleRoutineStatus");
+async function handleRoutineBoard(request, env) {
+  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+  const tmpls = (await env.DB.prepare("SELECT id, name, cadence, applies_when, sort_order FROM sprint_templates WHERE is_routine=1 AND cadence IN ('daily','weekly','monthly','45day') ORDER BY sort_order").all()).results;
+  const clients = (await env.DB.prepare("SELECT id, name FROM sprint_clients WHERE has_sprint=1 AND archived=0 ORDER BY name").all()).results;
+  const svcRows = (await env.DB.prepare("SELECT client_id, service FROM client_services WHERE status NOT IN ('none','')").all()).results;
+  const svcByClient = {};
+  for (const s of svcRows) { (svcByClient[s.client_id] = svcByClient[s.client_id] || {})[s.service] = 1; }
+  const periodByCadence = {
+    daily: routinePeriodKey("daily", today),
+    weekly: routinePeriodKey("weekly", today),
+    monthly: routinePeriodKey("monthly", today),
+    "45day": routinePeriodKey("45day", today)
+  };
+  const periods = [...new Set(Object.values(periodByCadence))];
+  const genRows = periods.length ? (await env.DB.prepare(
+    `SELECT template_id, client_id, period_key, job_id FROM routine_generation WHERE period_key IN (${periods.map(() => "?").join(",")})`
+  ).bind(...periods).all()).results : [];
+  const genMap = {};
+  const jobIds = [];
+  for (const g of genRows) { genMap[g.template_id + "|" + g.client_id + "|" + g.period_key] = g.job_id; if (g.job_id) jobIds.push(g.job_id); }
+  const taskByJob = {};
+  if (jobIds.length) {
+    const trows = (await env.DB.prepare(
+      `SELECT job_id, COUNT(*) total, SUM(CASE WHEN status='Complete' THEN 1 ELSE 0 END) done, MIN(due_date) due FROM sprint_tasks WHERE job_id IN (${jobIds.map(() => "?").join(",")}) GROUP BY job_id`
+    ).bind(...jobIds).all()).results;
+    for (const t of trows) taskByJob[t.job_id] = t;
+  }
+  const lastRows = (await env.DB.prepare("SELECT client_id, MAX(created_at) last_at FROM routine_generation GROUP BY client_id").all()).results;
+  const lastByClient = {};
+  for (const r of lastRows) lastByClient[r.client_id] = r.last_at;
+  const cells = {};
+  const pulse = {};
+  for (const cad of ["daily", "weekly", "monthly", "45day"]) pulse[cad] = { total: 0, done: 0, partial: 0, pending: 0, overdue: 0, none: 0 };
+  for (const c of clients) {
+    cells[c.id] = {};
+    for (const t of tmpls) {
+      const applies = (t.applies_when || "").split(",").map((s) => s.trim()).filter(Boolean);
+      const applicable = !applies.length || applies.some((a) => (svcByClient[c.id] || {})[a]);
+      const period = periodByCadence[t.cadence];
+      const jobId = genMap[t.id + "|" + c.id + "|" + period] || null;
+      let status = "na", total = 0, done = 0, due = null;
+      if (applicable) {
+        if (!jobId) status = "none";
+        else {
+          const tk = taskByJob[jobId] || { total: 0, done: 0, due: null };
+          total = tk.total || 0; done = tk.done || 0; due = tk.due || null;
+          if (total > 0 && done >= total) status = "done";
+          else if (due && due < today) status = "overdue";
+          else if (done > 0) status = "partial";
+          else status = "pending";
+        }
+        pulse[t.cadence].total++;
+        pulse[t.cadence][status] = (pulse[t.cadence][status] || 0) + 1;
+      }
+      cells[c.id][t.id] = { applicable, status, total, done, due, job_id: jobId };
+    }
+  }
+  return json({ today, templates: tmpls, clients, cells, lastGenerated: lastByClient, pulse });
+}
+__name(handleRoutineBoard, "handleRoutineBoard");
+async function handleRoutineJobTasks(request, env, jobId) {
+  const job = await env.DB.prepare(
+    "SELECT j.id, j.name, j.client_id, j.due_date, (SELECT name FROM sprint_clients WHERE id=j.client_id) client_name FROM sprint_jobs j WHERE j.id=?"
+  ).bind(jobId).first();
+  if (!job) return json({ error: "not found" }, 404);
+  const tasks = (await env.DB.prepare(
+    "SELECT id, notes, status, assigned_to, due_date FROM sprint_tasks WHERE job_id=? ORDER BY created_at"
+  ).bind(jobId).all()).results;
+  return json({ job, tasks });
+}
+__name(handleRoutineJobTasks, "handleRoutineJobTasks");
 async function callClaude(env, messages, model = "claude-sonnet-5", system = null) {
   if (!env.ANTHROPIC_API_KEY)
     throw new Error("ANTHROPIC_API_KEY not set");
@@ -2271,6 +2344,60 @@ body{padding-bottom:80px}
 .seo-score-g{color:var(--green);font-weight:700;font-size:12px}
 .seo-score-y{color:var(--amber);font-weight:700;font-size:12px}
 .seo-score-r{color:var(--red);font-weight:700;font-size:12px}
+/* Routine board */
+.rt-pulse{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.rt-pulse-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.rt-pulse-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.rt-pulse-label{font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text-dim)}
+.rt-pulse-ok{font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);padding:2px 8px;border-radius:20px}
+.rt-pulse-behind{font-size:11px;font-weight:700;color:var(--red);background:var(--red-bg);padding:2px 8px;border-radius:20px}
+.rt-pulse-count{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.rt-pulse-count span{font-size:13px;font-weight:600;color:var(--text-muted)}
+.rt-pulse-bar{height:5px;background:var(--surface2);border-radius:3px;margin-top:8px;overflow:hidden}
+.rt-pulse-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+.rt-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.rt-title{font-size:16px;font-weight:700}
+.rt-title .rt-sub{font-size:12px;font-weight:500;color:var(--text-muted);margin-left:8px}
+.rt-gen-all{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.rt-gen-all:hover{filter:brightness(1.05)}
+.rt-board-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.rt-board{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.rt-board thead th{background:var(--surface2);padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+.rt-colname{font-weight:700;font-size:12px}
+.rt-colcad{font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.rt-csticky{position:sticky;left:0;z-index:3;background:var(--surface);text-align:left!important;padding:10px 14px;min-width:170px;border-right:1px solid var(--border)}
+.rt-board thead th.rt-csticky{z-index:4;background:var(--surface2)}
+.rt-cname{font-weight:700;font-size:13px}
+.rt-cmeta{display:flex;align-items:center;gap:6px;margin-top:3px}
+.rt-gen{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);width:22px;height:22px;border-radius:6px;cursor:pointer;font-size:13px;line-height:1;padding:0}
+.rt-gen:hover{color:var(--accent);border-color:var(--accent)}
+.rt-last{font-size:11px;color:var(--text-muted)}
+.rt-cell{text-align:center;border-top:1px solid var(--border);padding:7px 6px}
+.rt-pill{display:inline-block;min-width:42px;padding:4px 8px;border-radius:20px;font-size:12px;font-weight:700;cursor:default}
+.rt-pill.done{background:var(--green-bg);color:var(--green);cursor:pointer}
+.rt-pill.partial{background:var(--amber-bg);color:var(--amber);cursor:pointer}
+.rt-pill.pending{background:var(--surface2);color:var(--text-dim);cursor:pointer}
+.rt-pill.overdue{background:var(--red-bg);color:var(--red);cursor:pointer}
+.rt-pill.none{background:transparent;color:var(--text-muted);border:1px dashed var(--border);min-width:auto;padding:4px 10px}
+.rt-pill.na{background:transparent;color:var(--text-muted);min-width:auto}
+.rt-pill.done:hover,.rt-pill.partial:hover,.rt-pill.pending:hover,.rt-pill.overdue:hover{filter:brightness(.96);outline:2px solid var(--accent-glow)}
+.rt-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--text-dim)}
+.rt-legend span{display:flex;align-items:center;gap:5px}
+.rt-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.rt-dot.done{background:var(--green)}.rt-dot.partial{background:var(--amber)}.rt-dot.pending{background:var(--text-muted)}.rt-dot.overdue{background:var(--red)}.rt-dot.none{background:transparent;border:1px dashed var(--text-muted)}.rt-dot.na{background:var(--surface2);border:1px solid var(--border)}
+.rt-spin{animation:rtspin .7s linear infinite}@keyframes rtspin{to{transform:rotate(360deg)}}
+.rt-drawer{position:fixed;top:0;right:0;bottom:0;width:420px;max-width:92vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-8px 0 32px rgba(28,25,23,.14);z-index:500;overflow-y:auto}
+.rt-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface)}
+.rt-drawer-title{font-size:15px;font-weight:700}
+.rt-drawer-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.rt-drawer-close{background:none;border:none;font-size:24px;color:var(--text-dim);cursor:pointer;line-height:1}
+.rt-tasklist{padding:10px 12px}
+.rt-task{display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-radius:8px;cursor:pointer}
+.rt-task:hover{background:var(--surface2)}
+.rt-task input{margin-top:2px;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.rt-task-notes{font-size:13px;line-height:1.4;flex:1}
+.rt-task.done .rt-task-notes{color:var(--text-muted);text-decoration:line-through}
+.rt-task-who{font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-glow);padding:2px 7px;border-radius:20px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -2301,6 +2428,7 @@ body{padding-bottom:80px}
     <div class="mode-tabs">
       <button class="mode-tab active" id="modeJobBtn" data-action="mode-jobs">Jobs</button>
       <button class="mode-tab" id="modeSprintBtn" data-action="mode-sprint">30-Day Sprint</button>
+      <button class="mode-tab" id="modeRoutineBtn" data-action="mode-routine">Routine</button>
       <button class="mode-tab" id="modeAllWorkBtn" data-action="mode-allwork">All Work</button>
       <button class="mode-tab" id="modeServicesBtn" data-action="mode-services">Services</button>
       <button class="mode-tab" id="modeMaintenanceBtn" data-action="mode-maintenance">Maintenance</button>
@@ -2357,6 +2485,12 @@ body{padding-bottom:80px}
   <div class="sprint-client-bar" id="sprintClientBar"></div>
   <div id="sprintContent"><div class="loading">Select a client to view their sprint checklist.</div></div>
 </div>
+
+<!-- Routine mode -->
+<div id="routineMode" class="hidden">
+  <div id="routineContent"><div class="loading">Loading routine board...</div></div>
+</div>
+<div id="routineDrawer" class="rt-drawer hidden"><div class="rt-drawer-inner" id="routineDrawerInner"></div></div>
 
 <!-- All Work mode -->
 <div id="allWorkMode" class="hidden">
@@ -2477,6 +2611,7 @@ document.addEventListener('click', function(e) {
   var val = el.getAttribute('data-val') || '';
   if (act === 'mode-jobs') { switchMode('jobs'); }
   else if (act === 'mode-sprint') { switchMode('sprint'); }
+  else if (act === 'mode-routine') { switchMode('routine'); }
   else if (act === 'mode-allwork') { switchMode('allwork'); }
   else if (act === 'mode-services') { switchMode('services'); }
   else if (act === 'mode-maintenance') { switchMode('maintenance'); }
@@ -2557,6 +2692,7 @@ function switchMode(mode) {
   currentMode = mode;
   document.getElementById('modeJobBtn').classList.toggle('active', mode === 'jobs');
   document.getElementById('modeSprintBtn').classList.toggle('active', mode === 'sprint');
+  document.getElementById('modeRoutineBtn').classList.toggle('active', mode === 'routine');
   document.getElementById('modeAllWorkBtn').classList.toggle('active', mode === 'allwork');
   document.getElementById('modeServicesBtn').classList.toggle('active', mode === 'services');
   document.getElementById('modeMaintenanceBtn').classList.toggle('active', mode === 'maintenance');
@@ -2565,6 +2701,7 @@ function switchMode(mode) {
   document.getElementById('modeAgentsBtn').classList.toggle('active', mode === 'agents');
   document.getElementById('jobsMode').classList.toggle('hidden', mode !== 'jobs');
   document.getElementById('sprintMode').classList.toggle('hidden', mode !== 'sprint');
+  document.getElementById('routineMode').classList.toggle('hidden', mode !== 'routine');
   document.getElementById('allWorkMode').classList.toggle('hidden', mode !== 'allwork');
   document.getElementById('servicesMode').classList.toggle('hidden', mode !== 'services');
   document.getElementById('maintenanceMode').classList.toggle('hidden', mode !== 'maintenance');
@@ -2578,6 +2715,9 @@ function switchMode(mode) {
   } else if (mode === 'sprint') {
     document.getElementById('headerStats').style.display = 'none';
     renderSprintClientBar();
+  } else if (mode === 'routine') {
+    document.getElementById('headerStats').style.display = 'none';
+    loadRoutine();
   } else if (mode === 'allwork') {
     document.getElementById('headerStats').style.display = 'none';
     loadAllWork();
@@ -2600,6 +2740,131 @@ function switchMode(mode) {
 }
 
 // \u2500\u2500 All Work \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+// ── Routine board ──────────────────────────────────────────────────────────
+var routineData = null;
+var ROUTINE_SHORT = {'rt-seo':'SEO','rt-social':'Social','rt-cro':'CRO','rt-ads':'Ads','rt-daily':'Daily','rt-weekly':'Weekly','rt-weeklyemail':'W-Email','rt-monthly-report':'Report','rt-rediagnose':'Re-Dx'};
+
+async function loadRoutine() {
+  document.getElementById('routineContent').innerHTML = '<div class="loading">Loading routine board...</div>';
+  var res = await fetch(API + '/api/routine/board');
+  if (res.status === 401) { showLoginScreen(); return; }
+  routineData = await res.json();
+  renderRoutine();
+}
+
+function rtRelative(iso) {
+  if (!iso) return 'never';
+  var d = new Date(iso.replace(' ', 'T') + 'Z');
+  var days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  return days + 'd ago';
+}
+
+function renderRoutine() {
+  var d = routineData;
+  if (!d || !d.templates) { document.getElementById('routineContent').innerHTML = '<div class="loading">No data.</div>'; return; }
+  var cadLabel = {daily:'Daily', weekly:'Weekly', monthly:'Monthly', '45day':'45-Day'};
+  // Pulse strip
+  var pulse = '<div class="rt-pulse">';
+  var order = ['daily','weekly','monthly','45day'];
+  for (var pi=0; pi<order.length; pi++) {
+    var cad = order[pi]; var p = d.pulse[cad] || {total:0,done:0,overdue:0};
+    var pct = p.total ? Math.round(p.done / p.total * 100) : 0;
+    var behind = (p.overdue||0);
+    pulse += '<div class="rt-pulse-card">'
+      + '<div class="rt-pulse-top"><span class="rt-pulse-label">' + cadLabel[cad] + '</span>'
+      + (behind ? '<span class="rt-pulse-behind">' + behind + ' overdue</span>' : '<span class="rt-pulse-ok">on track</span>') + '</div>'
+      + '<div class="rt-pulse-count">' + p.done + '<span>/' + p.total + ' done</span></div>'
+      + '<div class="rt-pulse-bar"><div class="rt-pulse-fill" style="width:' + pct + '%"></div></div>'
+      + '</div>';
+  }
+  pulse += '</div>';
+  // Toolbar
+  var bar = '<div class="rt-toolbar">'
+    + '<div class="rt-title">Client Operating Routine <span class="rt-sub">' + d.clients.length + ' sprint clients &middot; ' + d.templates.length + ' tracks &middot; ' + d.today + '</span></div>'
+    + '<button class="rt-gen-all" onclick="generateRoutine(null,this)">&#8635; Generate all due</button>'
+    + '</div>';
+  // Matrix
+  var t = '<div class="rt-board-wrap"><table class="rt-board"><thead><tr><th class="rt-csticky">Client</th>';
+  for (var ti=0; ti<d.templates.length; ti++) {
+    var tm = d.templates[ti];
+    t += '<th title="' + esc(tm.name) + '"><div class="rt-colname">' + (ROUTINE_SHORT[tm.id] || esc(tm.name)) + '</div><div class="rt-colcad">' + (cadLabel[tm.cadence]||tm.cadence) + '</div></th>';
+  }
+  t += '</tr></thead><tbody>';
+  for (var ci=0; ci<d.clients.length; ci++) {
+    var c = d.clients[ci];
+    t += '<tr><td class="rt-csticky"><div class="rt-cname">' + esc(c.name) + '</div>'
+      + '<div class="rt-cmeta"><button class="rt-gen" title="Generate this client\\'s cycle" onclick="generateRoutine(\\'' + c.id + '\\',this)">&#8635;</button>'
+      + '<span class="rt-last">gen ' + rtRelative(d.lastGenerated[c.id]) + '</span></div></td>';
+    for (var ki=0; ki<d.templates.length; ki++) {
+      var tmid = d.templates[ki].id;
+      var cell = (d.cells[c.id] && d.cells[c.id][tmid]) || {status:'na'};
+      t += renderRoutineCell(c.id, tmid, cell);
+    }
+    t += '</tr>';
+  }
+  t += '</tbody></table></div>';
+  var legend = '<div class="rt-legend">'
+    + '<span><i class="rt-dot done"></i>Done</span>'
+    + '<span><i class="rt-dot partial"></i>In progress</span>'
+    + '<span><i class="rt-dot pending"></i>Not started</span>'
+    + '<span><i class="rt-dot overdue"></i>Overdue</span>'
+    + '<span><i class="rt-dot none"></i>Not generated</span>'
+    + '<span><i class="rt-dot na"></i>N/A (no service)</span>'
+    + '</div>';
+  document.getElementById('routineContent').innerHTML = pulse + bar + t + legend;
+}
+
+function renderRoutineCell(clientId, tmid, cell) {
+  if (!cell.applicable) return '<td class="rt-cell"><span class="rt-pill na">&mdash;</span></td>';
+  if (cell.status === 'none') return '<td class="rt-cell"><span class="rt-pill none" title="Not generated this cycle">&middot;</span></td>';
+  var label = (cell.status === 'done') ? '&#10003; ' + cell.done + '/' + cell.total : cell.done + '/' + cell.total;
+  var click = cell.job_id ? ' onclick="openRoutineDrawer(\\'' + cell.job_id + '\\')"' : '';
+  return '<td class="rt-cell"><span class="rt-pill ' + cell.status + '"' + click + '>' + label + '</span></td>';
+}
+
+async function generateRoutine(clientId, btn) {
+  if (btn) { btn.disabled = true; btn.classList.add('rt-spin'); }
+  var body = clientId ? JSON.stringify({client_id: clientId}) : '{}';
+  var res = await fetch(API + '/api/routine/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body: body});
+  var j = await res.json().catch(function(){ return {}; });
+  showSnackbar(j.created != null ? (j.created + ' cycle' + (j.created===1?'':'s') + ' generated') : 'Generated');
+  await loadRoutine();
+}
+
+async function openRoutineDrawer(jobId) {
+  var drawer = document.getElementById('routineDrawer');
+  var inner = document.getElementById('routineDrawerInner');
+  inner.innerHTML = '<div class="loading">Loading...</div>';
+  drawer.classList.remove('hidden');
+  var res = await fetch(API + '/api/routine/job/' + jobId + '/tasks');
+  var j = await res.json();
+  var job = j.job || {}; var tasks = j.tasks || [];
+  var doneN = tasks.filter(function(x){ return x.status === 'Complete'; }).length;
+  var h = '<div class="rt-drawer-head"><div><div class="rt-drawer-title">' + esc(job.name || 'Routine') + '</div>'
+    + '<div class="rt-drawer-sub">' + esc(job.client_name || '') + ' &middot; ' + doneN + '/' + tasks.length + ' done</div></div>'
+    + '<button class="rt-drawer-close" onclick="closeRoutineDrawer()">&times;</button></div><div class="rt-tasklist">';
+  for (var i=0; i<tasks.length; i++) {
+    var tk = tasks[i]; var done = tk.status === 'Complete';
+    h += '<label class="rt-task' + (done?' done':'') + '"><input type="checkbox" ' + (done?'checked':'') + ' onchange="toggleRoutineTask(\\'' + tk.id + '\\', this.checked)">'
+      + '<span class="rt-task-notes">' + esc(tk.notes) + '</span>'
+      + (tk.assigned_to ? '<span class="rt-task-who">' + esc(tk.assigned_to) + '</span>' : '') + '</label>';
+  }
+  h += '</div>';
+  inner.innerHTML = h;
+}
+
+function closeRoutineDrawer() {
+  document.getElementById('routineDrawer').classList.add('hidden');
+  loadRoutine();
+}
+
+async function toggleRoutineTask(taskId, checked) {
+  var ep = checked ? '/api/tasks/' + taskId + '/complete' : '/api/tasks/' + taskId + '/reopen';
+  await fetch(API + ep, {method:'POST'});
+}
 
 var allWorkData = null;
 var allWorkTab = 'jobs';
