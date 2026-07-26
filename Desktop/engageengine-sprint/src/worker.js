@@ -84,11 +84,13 @@ var ROUTES = [
   { method: "GET", re: /^\/api\/sprint\/([^/]+)$/, handler: (r, e, m) => handleSprintGet(r, e, m[1]) },
   { method: "POST", re: /^\/api\/sprint\/toggle$/, handler: handleSprintToggle },
   { method: "POST", re: /^\/api\/sprint\/activate$/, handler: handleSprintActivate },
+  { method: "POST", re: /^\/api\/sprint\/deactivate$/, handler: handleSprintDeactivate },
   // Routine engine — recurring per-client operating loop (cadence-driven)
   { method: "POST", re: /^\/api\/routine\/generate$/, handler: handleRoutineGenerate },
   { method: "GET", re: /^\/api\/routine\/status$/, handler: handleRoutineStatus },
   { method: "GET", re: /^\/api\/routine\/board$/, handler: handleRoutineBoard },
   { method: "GET", re: /^\/api\/routine\/job\/([^/]+)\/tasks$/, handler: (r, e, m) => handleRoutineJobTasks(r, e, m[1]) },
+  { method: "POST", re: /^\/api\/routine\/client\/([^/]+)\/toggle$/, handler: (r, e, m) => handleRoutineClientToggle(r, e, m[1]) },
   // Gmail OAuth
   { method: "GET", re: /^\/api\/gmail\/auth$/, handler: handleGmailAuth },
   { method: "GET", re: /^\/api\/gmail\/callback$/, handler: handleGmailCallback, public: true },
@@ -515,6 +517,15 @@ async function handleSprintActivate(request, env) {
   return json({ success: true });
 }
 __name(handleSprintActivate, "handleSprintActivate");
+async function handleSprintDeactivate(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const clientId = body.client_id;
+  if (!clientId) return json({ error: "client_id required" }, 400);
+  // Graduate: leave the 30-Day Sprint but keep the client + their checklist history.
+  await env.DB.prepare("UPDATE sprint_clients SET has_sprint=0, updated_at=date('now') WHERE id=?").bind(clientId).run();
+  return json({ ok: true });
+}
+__name(handleSprintDeactivate, "handleSprintDeactivate");
 // ── Routine engine ────────────────────────────────────────────────────────────
 // Recurring per-client operating loop. Routine templates (is_routine=1) with a
 // cadence auto-generate a Job + Tasks per eligible client, once per cadence period.
@@ -550,7 +561,7 @@ async function generateRoutineJobs(env, opts = {}) {
   const tmpls = (await env.DB.prepare(
     "SELECT * FROM sprint_templates WHERE is_routine=1 AND cadence IN ('daily','weekly','monthly','45day') ORDER BY sort_order"
   ).all()).results;
-  let clientSql = "SELECT id, name FROM sprint_clients WHERE has_sprint=1 AND archived=0";
+  let clientSql = "SELECT id, name FROM sprint_clients WHERE on_routine=1 AND archived=0";
   const cb = [];
   if (onlyClient) { clientSql += " AND id=?"; cb.push(onlyClient); }
   const clients = (await env.DB.prepare(clientSql).bind(...cb).all()).results;
@@ -611,7 +622,7 @@ __name(handleRoutineStatus, "handleRoutineStatus");
 async function handleRoutineBoard(request, env) {
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const tmpls = (await env.DB.prepare("SELECT id, name, cadence, applies_when, sort_order FROM sprint_templates WHERE is_routine=1 AND cadence IN ('daily','weekly','monthly','45day') ORDER BY sort_order").all()).results;
-  const clients = (await env.DB.prepare("SELECT id, name FROM sprint_clients WHERE has_sprint=1 AND archived=0 ORDER BY name").all()).results;
+  const clients = (await env.DB.prepare("SELECT id, name FROM sprint_clients WHERE on_routine=1 AND archived=0 ORDER BY name").all()).results;
   const svcRows = (await env.DB.prepare("SELECT client_id, service FROM client_services WHERE status NOT IN ('none','')").all()).results;
   const svcByClient = {};
   for (const s of svcRows) { (svcByClient[s.client_id] = svcByClient[s.client_id] || {})[s.service] = 1; }
@@ -638,6 +649,9 @@ async function handleRoutineBoard(request, env) {
   const lastRows = (await env.DB.prepare("SELECT client_id, MAX(created_at) last_at FROM routine_generation GROUP BY client_id").all()).results;
   const lastByClient = {};
   for (const r of lastRows) lastByClient[r.client_id] = r.last_at;
+  const availableClients = (await env.DB.prepare(
+    "SELECT id, name FROM sprint_clients WHERE archived=0 AND status='Active' AND COALESCE(on_routine,0)=0 ORDER BY name"
+  ).all()).results;
   const cells = {};
   const pulse = {};
   for (const cad of ["daily", "weekly", "monthly", "45day"]) pulse[cad] = { total: 0, done: 0, partial: 0, pending: 0, overdue: 0, none: 0 };
@@ -665,9 +679,16 @@ async function handleRoutineBoard(request, env) {
       cells[c.id][t.id] = { applicable, status, total, done, due, job_id: jobId };
     }
   }
-  return json({ today, templates: tmpls, clients, cells, lastGenerated: lastByClient, pulse });
+  return json({ today, templates: tmpls, clients, cells, lastGenerated: lastByClient, pulse, availableClients });
 }
 __name(handleRoutineBoard, "handleRoutineBoard");
+async function handleRoutineClientToggle(request, env, clientId) {
+  const body = await request.json().catch(() => ({}));
+  const on = body.on_routine ? 1 : 0;
+  await env.DB.prepare("UPDATE sprint_clients SET on_routine=?, updated_at=date('now') WHERE id=?").bind(on, clientId).run();
+  return json({ ok: true, on_routine: on });
+}
+__name(handleRoutineClientToggle, "handleRoutineClientToggle");
 async function handleRoutineJobTasks(request, env, jobId) {
   const job = await env.DB.prepare(
     "SELECT j.id, j.name, j.client_id, j.due_date, (SELECT name FROM sprint_clients WHERE id=j.client_id) client_name FROM sprint_jobs j WHERE j.id=?"
@@ -2360,6 +2381,13 @@ body{padding-bottom:80px}
 .rt-title .rt-sub{font-size:12px;font-weight:500;color:var(--text-muted);margin-left:8px}
 .rt-gen-all{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
 .rt-gen-all:hover{filter:brightness(1.05)}
+.rt-toolbar-actions{display:flex;align-items:center;gap:8px}
+.rt-add-select{font-family:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);cursor:pointer;max-width:220px}
+.rt-add-select:focus{outline:none;border-color:var(--accent)}
+.rt-remove{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);width:22px;height:22px;border-radius:6px;cursor:pointer;font-size:15px;line-height:1;padding:0}
+.rt-remove:hover{color:var(--red);border-color:var(--red)}
+.sprint-graduate-btn{margin-left:auto;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);padding:7px 14px;border-radius:8px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.sprint-graduate-btn:hover{color:var(--accent);border-color:var(--accent)}
 .rt-board-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
 .rt-board{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
 .rt-board thead th{background:var(--surface2);padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
@@ -2782,10 +2810,18 @@ function renderRoutine() {
   }
   pulse += '</div>';
   // Toolbar
+  var avail = d.availableClients || [];
+  var addCtl = '';
+  if (avail.length) {
+    addCtl = '<select id="rtAddSelect" class="rt-add-select" onchange="addClientToRoutine(this.value)"><option value="">+ Add client to routine\\u2026</option>';
+    for (var ai=0; ai<avail.length; ai++) addCtl += '<option value="' + avail[ai].id + '">' + esc(avail[ai].name) + '</option>';
+    addCtl += '</select>';
+  }
   var bar = '<div class="rt-toolbar">'
-    + '<div class="rt-title">Client Operating Routine <span class="rt-sub">' + d.clients.length + ' sprint clients &middot; ' + d.templates.length + ' tracks &middot; ' + d.today + '</span></div>'
+    + '<div class="rt-title">Client Operating Routine <span class="rt-sub">' + d.clients.length + ' on routine &middot; ' + d.templates.length + ' tracks &middot; ' + d.today + '</span></div>'
+    + '<div class="rt-toolbar-actions">' + addCtl
     + '<button class="rt-gen-all" onclick="generateRoutine(null,this)">&#8635; Generate all due</button>'
-    + '</div>';
+    + '</div></div>';
   // Matrix
   var t = '<div class="rt-board-wrap"><table class="rt-board"><thead><tr><th class="rt-csticky">Client</th>';
   for (var ti=0; ti<d.templates.length; ti++) {
@@ -2797,6 +2833,7 @@ function renderRoutine() {
     var c = d.clients[ci];
     t += '<tr><td class="rt-csticky"><div class="rt-cname">' + esc(c.name) + '</div>'
       + '<div class="rt-cmeta"><button class="rt-gen" title="Generate this client\\'s cycle" onclick="generateRoutine(\\'' + c.id + '\\',this)">&#8635;</button>'
+      + '<button class="rt-remove" title="Remove from routine" onclick="removeClientFromRoutine(\\'' + c.id + '\\',\\'' + esc(c.name).split("\\'").join("") + '\\')">&times;</button>'
       + '<span class="rt-last">gen ' + rtRelative(d.lastGenerated[c.id]) + '</span></div></td>';
     for (var ki=0; ki<d.templates.length; ki++) {
       var tmid = d.templates[ki].id;
@@ -2831,6 +2868,21 @@ async function generateRoutine(clientId, btn) {
   var res = await fetch(API + '/api/routine/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body: body});
   var j = await res.json().catch(function(){ return {}; });
   showSnackbar(j.created != null ? (j.created + ' cycle' + (j.created===1?'':'s') + ' generated') : 'Generated');
+  await loadRoutine();
+}
+
+async function addClientToRoutine(clientId) {
+  if (!clientId) return;
+  await fetch(API + '/api/routine/client/' + clientId + '/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on_routine: 1 }) });
+  showSnackbar('Added to routine');
+  await loadRoutine();
+}
+
+async function removeClientFromRoutine(clientId, name) {
+  if (!clientId) return;
+  if (!confirm('Remove ' + (name || 'this client') + ' from the operating routine?\\n\\nThey stop getting new routine cycles. Existing jobs stay. Reversible.')) return;
+  await fetch(API + '/api/routine/client/' + clientId + '/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on_routine: 0 }) });
+  showSnackbar('Removed from routine');
   await loadRoutine();
 }
 
@@ -4606,7 +4658,7 @@ function renderSprintChecklist() {
   var pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
   var html = '';
   html += '<div class="sprint-progress-wrap">';
-  html += '<div class="sprint-progress-header"><span class="pct">' + pct + '%</span><span class="counts">' + stats.done + ' / ' + stats.total + ' tasks complete</span></div>';
+  html += '<div class="sprint-progress-header"><span class="pct">' + pct + '%</span><span class="counts">' + stats.done + ' / ' + stats.total + ' tasks complete</span><button class="sprint-graduate-btn" onclick="graduateSprint(\\'' + sprintClientId + '\\')">&#127891; Graduate from Sprint</button></div>';
   html += '<div class="sprint-progress-bar"><div class="sprint-progress-fill" style="width:' + pct + '%"></div></div>';
   html += '</div>';
   html += '<div class="phase-nav">';
@@ -4715,6 +4767,18 @@ async function activateSprintClient() {
   dashboardData = await dr.json();
   renderSprintClientBar();
   loadSprintClient(sel.value);
+}
+
+async function graduateSprint(clientId) {
+  if (!clientId) return;
+  if (!confirm('Graduate this client from the 30-Day Sprint?\\n\\nThey leave the Sprint tab (checklist history is kept) and stay an active client. You can re-add them later.')) return;
+  await fetch(API + '/api/sprint/deactivate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: clientId }) });
+  showSnackbar('Graduated from sprint');
+  sprintClientId = null;
+  var dr = await fetch(API + '/api/dashboard');
+  dashboardData = await dr.json();
+  renderSprintClientBar();
+  document.getElementById('sprintContent').innerHTML = '<div class="loading">Select a client to view their sprint checklist.</div>';
 }
 
 // \u2500\u2500 Google Ads Portal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
