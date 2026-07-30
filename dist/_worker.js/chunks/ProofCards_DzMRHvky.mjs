@@ -1,8 +1,8 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { e as createComponent, m as maybeRenderHead, k as renderComponent, o as Fragment, r as renderTemplate, h as createAstro, g as addAttribute } from './astro/server_CdzYR9DH.mjs';
+import { e as createAstro, f as createComponent, m as maybeRenderHead, k as renderComponent, o as Fragment, r as renderTemplate, h as addAttribute } from './astro/server_rcS3mgi-.mjs';
 /* empty css                         */
 
-const $$Astro = createAstro();
+const $$Astro = createAstro("https://marketingperformance.net");
 const $$ProofCards = createComponent(($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
   Astro2.self = $$ProofCards;

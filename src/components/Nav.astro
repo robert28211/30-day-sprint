@@ -3,8 +3,7 @@
 <nav>
   <div class="nav-inner">
     <a href="/" class="logo">
-      Marketing Performance Group
-      <span class="logo-sub">Powered by EngageEngine™</span>
+      <img src="/mp-logo-v3.png" alt="Marketing Performance — Powered by EngageEngine™" width="217" height="44" />
     </a>
     <div class="nav-right">
       <a href="/the-build" class="nav-link">The Build</a>
@@ -29,31 +28,23 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 22px;
-    height: 52px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
   .logo {
-    font-family: var(--font-t);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--graphite);
-    text-decoration: none;
     display: flex;
-    flex-direction: column;
-    gap: 1px;
+    align-items: center;
     min-height: 44px;
-    justify-content: center;
+    text-decoration: none;
   }
-  .logo:hover { text-decoration: none; color: var(--graphite); }
-  .logo-sub {
-    font-size: 10px;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    color: var(--mid-gray);
+  .logo img {
+    height: 44px;
+    width: auto;
+    display: block;
   }
+  .logo:hover { text-decoration: none; }
   .nav-right {
     display: flex;
     align-items: center;
@@ -88,5 +79,6 @@
   @media (max-width: 600px) {
     .nav-link { display: none; }
     .nav-inner { padding: 0 16px; }
+    .logo img { height: 34px; }
   }
 </style>

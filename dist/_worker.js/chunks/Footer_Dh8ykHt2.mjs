@@ -1,5 +1,5 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { e as createComponent, m as maybeRenderHead, r as renderTemplate } from './astro/server_CdzYR9DH.mjs';
+import { f as createComponent, m as maybeRenderHead, r as renderTemplate } from './astro/server_rcS3mgi-.mjs';
 /* empty css                       */
 
 const $$Footer = createComponent(($$result, $$props, $$slots) => {

@@ -1,12 +1,12 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { e as createComponent, r as renderTemplate, l as renderScript, ao as renderSlot, p as renderHead, g as addAttribute, h as createAstro } from './astro/server_CdzYR9DH.mjs';
+import { e as createAstro, f as createComponent, r as renderTemplate, l as renderScript, ao as renderSlot, p as renderHead, h as addAttribute } from './astro/server_rcS3mgi-.mjs';
 /* empty css                       */
 
 var __freeze = Object.freeze;
 var __defProp = Object.defineProperty;
 var __template = (cooked, raw) => __freeze(__defProp(cooked, "raw", { value: __freeze(cooked.slice()) }));
 var _a;
-const $$Astro = createAstro();
+const $$Astro = createAstro("https://marketingperformance.net");
 const $$Base = createComponent(($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
   Astro2.self = $$Base;
@@ -14,7 +14,7 @@ const $$Base = createComponent(($$result, $$props, $$slots) => {
     title = "Marketing Performance Group \u2014 EngageEngine\u2122",
     description = "You are losing the demand you already paid for before it becomes revenue. Find exactly where \u2014 and fix it."
   } = Astro2.props;
-  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>', '</title><meta name="description"', `><!-- Preconnect to analytics/pixel origins \u2014 eliminates connection setup latency --><link rel="preconnect" href="https://www.googletagmanager.com" crossorigin><link rel="preconnect" href="https://www.clarity.ms" crossorigin><link rel="dns-prefetch" href="https://connect.facebook.net"><!-- Google Analytics \u2014 stub only in head, script loads after interaction --><script>
+  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="google-site-verification" content="b4c653b5568e24bc55155edab210345f"><title>', '</title><meta name="description"', `><!-- Preconnect to analytics/pixel origins \u2014 eliminates connection setup latency --><link rel="preconnect" href="https://www.googletagmanager.com" crossorigin><link rel="preconnect" href="https://www.clarity.ms" crossorigin><link rel="dns-prefetch" href="https://connect.facebook.net"><!-- Google Analytics \u2014 stub only in head, script loads after interaction --><script>
       window.dataLayer = window.dataLayer || [];
       window.gtag = function(){dataLayer.push(arguments);}
       gtag('js', new Date());

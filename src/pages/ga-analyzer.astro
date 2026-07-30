@@ -9,8 +9,7 @@ import Footer from '../components/Footer.astro'
   <nav class="mp-nav">
     <div class="mp-nav-inner">
       <a href="/" class="mp-logo">
-        Marketing Performance Group
-        <span class="mp-logo-sub">Powered by EngageEngine™</span>
+        <img src="/mp-logo-v3.png" alt="Marketing Performance — Powered by EngageEngine™" width="217" height="44" />
       </a>
     </div>
   </nav>
@@ -53,3 +52,22 @@ import Footer from '../components/Footer.astro'
 
   <Footer />
 </Base>
+
+<style>
+  /* This page never had nav styles of its own; only the logo rules it needs. */
+  .mp-nav-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 0 32px; height: 56px;
+    display: flex; align-items: center;
+  }
+  .mp-logo {
+    display: flex; align-items: center;
+    min-height: 44px; text-decoration: none;
+  }
+  .mp-logo img { height: 44px; width: auto; display: block; }
+  .mp-logo:hover { text-decoration: none; }
+  @media (max-width: 600px) {
+    .mp-nav-inner { padding: 0 16px; }
+    .mp-logo img { height: 34px; }
+  }
+</style>

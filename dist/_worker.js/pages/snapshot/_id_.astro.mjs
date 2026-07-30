@@ -1,10 +1,10 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
-import { e as createComponent, k as renderComponent, r as renderTemplate, h as createAstro, m as maybeRenderHead, g as addAttribute, o as Fragment, l as renderScript } from '../../chunks/astro/server_CdzYR9DH.mjs';
-import { $ as $$Base } from '../../chunks/Base_BSRx0yRe.mjs';
+import { e as createAstro, f as createComponent, k as renderComponent, r as renderTemplate, m as maybeRenderHead, h as addAttribute, o as Fragment, l as renderScript } from '../../chunks/astro/server_rcS3mgi-.mjs';
+import { $ as $$Base } from '../../chunks/Base_3mlfhRBP.mjs';
 /* empty css                                   */
 export { renderers } from '../../renderers.mjs';
 
-const $$Astro = createAstro();
+const $$Astro = createAstro("https://marketingperformance.net");
 const prerender = false;
 const $$id = createComponent(async ($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
