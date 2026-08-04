@@ -603,6 +603,34 @@ async function generateRoutineJobs(env, opts = {}) {
   return report;
 }
 __name(generateRoutineJobs, "generateRoutineJobs");
+async function reapSupersededRoutineTasks(env) {
+  // A routine job is SUPERSEDED once a later generation exists for the same
+  // (template, client) — the cadence rolled to a new period (daily every day,
+  // weekly/monthly/45day each period). Its still-open tasks are moot: "run X
+  // today" from yesterday, last month's audit, etc. Delete the Not-Started ones
+  // and any job left empty; Completed tasks are kept as history. Uses rowid
+  // ordering (insertion = generation order) so it's period-format agnostic —
+  // string-comparing period_key would misorder the numeric 45day keys.
+  const stale = (await env.DB.prepare(
+    `SELECT DISTINCT rg.job_id FROM routine_generation rg
+     WHERE EXISTS (
+       SELECT 1 FROM routine_generation r2
+       WHERE r2.template_id=rg.template_id AND r2.client_id=rg.client_id AND r2.rowid > rg.rowid
+     )`
+  ).all()).results || [];
+  if (!stale.length) return 0;
+  const ids = stale.map((r) => r.job_id);
+  let removed = 0;
+  for (let i = 0; i < ids.length; i += 40) {
+    const chunk = ids.slice(i, i + 40);
+    const ph = chunk.map(() => "?").join(",");
+    const r = await env.DB.prepare(`DELETE FROM sprint_tasks WHERE status='Not Started' AND job_id IN (${ph})`).bind(...chunk).run();
+    removed += r.meta?.changes || 0;
+    await env.DB.prepare(`DELETE FROM sprint_jobs WHERE id IN (${ph}) AND NOT EXISTS (SELECT 1 FROM sprint_tasks st WHERE st.job_id=sprint_jobs.id)`).bind(...chunk).run();
+  }
+  return removed;
+}
+__name(reapSupersededRoutineTasks, "reapSupersededRoutineTasks");
 async function handleRoutineGenerate(request, env) {
   const body = await request.json().catch(() => ({}));
   const report = await generateRoutineJobs(env, { client_id: body.client_id || null, dry_run: !!body.dry_run });
@@ -1519,6 +1547,7 @@ var worker_default = {
         const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
         const st = await env.DB.prepare("SELECT v FROM routine_state WHERE k='last_gen_date'").first().catch(() => null);
         if (!st || st.v !== today) {
+          await reapSupersededRoutineTasks(env);
           await generateRoutineJobs(env, {});
           await env.DB.prepare("INSERT INTO routine_state (k, v) VALUES ('last_gen_date', ?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").bind(today).run();
         }
