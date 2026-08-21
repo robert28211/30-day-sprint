@@ -565,7 +565,7 @@ async function generateRoutineJobs(env, opts = {}) {
   const cb = [];
   if (onlyClient) { clientSql += " AND id=?"; cb.push(onlyClient); }
   const clients = (await env.DB.prepare(clientSql).bind(...cb).all()).results;
-  const svcRows = (await env.DB.prepare("SELECT client_id, service FROM client_services WHERE status NOT IN ('none','')").all()).results;
+  const svcRows = (await env.DB.prepare("SELECT client_id, service FROM client_services WHERE status NOT IN ('none','','pending')").all()).results;
   const svcByClient = {};
   for (const s of svcRows) { (svcByClient[s.client_id] = svcByClient[s.client_id] || /* @__PURE__ */ new Set()).add(s.service); }
   const report = [];
@@ -651,7 +651,7 @@ async function handleRoutineBoard(request, env) {
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const tmpls = (await env.DB.prepare("SELECT id, name, cadence, applies_when, sort_order FROM sprint_templates WHERE is_routine=1 AND cadence IN ('daily','weekly','monthly','45day') ORDER BY sort_order").all()).results;
   const clients = (await env.DB.prepare("SELECT id, name FROM sprint_clients WHERE on_routine=1 AND archived=0 ORDER BY name").all()).results;
-  const svcRows = (await env.DB.prepare("SELECT client_id, service FROM client_services WHERE status NOT IN ('none','')").all()).results;
+  const svcRows = (await env.DB.prepare("SELECT client_id, service FROM client_services WHERE status NOT IN ('none','','pending')").all()).results;
   const svcByClient = {};
   for (const s of svcRows) { (svcByClient[s.client_id] = svcByClient[s.client_id] || {})[s.service] = 1; }
   const periodByCadence = {
@@ -2368,6 +2368,7 @@ body{padding-bottom:80px}
 .svc-active{background:var(--green-bg);color:var(--green)}
 .svc-paused{background:var(--amber-bg);color:var(--amber)}
 .svc-cancelled{background:var(--red-bg);color:var(--red)}
+.svc-pending{background:var(--accent-glow);color:var(--accent);border:1px dashed var(--accent)}
 .svc-website{background:var(--accent-glow);color:var(--accent)}
 .svc-none{color:var(--text-muted);font-size:16px;line-height:1}
 .svc-thru{display:block;font-size:9px;color:var(--text-muted);font-family:"JetBrains Mono",monospace;margin-top:1px;white-space:nowrap}
@@ -4873,7 +4874,7 @@ var SERVICE_COLS = [
   {key:'seo',          label:'SEO'},
 ];
 
-var STATUS_CYCLE   = ['none','active','paused','cancelled'];
+var STATUS_CYCLE   = ['none','pending','active','paused','cancelled'];
 var WEBSITE_CYCLE  = ['none','B','M','O'];
 
 // ── Client Health ──
@@ -4980,6 +4981,7 @@ function renderServices() {
   html += '<span><span class="svc-badge svc-active" style="width:16px;height:16px;font-size:9px">\u2713</span> Active</span>';
   html += '<span><span class="svc-badge svc-paused" style="width:16px;height:16px;font-size:10px">\u23F8</span> Paused</span>';
   html += '<span><span class="svc-badge svc-cancelled" style="width:16px;height:16px;font-size:10px">\u2715</span> Cancelled</span>';
+  html += '<span><span class="svc-badge svc-pending" style="width:16px;height:16px;font-size:9px">\u23F3</span> Pending \u2014 wanted, no access yet</span>';
   html += '<span><span class="svc-none" style="font-size:14px">\u2014</span> Not active</span>';
   html += '<span style="color:var(--text-muted);font-size:11px">Click any cell to cycle status</span>';
   html += '</div>';
@@ -5019,6 +5021,10 @@ function renderSvcBadge(key, svc) {
     return '<span class="svc-badge svc-paused">\u23F8</span>' + info;
   }
   if (s === 'cancelled') return '<span class="svc-badge svc-cancelled">\u2715</span>';
+  if (s === 'pending') {
+    var pinfo = svc.notes ? '<span class="svc-note-icon" title="' + svc.notes.replace(/"/g,"&quot;") + '">\u2139</span>' : '';
+    return '<span class="svc-badge svc-pending" title="Wanted \u2014 access not confirmed">\u23F3</span>' + pinfo;
+  }
   return '<span class="svc-none">\u2014</span>';
 }
 
