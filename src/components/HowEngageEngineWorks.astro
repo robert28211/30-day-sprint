@@ -1,0 +1,280 @@
+---
+// Home "How EngageEngine™ works": buyer journey (3 stages) + the 4-step loop.
+// Replaced DemandEngine on the homepage 2026-10-01; DemandEngine still lives on /how-it-works.
+const stages = [
+  { tag: 'We can start here', h: 'Awareness', p: 'Interest is emerging. They may not be searching for a provider yet.', start: true },
+  { tag: 'Buyer moves to', h: 'Research', p: 'They explore options, read reviews, and compare businesses.' },
+  { tag: 'Buyer moves to', h: 'Decision', p: 'They are ready to call, request an estimate, or choose.' },
+];
+const steps = [
+  { n: '01', h: 'Detect', p: 'Spot relevant interest signals early.',
+    icon: '<circle cx="12" cy="12" r="2.2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/>' },
+  { n: '02', h: 'Score', p: 'Distinguish awareness, research, and decision.',
+    icon: '<path d="M4 20V14M10 20V9M16 20V4"/><path d="M2.5 20.5h19"/>' },
+  { n: '03', h: 'Reach', p: 'Coordinate ads and email where contactable.',
+    icon: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>' },
+  { n: '04', h: 'Win & learn', p: 'Earn the inquiry, trace the source, improve.',
+    icon: '<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/><path d="m8.5 12 2.5 2.5 4.5-5"/>' },
+];
+const channels = ['Search', 'Maps', 'AI answers', 'Your website', 'Reviews', 'Follow-up'];
+---
+<section class="ee-how" aria-labelledby="ee-how-h">
+  <div class="ee-how-inner">
+    <header class="ee-how-head" data-animate>
+      <p class="ee-eye">How EngageEngine™ works</p>
+      <h2 id="ee-how-h" class="ee-h2">Find buyers before they search.</h2>
+      <p class="ee-sub">We detect signs of interest, score how close someone is to buying, and reach them with the right message as they move toward a decision.</p>
+    </header>
+
+    <!-- Buyer journey: track + travelling signal behind three stage cards -->
+    <div class="ee-journey">
+      <div class="ee-track" aria-hidden="true"><span class="ee-pulse"></span></div>
+      {stages.map((s, i) => (
+        <article class={`ee-stage ${s.start ? 'is-start' : ''}`} data-animate data-delay={(0.08 + i * 0.1).toFixed(2)}>
+          <span class="ee-node" aria-hidden="true"></span>
+          <p class="ee-stage-tag">{s.tag}</p>
+          <h3 class="ee-stage-h">{s.h}</h3>
+          <p class="ee-stage-p">{s.p}</p>
+        </article>
+      ))}
+    </div>
+
+    <div class="ee-band" data-animate data-delay="0.1">
+      <span class="ee-radar" aria-hidden="true"><span></span><span></span></span>
+      <p>EngageEngine™ watches for signals across the journey—not just the final search.</p>
+    </div>
+
+    <ol class="ee-steps">
+      {steps.map((s, i) => (
+        <li class="ee-step" data-animate data-delay={(0.06 + i * 0.08).toFixed(2)}>
+          <div class="ee-step-top">
+            <span class="ee-step-n">{s.n}</span>
+            <svg class="ee-step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={s.icon} />
+          </div>
+          <h3 class="ee-step-h">{s.h}</h3>
+          <p class="ee-step-p">{s.p}</p>
+        </li>
+      ))}
+    </ol>
+
+    <div class="ee-channels" data-animate data-delay="0.1">
+      <ul>{channels.map((c) => <li>{c}</li>)}</ul>
+      <p>all support the same journey.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ee-how {
+    position: relative; overflow: hidden;
+    background: var(--white);
+    padding: 88px 32px 92px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .ee-how::before {
+    content: ""; position: absolute; inset: -30% -10% auto auto;
+    width: 640px; height: 640px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0,113,227,0.08), transparent);
+    pointer-events: none;
+  }
+  .ee-how-inner { position: relative; max-width: 1160px; margin: 0 auto; }
+
+  .ee-how-head { max-width: 760px; }
+  .ee-eye {
+    font-family: var(--font-t); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue);
+  }
+  .ee-h2 {
+    font-family: var(--font-d); font-size: clamp(34px, 4.6vw, 52px);
+    font-weight: 600; line-height: 1.06; letter-spacing: -0.028em;
+    color: var(--graphite); margin-top: 14px;
+  }
+  .ee-sub {
+    font-family: var(--font-t); font-size: clamp(17px, 1.7vw, 20px);
+    line-height: 1.5; letter-spacing: -0.015em; color: var(--mid-gray);
+    margin-top: 18px;
+  }
+
+  /* ─── Journey ─── */
+  .ee-journey {
+    position: relative; margin-top: 56px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  }
+  .ee-track {
+    position: absolute; left: 16%; right: 16%; top: 0; height: 2px;
+    background: linear-gradient(90deg, var(--blue), rgba(0,113,227,0.18));
+    border-radius: 2px;
+  }
+  .ee-pulse {
+    position: absolute; top: 50%; left: 0; width: 10px; height: 10px;
+    margin: -5px 0 0 -5px; border-radius: 50%;
+    background: var(--blue);
+    box-shadow: 0 0 0 4px rgba(0,113,227,0.18), 0 0 18px 4px rgba(0,113,227,0.45);
+    animation: ee-travel 4.2s cubic-bezier(.55,.05,.35,1) infinite;
+  }
+  @keyframes ee-travel {
+    0% { left: 0; opacity: 0; }
+    8% { opacity: 1; }
+    92% { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+  }
+  .ee-stage {
+    position: relative; margin-top: 22px;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 18px; padding: 30px 28px 30px;
+    box-shadow: rgba(0,0,0,0.04) 0 2px 6px;
+    transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+  }
+  .ee-stage:hover { transform: translateY(-4px); box-shadow: rgba(0,0,0,0.08) 0 14px 34px; }
+  .ee-node {
+    position: absolute; top: -29px; left: 50%; width: 14px; height: 14px;
+    margin-left: -7px; border-radius: 50%;
+    background: var(--white); border: 2px solid rgba(0,113,227,0.35);
+  }
+  .ee-stage.is-start {
+    background: linear-gradient(160deg, #0a1a33 0%, #1d1d1f 70%);
+    border-color: rgba(110,158,255,0.45);
+    box-shadow: rgba(0,113,227,0.18) 0 18px 40px, rgba(110,158,255,0.15) 0 0 0 1px;
+  }
+  .ee-stage.is-start .ee-node {
+    background: var(--blue); border-color: var(--blue);
+    box-shadow: 0 0 0 6px rgba(0,113,227,0.16);
+    animation: ee-ping 2.4s ease-out infinite;
+  }
+  @keyframes ee-ping {
+    0% { box-shadow: 0 0 0 0 rgba(0,113,227,0.45); }
+    100% { box-shadow: 0 0 0 14px rgba(0,113,227,0); }
+  }
+  .ee-stage-tag {
+    font-family: var(--font-t); font-size: 13px; font-weight: 500;
+    letter-spacing: -0.01em; color: var(--mid-gray);
+  }
+  .ee-stage.is-start .ee-stage-tag {
+    display: inline-block; color: #fff; background: var(--blue);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 980px;
+  }
+  .ee-stage-h {
+    font-family: var(--font-d); font-size: 28px; font-weight: 600;
+    letter-spacing: -0.022em; line-height: 1.1; color: var(--graphite);
+    margin-top: 12px;
+  }
+  .ee-stage.is-start .ee-stage-h { color: #fff; }
+  .ee-stage-p {
+    font-family: var(--font-t); font-size: 16px; line-height: 1.5;
+    letter-spacing: -0.015em; color: var(--mid-gray); margin-top: 12px;
+  }
+  .ee-stage.is-start .ee-stage-p { color: rgba(255,255,255,0.74); }
+
+  /* ─── Band ─── */
+  .ee-band {
+    display: flex; align-items: center; gap: 18px;
+    margin-top: 36px; padding: 22px 28px;
+    background: #1d1d1f; border-radius: 16px;
+  }
+  .ee-band p {
+    font-family: var(--font-d); font-size: clamp(17px, 1.8vw, 21px);
+    font-weight: 500; letter-spacing: -0.018em; line-height: 1.35; color: #fff;
+  }
+  .ee-radar {
+    position: relative; flex: none; width: 34px; height: 34px;
+    border-radius: 50%; background: rgba(110,158,255,0.12);
+  }
+  .ee-radar::after {
+    content: ""; position: absolute; inset: 12px; border-radius: 50%; background: #6e9eff;
+  }
+  .ee-radar span {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 1.5px solid rgba(110,158,255,0.7);
+    animation: ee-radar 2.4s ease-out infinite;
+  }
+  .ee-radar span:nth-child(2) { animation-delay: 1.2s; }
+  @keyframes ee-radar {
+    0% { transform: scale(0.4); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  /* ─── Steps ─── */
+  .ee-steps {
+    list-style: none; margin: 36px 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    counter-reset: none;
+  }
+  .ee-step {
+    position: relative;
+    background: var(--canvas); border: 1px solid transparent;
+    border-radius: 18px; padding: 26px 24px 28px;
+    transition: transform 0.28s ease, background 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+  }
+  .ee-step:hover {
+    transform: translateY(-4px); background: var(--white);
+    border-color: rgba(0,113,227,0.35); box-shadow: rgba(0,0,0,0.08) 0 14px 34px;
+  }
+  .ee-step:not(:last-child)::after {
+    content: ""; position: absolute; top: 46px; right: -16px; width: 12px; height: 12px;
+    border-top: 2px solid rgba(0,113,227,0.35); border-right: 2px solid rgba(0,113,227,0.35);
+    transform: rotate(45deg);
+  }
+  .ee-step-top { display: flex; align-items: center; justify-content: space-between; }
+  .ee-step-n {
+    font-family: var(--font-d); font-size: 40px; font-weight: 600;
+    letter-spacing: -0.03em; line-height: 1; color: var(--blue);
+  }
+  .ee-step-icon {
+    width: 34px; height: 34px; padding: 7px; border-radius: 10px;
+    background: rgba(0,113,227,0.08); color: var(--blue);
+  }
+  .ee-step-h {
+    font-family: var(--font-d); font-size: 21px; font-weight: 600;
+    letter-spacing: -0.02em; color: var(--graphite); margin-top: 20px;
+  }
+  .ee-step-p {
+    font-family: var(--font-t); font-size: 15px; line-height: 1.5;
+    letter-spacing: -0.012em; color: var(--mid-gray); margin-top: 8px;
+  }
+
+  /* ─── Channels ─── */
+  .ee-channels {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    margin-top: 36px;
+  }
+  .ee-channels ul { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+  .ee-channels li {
+    font-family: var(--font-t); font-size: 14px; font-weight: 500;
+    color: var(--graphite); background: var(--canvas);
+    border: 1px solid var(--border); border-radius: 980px; padding: 7px 14px;
+  }
+  .ee-channels p {
+    font-family: var(--font-t); font-size: 15px; color: var(--mid-gray); letter-spacing: -0.012em;
+  }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 939px) {
+    .ee-steps { grid-template-columns: repeat(2, 1fr); }
+    .ee-step:nth-child(2)::after { display: none; }
+  }
+  @media (max-width: 760px) {
+    .ee-how { padding: 64px 22px 68px; }
+    .ee-journey { grid-template-columns: 1fr; gap: 16px; padding-left: 26px; margin-top: 40px; }
+    .ee-track {
+      left: 6px; right: auto; top: 30px; bottom: 30px; width: 2px; height: auto;
+      background: linear-gradient(180deg, var(--blue), rgba(0,113,227,0.18));
+    }
+    .ee-pulse { left: 50%; top: 0; animation-name: ee-travel-v; }
+    @keyframes ee-travel-v {
+      0% { top: 0; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { top: 100%; opacity: 0; }
+    }
+    .ee-stage { margin-top: 0; }
+    .ee-node { top: 34px; left: -27px; margin-left: 0; }
+    .ee-band { padding: 18px 20px; }
+    .ee-step:not(:last-child)::after { display: none; }
+  }
+  @media (max-width: 520px) {
+    .ee-steps { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ee-pulse, .ee-radar span, .ee-stage.is-start .ee-node { animation: none; }
+    .ee-pulse { display: none; }
+  }
+</style>

@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import Footer from '../components/Footer.astro'
-import DemandEngine from '../components/DemandEngine.astro'
+import HowEngageEngineWorks from '../components/HowEngageEngineWorks.astro'
 import CaseStudyCards from '../components/CaseStudyCards.astro'
 
 // Home case-study wall. Full stories live at /case-studies/*.
@@ -83,6 +83,9 @@ const caseStudies = [
     <!-- ═══ 1b. CASE STUDIES ═══ -->
     <CaseStudyCards cards={caseStudies} />
 
+    <!-- ═══ 1b2. HOW ENGAGEENGINE WORKS ═══ -->
+    <HowEngageEngineWorks />
+
     <!-- ═══ 1c. WHO YOU'RE DEALING WITH ═══ -->
     <section class="mp-creds">
       <div class="mp-creds-inner">
@@ -124,8 +127,7 @@ const caseStudies = [
       </div>
     </section>
 
-    <!-- ═══ 4. THE ENGINE (interactive mechanism reveal) ═══ -->
-    <DemandEngine />
+    <!-- ═══ 4. THE ENGINE — DemandEngine removed from home 2026-10-01 (Robbie); component kept, still used on /how-it-works ═══ -->
 
     <!-- Founder block removed 2026-07-17: off-aesthetic, belongs to a deeper page. -->
     <!-- Value Stack removed 2026-07-17: discounty price-anchor + names pitch, off the new positioning. -->
