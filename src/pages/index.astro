@@ -71,11 +71,11 @@ const caseStudies = [
         <!-- Hero VSL. Autoplays muted; burned-in captions carry it, controls allow unmute. -->
         <figure class="mp-artifact mp-artifact-video">
           <div class="mp-hero-video">
-            <video autoplay muted loop playsinline controls poster="/video/hub/hero-vsl-poster.jpg">
-              <source src="/video/hub/hero-vsl.mp4" type="video/mp4" />
+            <video autoplay muted loop playsinline controls preload="auto" poster="/video/hub/hero-nine-cents-poster.jpg">
+              <source src="/video/hub/hero-nine-cents.mp4" type="video/mp4" />
             </video>
           </div>
-          <figcaption class="mp-artifact-cap">60 seconds. Why your phone isn't ringing.</figcaption>
+          <figcaption class="mp-artifact-cap">40 seconds. How our clients buy clicks for nine cents.</figcaption>
         </figure>
       </div>
     </section>
@@ -341,21 +341,23 @@ const caseStudies = [
     .mp-artifact { max-width: 100%; }
   }
 
-  /* Hero VSL (replaces the divergence chart) */
+  /* Hero VSL — vertical 9:16 (2026-10-01), capped so it never towers over the hero copy */
   .mp-hero-video {
     width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
     background: #1d1d1f;
     border-radius: 8px;
     overflow: hidden;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 9 / 16;
     box-shadow: var(--shadow-xl, rgba(0,0,0,0.22) 3px 5px 30px 0px);
   }
-  .mp-hero-video video { width: 100%; height: 100%; display: block; }
+  .mp-hero-video video { width: 100%; height: 100%; display: block; object-fit: cover; }
+  @media (max-width: 768px) { .mp-hero-video { max-width: 280px; } }
 
   /* Proof-card styles now live in ProofCards.astro (shared by / and /snapshot). */
   @media (max-width: 768px) {
-    /* Unlike the old chart, the video stays on mobile — 16:9 is short enough
-       not to bury the proof cards. */
+    /* The video stays on mobile, capped at 280px wide so it does not bury the case studies. */
     .mp-hero { padding-bottom: 8px; }
   }
 
