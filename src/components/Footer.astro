@@ -1,6 +1,6 @@
 ---
-// ctaHref lets a page point the footer CTA somewhere other than /score/ (case studies -> /diagnostic/).
-const { ctaHref = '/score/' } = Astro.props;
+// ctaHref lets a page point the footer CTA somewhere other than the default /diagnostic/.
+const { ctaHref = '/diagnostic/' } = Astro.props;
 ---
 <footer>
   <div class="footer-inner">
