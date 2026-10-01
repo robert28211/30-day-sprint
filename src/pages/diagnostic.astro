@@ -302,6 +302,17 @@ import Footer from '../components/Footer.astro'
       .band-red    { background: rgba(239,68,68,0.12);   color: #dc2626; }
 
       /* CTAs */
+      #fm-toolkit-row { margin-bottom: 14px; }
+      .fm-kit-btn {
+        display: block; text-align: center; text-decoration: none;
+        border: 1px solid var(--border); border-radius: 10px;
+        padding: 14px 18px; font-size: 15px; font-weight: 700;
+        color: var(--graphite); background: var(--white);
+        transition: border-color .15s;
+      }
+      .fm-kit-btn:hover { border-color: var(--blue); color: var(--blue); text-decoration: none; }
+      .fm-kit-micro { font-size: 12px; color: var(--light-gray); text-align: center; margin-top: 8px; }
+
       .cta-primary {
         display: block; width: 100%;
         background: var(--blue); color: var(--white);
@@ -604,6 +615,12 @@ import Footer from '../components/Footer.astro'
           <div id="primary-fm-copy"></div>
           <div class="primary-fm-score" id="primary-fm-score"></div>
         </div>
+        <div id="fm-toolkit-row" hidden>
+          <a href="#" class="fm-kit-btn" id="fm-kit-btn" download>
+            <span id="fm-kit-label"></span>
+          </a>
+          <p class="fm-kit-micro">Yours free. No email, no form — you already gave us your answers.</p>
+        </div>
         <a href="#" class="cta-primary disabled" id="cta-primary-btn">
           Answer all 12 questions to see your full diagnosis →
         </a>
@@ -630,21 +647,29 @@ import Footer from '../components/Footer.astro'
           name: 'Failure Mode #1 — Not Seen When Decisions Are Made',
           copy: "Your score suggests buyers can't find you when decisions are being made. This is upstream loss — it happens before you even know an opportunity existed.",
           url:  'https://marketingperformance.net/diagnosis/not-seen/?src=diagnostic',
+          kit:  'fm1-toolkit.zip',
+          kitLabel: 'The Visibility Toolkit',
         },
         {
           name: 'Failure Mode #2 — Seen But Not Trusted',
           copy: "Your score suggests trust isn't forming fast enough when buyers evaluate you. Marketing shows engagement. Sales hears hesitation. The gap isn't credibility — it's contextual trust.",
           url:  'https://marketingperformance.net/diagnosis/not-trusted/?src=diagnostic',
+          kit:  'fm2-toolkit.zip',
+          kitLabel: 'The Trust Toolkit',
         },
         {
           name: 'Failure Mode #3 — Trusted But Still Compared',
           copy: "Your score suggests buyers trust you but still feel the need to compare. When they compare, price becomes the deciding factor. This is a justification gap, not a quality problem.",
           url:  'https://marketingperformance.net/diagnosis/still-compared/?src=diagnostic',
+          kit:  'fm3-toolkit.zip',
+          kitLabel: 'The Justification Toolkit',
         },
         {
           name: 'Failure Mode #4 — Intended Choice, No Action',
           copy: "Your score suggests buyers intend to choose you, then momentum decays. This is the most expensive failure mode — and the most fixable. The intent is already there.",
           url:  'https://marketingperformance.net/diagnosis/no-action/?src=diagnostic',
+          kit:  'fm4-toolkit.zip',
+          kitLabel: 'The Momentum Toolkit',
         },
       ];
 
@@ -713,6 +738,22 @@ import Footer from '../components/Footer.astro'
           ctaBtn.textContent = 'See Your Full Diagnosis →';
           ctaBtn.href        = fm.url;
           ctaBtn.classList.remove('disabled');
+
+          // Toolkit for THIS failure mode. Free and ungated — twelve answers is
+          // the price, and anyone arriving from the DVS report has already
+          // passed the one email gate.
+          const kitRow = document.getElementById('fm-toolkit-row');
+          const kitBtn = document.getElementById('fm-kit-btn');
+          if (kitRow && kitBtn && fm.kit) {
+            kitBtn.href = '/downloads/' + fm.kit;
+            document.getElementById('fm-kit-label').textContent = 'Download ' + fm.kitLabel + ' →';
+            kitRow.hidden = false;
+            kitBtn.onclick = function () {
+              if (typeof gtag !== 'undefined') {
+                gtag('event', 'toolkit_download', { failure_mode: fm.name, file: fm.kit });
+              }
+            };
+          }
 
           if (!completionFired) {
             completionFired = true;

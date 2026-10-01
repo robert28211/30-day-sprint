@@ -1,0 +1,113 @@
+---
+// Shared shell for /case-studies/* pages. Body copy goes in the default slot.
+import Base from '../layouts/Base.astro'
+import Footer from './Footer.astro'
+const { title, description, h1, sub, ctaHead, ctaBody } = Astro.props;
+---
+<Base title={title} description={description}>
+  <nav class="mp-nav">
+    <div class="mp-nav-inner">
+      <a href="/" class="mp-logo">
+        <img src="/mp-logo-v3.png" alt="Marketing Performance — Powered by EngageEngine™" width="217" height="44" />
+      </a>
+    </div>
+  </nav>
+
+  <main class="cs">
+    <article class="cs-doc">
+      <header class="cs-head">
+        <p class="cs-eye">Case study</p>
+        <h1 class="cs-h1">{h1}</h1>
+        <p class="cs-sub">{sub}</p>
+      </header>
+
+      <div class="cs-body">
+        <slot />
+      </div>
+
+      <aside class="cs-cta">
+        <h2>{ctaHead}</h2>
+        <p>{ctaBody}</p>
+        <a href="/diagnostic/" class="cs-btn">See where you stand</a>
+      </aside>
+    </article>
+  </main>
+
+  <Footer />
+</Base>
+
+<style>
+  .mp-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .mp-nav-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 0 32px; height: 56px;
+    display: flex; align-items: center;
+  }
+  .mp-logo { display: flex; align-items: center; min-height: 44px; text-decoration: none; }
+  .mp-logo img { height: 44px; width: auto; display: block; }
+  @media (max-width: 600px) { .mp-logo img { height: 34px; } }
+
+  .cs { background: var(--canvas); padding: 64px 22px 96px; }
+  .cs-doc {
+    max-width: 720px; margin: 0 auto;
+    background: var(--white); padding: 64px 56px;
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 640px) { .cs-doc { padding: 40px 24px; } }
+
+  .cs-head { padding-bottom: 32px; margin-bottom: 36px; border-bottom: 1px solid var(--border); }
+  .cs-eye {
+    font-family: var(--font-t); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--blue); margin-bottom: 14px;
+  }
+  .cs-h1 {
+    font-family: var(--font-d); font-size: clamp(32px, 4.5vw, 44px);
+    font-weight: 600; line-height: 1.07; letter-spacing: -0.022em;
+    color: var(--graphite); margin-bottom: 14px;
+  }
+  .cs-sub {
+    font-family: var(--font-t); font-size: 15px; font-weight: 600;
+    color: var(--mid-gray); letter-spacing: -0.015em;
+  }
+
+  .cs-body :global(h2) {
+    font-family: var(--font-d); font-size: 22px; font-weight: 600;
+    line-height: 1.25; letter-spacing: -0.018em;
+    color: var(--graphite); margin: 40px 0 16px;
+  }
+  .cs-body :global(p) {
+    font-family: var(--font-t); font-size: 17px; line-height: 1.6;
+    letter-spacing: -0.018em; color: var(--graphite); margin-bottom: 16px;
+  }
+  .cs-body :global(p.cs-lead) { font-size: 20px; line-height: 1.5; }
+
+  .cs-cta {
+    margin-top: 48px; padding: 36px 32px;
+    background: #1d1d1f; color: #fff;
+  }
+  .cs-cta h2 {
+    font-family: var(--font-d); font-size: 24px; font-weight: 600;
+    line-height: 1.2; letter-spacing: -0.02em; color: #fff; margin-bottom: 12px;
+  }
+  .cs-cta p {
+    font-family: var(--font-t); font-size: 16px; line-height: 1.55;
+    color: rgba(255,255,255,0.72); margin-bottom: 22px;
+  }
+  .cs-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue); color: #fff;
+    font-family: var(--font-t); font-size: 17px; letter-spacing: -0.022em;
+    padding: 12px 24px; border-radius: 980px; text-decoration: none;
+    transition: background 0.2s; line-height: 1.2;
+  }
+  .cs-btn:hover { background: var(--blue-link); color: #fff; text-decoration: none; }
+  .cs-btn::after { content: "→"; transition: transform 0.2s; }
+  .cs-btn:hover::after { transform: translateX(3px); }
+</style>

@@ -2,22 +2,19 @@
 import Base from '../layouts/Base.astro'
 import Footer from '../components/Footer.astro'
 import DemandEngine from '../components/DemandEngine.astro'
-import ProofCards from '../components/ProofCards.astro'
+import CaseStudyCards from '../components/CaseStudyCards.astro'
 
-// Share-Line proof wall (home). Numbers sourced from share-line-job-counts-variable-growth.csv
-// (jobs 2023 -> 2025 total growth). Verified, market-volume comparator flat-to-contracting.
-const homeCards = [
-  { trade: 'Well drilling',    loc: '',                      num: '9¢',   unit: 'per click',     market: 'in an industry that averages $7.85 a click', down: false, featured: true },
-  { trade: 'Glass',            loc: '',                      num: '1 in 8', unit: 'clicks become leads', market: 'most campaigns convert 3–5%', down: false },
-  { trade: 'Landscaping',      loc: '',              num: '+40%', unit: 'more jobs',     market: 'in a flat market', down: false },
-  { trade: 'Roofing',          loc: '',              num: '+23%', unit: 'more jobs',     market: 'in a flat market', down: false },
-  { trade: 'Plumbing',         loc: '',                      num: '1 in 3', unit: 'clicks become calls', market: 'in the off-season', down: false },
-  { trade: 'Fencing',          loc: '', num: '+25%', unit: 'more jobs',     market: 'in a flat market', down: false },
-  { trade: 'Gutters',          loc: '',   num: '+22%', unit: 'more jobs',     market: 'in a flat market', down: false },
-  { trade: 'Windows & doors',  loc: '',                      num: '16.1%', unit: 'click-through rate', market: 'the industry benchmark is 6.47%', down: false },
-  { trade: 'Pools',            loc: '',              num: '+26%', unit: 'more installs', market: 'while pools fell 50%', down: true },
-  { trade: 'Metal roofing',    loc: '',               num: '+30%', unit: 'more sold',     market: 'while the market shrank 15–25%', down: true },
-  { trade: 'Stone',            loc: '',              num: '+232%', unit: 'more demand',  market: 'in the off-season', down: false },
+// Home case-study wall. Full stories live at /case-studies/*.
+const caseStudies = [
+  { client: 'The Guttermen', headline: 'Twice the estimate bookings. Within 45 days.',
+    summary: 'Advertising, intent-based email follow-up, and a connected website and inquiry system supported a doubling of estimate bookings within the first 45 days of working together.',
+    href: '/case-studies/the-guttermen/' },
+  { client: 'Punch List Pros', headline: '$5.20 in booked work per Google Ads dollar.',
+    summary: 'August 2026 reporting connected Google advertising to uploaded closed-job values. Alongside search, the Meta program generated 97 lead-form submissions at approximately $29 each over the April–September reporting window.',
+    href: '/case-studies/punch-list-pros/' },
+  { client: 'Midlands Landscape', headline: '20% growth. In a market that grew 6%.',
+    summary: 'A coordinated marketing program connected intent-based audiences, advertising, and email follow-up across landscaping, hardscaping, and landscape supply.',
+    href: '/case-studies/midlands-landscape/' },
 ];
 ---
 <Base
@@ -66,8 +63,7 @@ const homeCards = [
           </div>
 
           <div class="hero-cta mp-hero-cta-block">
-            <a href="/diagnostic/" class="mp-btn-primary">Find where you're losing it</a>
-            <a href="tel:+18033868337" class="mp-btn-ghost">Or just call me &mdash; 803-386-8337</a>
+            <a href="/score/" class="mp-btn-primary">See where you stand</a>
             <p class="mp-micro">Ten minutes. Your result on screen. No call, no salesperson, nothing scheduled.</p>
           </div>
         </div>
@@ -84,11 +80,8 @@ const homeCards = [
       </div>
     </section>
 
-    <!-- ═══ 1b. PROOF CARDS (Share Line) ═══ -->
-    <ProofCards
-      cards={homeCards}
-      foot="Every one of those jobs came off a competitor's schedule. One company per trade, per market."
-    />
+    <!-- ═══ 1b. CASE STUDIES ═══ -->
+    <CaseStudyCards cards={caseStudies} />
 
     <!-- ═══ 1c. WHO YOU'RE DEALING WITH ═══ -->
     <section class="mp-creds">
@@ -182,7 +175,7 @@ const homeCards = [
       <p class="mp-close-body" data-animate data-delay="0.1">Our clients buy clicks for nine cents in an industry that averages $7.85. That's what in-market data does.</p>
       <p class="mp-close-body" data-animate data-delay="0.15">We can't sell your market twice. That's the whole point. If your competitor claims it first, we start sending <em>him</em> the work.</p>
       <div class="mp-close-cta" data-animate data-delay="0.2">
-        <a href="/snapshot" class="mp-btn-primary">See If My Trade Is Still Open</a>
+        <a href="/score/" class="mp-btn-primary">See where you stand</a>
         <p class="mp-micro">Free. No email required. Takes 30 seconds.</p>
       </div>
     </section>

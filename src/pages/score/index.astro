@@ -26,16 +26,54 @@ import Footer from '../../components/Footer.astro'
           <p class="hook-sub" data-animate data-delay="0.12">
             Find out your AI Visibility Score — and exactly which gap is costing you the most business right now.
           </p>
-          <div class="hook-cta" data-animate data-delay="0.2">
-            <a href="#score-form" class="btn btn-blue hook-btn">Get My Free Score →</a>
-            <p class="hook-micro">Free &nbsp;·&nbsp; No pitch &nbsp;·&nbsp; Takes up to 90 seconds — pulls live data</p>
-          </div>
           <div class="hook-proof" data-animate data-delay="0.28">
             <div class="hook-proof-inner">
               <span class="hook-proof-num">2,400+</span>
               <span class="hook-proof-label">businesses diagnosed &nbsp;·&nbsp; same engine</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section class="s-form" id="score-form">
+        <div class="form-wrap">
+
+          <div class="form-left">
+            <p class="eyebrow" data-animate>What you get</p>
+            <ul class="form-value" data-animate data-delay="0.1">
+              <li><span class="fv-check">✓</span> Overall AI Visibility Score (0–100)</li>
+              <li><span class="fv-check">✓</span> Your visibility profile (DARK → DEFENDED)</li>
+              <li><span class="fv-check">✓</span> Head-to-head competitor comparison</li>
+              <li><span class="fv-check">✓</span> Four-gate breakdown + your highest-leverage gap</li>
+            </ul>
+          </div>
+
+          <div class="form-right" data-animate data-delay="0.1">
+            <form id="dvs-form" novalidate>
+              <div class="field-group">
+                <label class="field-label" for="f-name">Business Name</label>
+                <input type="text" id="f-name" name="businessName" class="field-input" placeholder="" required autocomplete="organization" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f-url">Website URL</label>
+                <input type="url" id="f-url" name="url" class="field-input"  required autocomplete="url" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f-niche">Service Category</label>
+                <input type="text" id="f-niche" name="niche" class="field-input"  required autocomplete="off" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f-location">Service Area</label>
+                <input type="text" id="f-location" name="location" class="field-input" placeholder="" required autocomplete="off" />
+              </div>
+              <div id="form-error" class="form-error" hidden></div>
+              <button type="submit" class="btn btn-blue form-cta" id="form-submit">
+                Run My AI Visibility Score →
+              </button>
+              <p class="form-trust">Free &nbsp;·&nbsp; No pitch &nbsp;·&nbsp; Takes about 15 seconds — pulls live data</p>
+            </form>
+          </div>
+
         </div>
       </section>
 
@@ -139,51 +177,6 @@ import Footer from '../../components/Footer.astro'
       </section>
 
       <!-- ═══ SECTION 5: OFFER / FORM ═══ -->
-      <section class="s-form" id="score-form">
-        <div class="form-wrap">
-
-          <div class="form-left">
-            <p class="eyebrow" data-animate>Your Free AI Visibility Score</p>
-            <h2 class="form-h2" data-animate data-delay="0.05">
-              Find out where you stand —<br>
-              <span class="form-h2-blue">before your competitor does.</span>
-            </h2>
-            <ul class="form-value" data-animate data-delay="0.1">
-              <li><span class="fv-check">✓</span> Overall AI Visibility Score (0–100)</li>
-              <li><span class="fv-check">✓</span> Your visibility profile (DARK → DEFENDED)</li>
-              <li><span class="fv-check">✓</span> Head-to-head competitor comparison</li>
-              <li><span class="fv-check">✓</span> Four-gate breakdown + your highest-leverage gap</li>
-            </ul>
-          </div>
-
-          <div class="form-right" data-animate data-delay="0.1">
-            <form id="dvs-form" novalidate>
-              <div class="field-group">
-                <label class="field-label" for="f-name">Business Name</label>
-                <input type="text" id="f-name" name="businessName" class="field-input" placeholder="" required autocomplete="organization" />
-              </div>
-              <div class="field-group">
-                <label class="field-label" for="f-url">Website URL</label>
-                <input type="url" id="f-url" name="url" class="field-input"  required autocomplete="url" />
-              </div>
-              <div class="field-group">
-                <label class="field-label" for="f-niche">Service Category</label>
-                <input type="text" id="f-niche" name="niche" class="field-input"  required autocomplete="off" />
-              </div>
-              <div class="field-group">
-                <label class="field-label" for="f-location">Service Area</label>
-                <input type="text" id="f-location" name="location" class="field-input" placeholder="" required autocomplete="off" />
-              </div>
-              <div id="form-error" class="form-error" hidden></div>
-              <button type="submit" class="btn btn-blue form-cta" id="form-submit">
-                Run My AI Visibility Score →
-              </button>
-              <p class="form-trust">Free &nbsp;·&nbsp; No pitch &nbsp;·&nbsp; Takes up to 90 seconds — pulls live data</p>
-            </form>
-          </div>
-
-        </div>
-      </section>
 
     </main>
   </div>
@@ -260,7 +253,26 @@ import Footer from '../../components/Footer.astro'
     </section>
 
     <!-- Competitor Bars — populated by JS -->
-    <section class="r-competitors">
+    <!-- FREE — real market demand + seat availability. Shown before any email ask. -->
+    <section class="r-market" id="r-market" hidden>
+      <div class="r-inner">
+        <h2 class="r-h2">Your market right now</h2>
+        <div class="mkt-grid">
+          <div class="mkt-figure">
+            <div class="mkt-num" id="mkt-num">—</div>
+            <div class="mkt-unit" id="mkt-unit">monthly searches</div>
+          </div>
+          <div class="mkt-body">
+            <p class="mkt-line" id="mkt-line"></p>
+            <div class="mkt-terms" id="mkt-terms"></div>
+          </div>
+        </div>
+        <div class="mkt-seat" id="mkt-seat" hidden></div>
+        <p class="mkt-method" id="mkt-method"></p>
+      </div>
+    </section>
+
+    <section class="r-competitors" id="r-competitors" hidden>
       <div class="wrap">
         <p class="eyebrow">How you compare</p>
         <p class="comp-subtitle">Your score against your top local competitors on the same four gates.</p>
@@ -269,7 +281,7 @@ import Footer from '../../components/Footer.astro'
     </section>
 
     <!-- Breakdown — BLURRED until gate -->
-    <section class="r-breakdown" id="r-breakdown">
+    <section class="r-breakdown" id="r-breakdown" hidden>
       <div class="wrap">
         <div class="breakdown-header">
           <p class="eyebrow">The Four Gates</p>
@@ -305,21 +317,37 @@ import Footer from '../../components/Footer.astro'
     </section>
 
     <!-- Post-unlock — hidden until gate clears, populated by JS -->
+    <section class="r-exits" id="r-exits" hidden>
+      <div class="r-inner">
+        <h2 class="r-h2">Where to go from here</h2>
+        <div class="exit-grid">
+          <a class="exit-card" href="/diagnostic/">
+            <div class="exit-k">Find your failure mode</div>
+            <p class="exit-b">This score measures what is true about your site. The Diagnostic finds where you are losing the deals — twelve questions, four failure modes. Free toolkit at the end.</p>
+            <span class="exit-cta">Take the Diagnostic →</span>
+          </a>
+          <a class="exit-card" href="tel:+18033868337">
+            <div class="exit-k">Or just call</div>
+            <p class="exit-b">One company per trade, per market. If your seat is open and you want it, this is the shortest path.</p>
+            <span class="exit-cta">803-386-8337 →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
     <section class="r-unlocked" id="r-unlocked" hidden>
       <div class="wrap">
         <div class="unlock-inner">
           <div class="unlock-profile-chip" id="unlock-profile-chip"></div>
           <h2 class="unlock-h2" id="unlock-h2"></h2>
           <p class="unlock-body" id="unlock-body"></p>
-          <div class="unlock-download-wrap">
-            <a id="unlock-download-btn" href="#" class="btn btn-blue unlock-dl-btn" download>
-              <span id="unlock-download-label"></span>
-            </a>
-            <p class="unlock-dl-note">Your toolkit downloads automatically — no account needed.</p>
-          </div>
+          <!-- Toolkit download removed: it was keyed to the DVS visibility profile
+               (EXPOSED, DARK…) but the toolkits are per FAILURE MODE, a different axis.
+               The toolkit is now offered at the end of /diagnostic, where the failure
+               mode is actually determined. -->
           <div class="unlock-divider"></div>
           <p class="unlock-call-label" id="unlock-call-label"></p>
-          <a href="https://calendly.com/robert-marketingperformance/strategy" class="btn btn-outline unlock-call-btn" target="_blank" rel="noopener">Book a Free 20-Min Strategy Call →</a>
+          
           <div class="unlock-report-row">
             <a id="report-link" href="#" class="unlock-report-link" target="_blank" rel="noopener">View full technical report →</a>
           </div>
@@ -338,6 +366,84 @@ import Footer from '../../components/Footer.astro'
 // States: landing → loading → results → unlocked
 // ══════════════════════════════════════════════════════════
 
+// ── STAGE 1 — seat check ─────────────────────────────────────────────────────
+// Instant, no API, no email. Qualifies the visitor before we spend a DVS run
+// (live crawl + SERP + model calls) on a market that is already closed.
+const TRADES = {
+  'metal roof': { rate: 0.04, job: 12000, label: 'metal roofing' },
+  roofing:      { rate: 0.04,  job: 10000, label: 'roofing' },
+  roof:         { rate: 0.04,  job: 10000, label: 'roofing' },
+  gutter:       { rate: 0.035, job: 1850,  label: 'gutter' },
+  plumb:        { rate: 0.18,  job: 425,   label: 'plumbing' },
+  hvac:         { rate: 0.10,  job: 900,   label: 'HVAC' },
+  'landscape design': { rate: 0.035, job: 7000, label: 'landscape design' },
+  landscap:     { rate: 0.25,  job: 1400,  label: 'landscaping' },
+  lawn:         { rate: 0.25,  job: 1400,  label: 'lawn care' },
+  irrigation:   { rate: 0.10,  job: 1600,  label: 'irrigation' },
+  window:       { rate: 0.05,  job: 6500,  label: 'window & door' },
+  door:         { rate: 0.05,  job: 6500,  label: 'window & door' },
+  fenc:         { rate: 0.03,  job: 4200,  label: 'fencing' },
+  well:         { rate: 0.015, job: 7500,  label: 'water-well drilling' },
+  drill:        { rate: 0.015, job: 7500,  label: 'water-well drilling' },
+  paint:        { rate: 0.08,  job: 2600,  label: 'painting' },
+  mason:        { rate: 0.04,  job: 6500,  label: 'masonry' },
+  stone:        { rate: 0.04,  job: 6500,  label: 'stone & masonry' },
+  pool:         { rate: 0.008, job: 55000, label: 'pool' },
+  glass:        { rate: 0.07,  job: 425,   label: 'glass' },
+  dumpster:     { rate: 0.02,  job: 475,   label: 'dumpster rental' },
+  handyman:     { rate: 0.40,  job: 650,   label: 'handyman' },
+  deck:         { rate: 0.03,  job: 8000,  label: 'deck & dock' },
+  dock:         { rate: 0.03,  job: 8000,  label: 'deck & dock' },
+};
+const DEFAULT_TRADE = { rate: 0.06, job: 3000, label: '' };
+const METROS = {
+  'columbia':     { hh: 195000,  label: 'Columbia' },
+  'charleston':   { hh: 219000,  label: 'Charleston' },
+  'greenville':   { hh: 247000,  label: 'Greenville' },
+  'myrtle':       { hh: 166000,  label: 'Myrtle Beach' },
+  'florence':     { hh: 120000,  label: 'Florence' },
+  'augusta':      { hh: 143000,  label: 'Augusta' },
+  'atlanta':      { hh: 1361000, label: 'Atlanta' },
+  'charlotte':    { hh: 620000,  label: 'Charlotte' },
+  'raleigh':      { hh: 520000,  label: 'Raleigh' },
+  'savannah':     { hh: 130000,  label: 'Savannah' },
+};
+const DEFAULT_METRO_HH = 180000;
+const TAKEN = {
+  'roofing|columbia':1,'gutter|columbia':1,'plumbing|columbia':1,'landscaping|columbia':1,
+  'lawn care|columbia':1,'landscape design|columbia':1,'fencing|columbia':1,
+  'water-well drilling|columbia':1,'masonry|columbia':1,'stone & masonry|columbia':1,
+  'pool|columbia':1,'glass|columbia':1,'painting|columbia':1,'window & door|columbia':1,
+  'dumpster rental|columbia':1,'handyman|columbia':1,'deck & dock|columbia':1,
+  'fencing|charleston':1,'masonry|charleston':1,'stone & masonry|charleston':1,
+  'water-well drilling|greenville':1,'pool|myrtle':1,'pool|florence':1,
+  'dumpster rental|augusta':1,'metal roofing|atlanta':1,
+};
+
+function seatMatchTrade(v: string) {
+  const t = v.toLowerCase();
+  for (const k in TRADES) { if (t.includes(k)) return (TRADES as any)[k]; }
+  return { ...DEFAULT_TRADE, label: t.trim() };
+}
+function seatMatchMetro(v: string) {
+  const low = v.toLowerCase();
+  for (const k in METROS) { if (low.includes(k)) return { ...(METROS as any)[k], key: k }; }
+  const label = (v.split(',')[0] || 'your market').trim().replace(/\b\w/g, (c: string) => c.toUpperCase());
+  return { hh: DEFAULT_METRO_HH, label, key: label.toLowerCase(), est: true };
+}
+
+// Seat availability is now reported alongside the market demand in the results,
+// not as a gate in front of the diagnostic. TRADES/METROS/TAKEN above stay the
+// source for it.
+function seatStatus(trade: string, city: string) {
+  const t = seatMatchTrade(trade);
+  const m = seatMatchMetro(city);
+  const label = t.label || trade.toLowerCase();
+  return { label, metro: m.label, taken: !!(TAKEN as any)[label + '|' + m.key] };
+}
+
+const MARKET_API = 'https://engageengine-dvs.robertlbutt.workers.dev/api/market';
+
 const DVS_API = 'https://engageengine-dvs.robertlbutt.workers.dev/api/audit';
 
 const PROFILE_COLORS: Record<string, string> = {
@@ -348,13 +454,6 @@ const PROFILE_COLORS: Record<string, string> = {
   DARK:     '#991b1b',
 };
 
-const PROFILE_TOOLKIT: Record<string, { file: string; label: string }> = {
-  DARK:     { file: 'fm1-toolkit.zip',  label: 'Download Your AI Visibility Playbook →' },
-  EXPOSED:  { file: 'fm2-toolkit.zip',  label: 'Download Your AI Trust Playbook →' },
-  EMERGING: { file: 'fm3-toolkit.zip',  label: 'Download Your AI Citation Playbook →' },
-  VISIBLE:  { file: 'fm4-toolkit.zip',  label: 'Download Your AI Authority Playbook →' },
-  DEFENDED: { file: 'full-toolkit.zip', label: 'Download the Full AI Visibility Vault →' },
-};
 
 const PROFILE_UNLOCK: Record<string, { headline: string; body: string; callLabel: string }> = {
   DARK: {
@@ -491,7 +590,14 @@ function startLoadAnimation(url: string, niche: string, location: string) {
   loadBar.style.width = '0%';
   loadPct.textContent = '0%';
 
-  const STEP_MS = 5200;
+  // The engine returns in ~13s. Pace the log to real work, then hold the final
+  // line until the API actually resolves. No manufactured waiting.
+  // The log paces itself to the real work. While the engine is still running we
+  // step at STEP_MS; the moment it answers we flush the remaining lines at
+  // FLUSH_MS and show the result. Total wait is the engine's actual time plus a
+  // beat — never a fixed animation the visitor has to sit through.
+  const STEP_MS  = 1100;
+  const FLUSH_MS = 90;
   let i = 0;
 
   function nextStep() {
@@ -511,16 +617,17 @@ function startLoadAnimation(url: string, niche: string, location: string) {
     loadPct.textContent = pct + '%';
     i++;
 
-    if (i < steps.length) setTimeout(nextStep, STEP_MS);
-    else {
-      // Hold on READY until API is done too
-      const waitForApi = setInterval(() => {
-        if (apiDone) {
-          clearInterval(waitForApi);
-          animDone = true;
-          checkBothDone();
-        }
-      }, 300);
+    if (i < steps.length) {
+      setTimeout(nextStep, apiDone ? FLUSH_MS : STEP_MS);
+    } else {
+      animDone = true;
+      checkBothDone();
+      if (!apiDone) {
+        // Engine slower than the log — hold on READY until it answers.
+        const waitForApi = setInterval(() => {
+          if (apiDone) { clearInterval(waitForApi); checkBothDone(); }
+        }, 200);
+      }
     }
   }
 
@@ -528,7 +635,48 @@ function startLoadAnimation(url: string, niche: string, location: string) {
 }
 
 // ── API call ──────────────────────────────────────────────
+// Real monthly search volume for this trade in this market. Runs in parallel
+// with the audit; a failure here must never block the score.
+async function loadMarket(niche: string, location: string) {
+  try {
+    const r = await fetch(MARKET_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trade: niche, location }),
+    });
+    if (!r.ok) return;
+    const m = await r.json();
+    if (m.error || !m.monthly_searches) return;
+    renderMarket(m, niche, location);
+  } catch (_) { /* free section simply stays hidden */ }
+}
+
+function renderMarket(m: any, niche: string, location: string) {
+  const sec = document.getElementById('r-market');
+  if (!sec) return;
+  document.getElementById('mkt-num')!.textContent = m.monthly_searches.toLocaleString();
+  document.getElementById('mkt-unit')!.textContent =
+    'searches a month for ' + (m.trade || niche) + ' in ' + (m.market || location);
+  document.getElementById('mkt-line')!.textContent =
+    'That is demand already in your market this month — people typing these terms into Google, before anyone has been chosen.';
+  const terms = document.getElementById('mkt-terms')!;
+  terms.innerHTML = (m.clusters || []).slice(0, 5).map((c: any) =>
+    '<div class="mkt-term"><span class="mkt-term-v">' + c.volume.toLocaleString() + '</span>' +
+    '<span class="mkt-term-k">' + c.terms.join(', ') + '</span></div>').join('');
+  document.getElementById('mkt-method')!.textContent = m.method || '';
+
+  const seat = seatStatus(niche, location);
+  const seatEl = document.getElementById('mkt-seat')!;
+  seatEl.hidden = false;
+  seatEl.className = 'mkt-seat ' + (seat.taken ? 'is-taken' : 'is-open');
+  seatEl.innerHTML = seat.taken
+    ? '<strong>' + seat.metro + ' is taken for ' + seat.label + '.</strong> We work with one company per trade, per market, and that seat is held. Tell us where else you work and we will check that market.'
+    : '<strong>' + seat.metro + ' is open for ' + seat.label + '.</strong> We work with one company per trade, per market. Nobody holds this one yet.';
+  sec.hidden = false;
+}
+
 async function startApiCall(url: string, businessName: string, niche: string, location: string) {
+  loadMarket(niche, location);
   try {
     const res = await fetch(DVS_API, {
       method: 'POST',
@@ -585,16 +733,16 @@ function showResults() {
     if (blockedEl) blockedEl.hidden = false;
   }
 
-  // Competitor bars
+  // Build competitors + breakdown now, but leave both sections hidden. The free
+  // side of the gate is score + named failure mode only — sub-scores and charts
+  // invite argument before the visitor has raised a hand.
   buildCompetitorBars(total_score, competitors || []);
-
-  // Dimension breakdown (blurred)
   buildDimensionBreakdown(dimensions || {});
 
   // Report link
   if (reportId) {
     const link = document.getElementById('report-link') as HTMLAnchorElement;
-    if (link) link.href = 'https://engageengine-dvs.robertlbutt.workers.dev/reports/' + reportId;
+    if (link) link.href = 'https://engageengine-dvs.robertlbutt.workers.dev/reports/' + reportId + '/client';
   }
 
   // Store reportId for gate
@@ -763,8 +911,13 @@ gateForm?.addEventListener('submit', async (e) => {
     });
   }
 
-  // Unblur the breakdown
+  // Gate passed — reveal the depth: competitor set and the dimension breakdown.
+  const comps = document.getElementById('r-competitors');
+  if (comps) comps.hidden = false;
+  const exits = document.getElementById('r-exits');
+  if (exits) exits.hidden = false;
   const breakdown = document.getElementById('r-breakdown')!;
+  breakdown.hidden = false;
   breakdown.classList.remove('is-blurred');
   if (typeof (window as any)._revealDimBars === 'function') (window as any)._revealDimBars();
 
@@ -781,15 +934,13 @@ gateForm?.addEventListener('submit', async (e) => {
   document.getElementById('unlock-body')!.textContent = unlockCopy.body;
   document.getElementById('unlock-call-label')!.textContent = unlockCopy.callLabel;
 
-  const dlBtn = document.getElementById('unlock-download-btn') as HTMLAnchorElement;
   dlBtn.href = '/downloads/' + toolkit.file;
   dlBtn.download = toolkit.file;
-  document.getElementById('unlock-download-label')!.textContent = toolkit.label;
 
   // DVS full report as secondary link
   if (reportId) {
     const reportLink = document.getElementById('report-link') as HTMLAnchorElement;
-    reportLink.href = 'https://engageengine-dvs.robertlbutt.workers.dev/reports/' + reportId;
+    reportLink.href = 'https://engageengine-dvs.robertlbutt.workers.dev/reports/' + reportId + '/client';
     reportLink.closest('.unlock-report-row')!.removeAttribute('hidden');
   }
 
@@ -1818,4 +1969,58 @@ window.addEventListener('beforeprint', (e) => {
   .banner-inner { flex-direction: column; }
   .unlock-ctas { flex-direction: column; }
 }
+
+/* ── Free: market demand + seat availability ──────────────────────── */
+.r-market { padding: 44px 0; border-top: 1px solid var(--border); }
+.mkt-grid { display: grid; grid-template-columns: minmax(140px, 210px) 1fr; gap: 32px; align-items: start; }
+.mkt-num {
+  font-family: var(--font-d);
+  font-size: clamp(40px, 6vw, 62px);
+  font-weight: 700; letter-spacing: -0.03em; line-height: 1;
+  color: var(--graphite); font-variant-numeric: tabular-nums;
+}
+.mkt-unit { font-size: 13.5px; color: var(--mid-gray); margin-top: 8px; line-height: 1.45; }
+.mkt-line { font-size: 16px; line-height: 1.6; color: var(--mid-gray); margin-bottom: 16px; }
+.mkt-terms { display: flex; flex-direction: column; gap: 6px; }
+.mkt-term {
+  display: flex; gap: 14px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+}
+.mkt-term:last-child { border-bottom: 0; }
+.mkt-term-v {
+  font-family: var(--font-d); font-weight: 700; font-size: 14px;
+  color: var(--graphite); min-width: 54px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.mkt-term-k { font-size: 14px; color: var(--mid-gray); }
+.mkt-seat {
+  margin-top: 26px; padding: 18px 20px; border-radius: 10px;
+  background: var(--canvas); border: 1px solid var(--border);
+  font-size: 15px; line-height: 1.6; color: var(--mid-gray);
+}
+.mkt-seat strong { color: var(--graphite); }
+.mkt-seat.is-open  { border-left: 3px solid var(--blue); }
+.mkt-seat.is-taken { border-left: 3px solid #8b2e22; }
+.mkt-method { margin-top: 16px; font-size: 12px; line-height: 1.55; color: var(--light-gray); }
+
+/* ── Exits, revealed with the detailed report ─────────────────────── */
+.r-exits { padding: 44px 0; border-top: 1px solid var(--border); }
+.exit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.exit-card {
+  display: block; text-decoration: none; padding: 24px;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--canvas); transition: border-color .15s;
+}
+.exit-card:hover { border-color: var(--blue); }
+.exit-k {
+  font-family: var(--font-d); font-size: 17px; font-weight: 700;
+  color: var(--graphite); margin-bottom: 8px; letter-spacing: -0.01em;
+}
+.exit-b { font-size: 14.5px; line-height: 1.6; color: var(--mid-gray); margin-bottom: 14px; }
+.exit-cta { font-size: 14px; font-weight: 700; color: var(--blue); }
+
+@media (max-width: 720px) {
+  .mkt-grid, .exit-grid { grid-template-columns: 1fr; gap: 20px; }
+}
+
 </style>

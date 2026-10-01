@@ -45,7 +45,7 @@ export async function POST({ request, locals }: APIContext) {
   // Resend notification
   try {
     const reportLink = reportId
-      ? `<p><a href="https://engageengine-dvs.robertlbutt.workers.dev/reports/${reportId}">View full DVS report →</a></p>`
+      ? `<p><a href="https://engageengine-dvs.robertlbutt.workers.dev/reports/${reportId}/client">View full DVS report →</a></p>`
       : ''
 
     await fetch('https://api.resend.com/emails', {

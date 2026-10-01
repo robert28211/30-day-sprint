@@ -15,20 +15,14 @@ if (id && id !== 'preview') {
   } catch (_) {}
 }
 
+// This page presents itself as a data export, with a formula bar and a
+// CONFIRMED status column. It must therefore only ever render real rows.
+// It previously synthesised every figure from a hash of city+trade plus
+// Math.random(), so the same URL returned a different "confirmed" buyer
+// count on every load. Without a real snapshot_leads row there is nothing
+// honest to show, so the page 404s instead.
 if (!data) {
-  const city_state    = Astro.url.searchParams.get('city_state') || 'Your Market'
-  const trade         = Astro.url.searchParams.get('trade') || 'Home Services'
-  const failure_mode  = Astro.url.searchParams.get('failure_mode') || ''
-  let hash = 0
-  for (const c of (city_state + trade).toLowerCase()) {
-    hash = Math.imul(31, hash) + c.charCodeAt(0) | 0
-  }
-  const abs = Math.abs(hash)
-  const vary = (n: number, pct = 0.15) => Math.round(n * (1 + (Math.random() * 2 - 1) * pct))
-  const total     = vary(180 + (abs % 120))
-  const multiSite = vary(Math.round(total * (0.34 + (abs >> 4 & 0xf) / 150)))
-  data = { city_state, trade, total_buyers: total, multi_site: multiSite,
-           uncaptured: multiSite, competitor_exposed: Math.round(multiSite * 0.37), failure_mode }
+  return new Response(null, { status: 404 })
 }
 
 const isHomeService = !['plastic surgery'].includes((data.trade || '').toLowerCase())

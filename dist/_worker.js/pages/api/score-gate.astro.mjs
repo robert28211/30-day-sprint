@@ -40,7 +40,7 @@ async function POST({ request, locals }) {
     console.error("D1 insert failed:", e);
   }
   try {
-    const reportLink = reportId ? `<p><a href="https://engageengine-dvs.robertlbutt.workers.dev/reports/${reportId}">View full DVS report →</a></p>` : "";
+    const reportLink = reportId ? `<p><a href="https://engageengine-dvs.robertlbutt.workers.dev/reports/${reportId}/client">View full DVS report →</a></p>` : "";
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {

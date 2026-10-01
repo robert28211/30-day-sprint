@@ -28,6 +28,7 @@
     "/reports/*",
     "/video/*",
     "/b2b",
+    "/case-studies/*",
     "/diagnosis/*",
     "/diagnostic",
     "/fm1",
@@ -42,7 +43,6 @@
     "/score",
     "/snapshot/booked",
     "/the-build",
-    "/toolkit",
     "/videos"
   ]
 }

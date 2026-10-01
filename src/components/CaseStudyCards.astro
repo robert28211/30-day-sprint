@@ -1,0 +1,67 @@
+---
+// Home case-study wall. Same dark-card shell as ProofCards, three linked stories.
+// card = { client, headline, summary, href }
+const { cards = [] } = Astro.props;
+---
+<section class="mp-csband">
+  <div class="mp-csband-inner">
+    {cards.map((c, i) => (
+      <a href={c.href} class="mp-cscard" data-animate data-delay={(i * 0.05).toFixed(2)}>
+        <p class="mp-cscard-client">{c.client}</p>
+        <h3 class="mp-cscard-head">{c.headline}</h3>
+        <p class="mp-cscard-sum">{c.summary}</p>
+        <p class="mp-cscard-link">Read the story</p>
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  .mp-csband { padding: 8px 32px 52px; background: var(--canvas); }
+  .mp-csband-inner {
+    max-width: 1160px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr; gap: 22px;
+  }
+  @media (min-width: 940px) { .mp-csband-inner { grid-template-columns: repeat(3, 1fr); } }
+  .mp-cscard {
+    background: #1d1d1f;
+    border: 1px solid rgba(255,255,255,0.09);
+    padding: 32px 32px 30px;
+    display: flex; flex-direction: column;
+    text-decoration: none;
+    box-shadow: rgba(0,0,0,0.10) 0 2px 8px, rgba(0,0,0,0.16) 0 14px 34px;
+    transition: box-shadow 0.28s ease, transform 0.28s ease, border-color 0.28s ease;
+  }
+  .mp-cscard:hover {
+    text-decoration: none;
+    border-color: rgba(110,158,255,0.45);
+    box-shadow: rgba(0,0,0,0.12) 0 6px 16px, rgba(0,0,0,0.22) 0 22px 50px;
+    transform: translateY(-4px);
+  }
+  .mp-cscard-client {
+    font-family: var(--font-t); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.07em; text-transform: uppercase; color: #6e9eff;
+    line-height: 1.4;
+  }
+  .mp-cscard-head {
+    font-family: var(--font-d); font-size: clamp(26px, 2.6vw, 32px);
+    font-weight: 600; letter-spacing: -0.022em; line-height: 1.12;
+    color: #ffffff; margin-top: 18px;
+  }
+  .mp-cscard-sum {
+    font-family: var(--font-t); font-size: 15px; line-height: 1.5;
+    color: rgba(255,255,255,0.72); letter-spacing: -0.01em;
+    margin-top: 16px; padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    flex: 1;
+  }
+  .mp-cscard-link {
+    font-family: var(--font-t); font-size: 15px; font-weight: 500;
+    color: #6e9eff; letter-spacing: -0.01em; margin-top: 22px;
+  }
+  .mp-cscard-link::after { content: " →"; transition: margin 0.2s; }
+  .mp-cscard:hover .mp-cscard-link::after { margin-left: 3px; }
+  @media (max-width: 768px) {
+    .mp-csband { padding: 0 22px 24px; }
+  }
+</style>
