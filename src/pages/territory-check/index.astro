@@ -1,14 +1,14 @@
 ---
-// /second-opinion — the $497 paid entry offer, on the homepage layout.
-// Copy approved in Dropbox/EngageEngine/Client Reports/Marketing Performance/Second Opinion — Offer Page Copy 2026-10-09.md
+// /territory-check — the $495 paid entry offer, on the homepage layout.
+// Copy approved in Dropbox/EngageEngine/Client Reports/Marketing Performance/Territory Check — Offer Page Copy 2026-10-10.md
 import Base from '../../layouts/Base.astro'
 import Footer from '../../components/Footer.astro'
 import CaseStudyCards from '../../components/CaseStudyCards.astro'
 
 // Stripe Buy Button (Robbie, 2026-10-10). The publishable key is public by design.
 // Its Payment Link must redirect after payment to
-//   https://marketingperformance.net/second-opinion/thanks/?session_id={CHECKOUT_SESSION_ID}
-// so the sale is recorded on /second-opinion/thanks/.
+//   https://marketingperformance.net/territory-check/thanks/?session_id={CHECKOUT_SESSION_ID}
+// so the sale is recorded on /territory-check/thanks/.
 const STRIPE_BUTTON_ID = 'buy_btn_1UP6npEXtQdTAS0pg5gD2O2a'
 const STRIPE_PK = 'pk_live_NCHTemOvjLeYzr0ZrsGcdQEp00k1AiMZ2F'
 const PHONE = '803-386-8337'
@@ -27,8 +27,8 @@ const caseStudies = [
 ];
 ---
 <Base
-  title="Second Opinion — Marketing Performance"
-  description="In three days we show you where your market is choosing someone else, with proof you can check yourself. $497, credited if you hire us.">
+  title="Territory Check — Marketing Performance"
+  description="In three days we show you where your market is choosing someone else, with proof you can check yourself. $495, credited if you hire us.">
 
   <nav class="mp-nav">
     <div class="mp-nav-inner">
@@ -45,7 +45,7 @@ const caseStudies = [
     <section class="mp-hero">
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
-          <p class="mp-eye">The Second Opinion · $497</p>
+          <p class="mp-eye">The Territory Check · $495</p>
           <h1 class="mp-h1">
             <span class="hero-word">You </span>
             <span class="hero-word">already </span>
@@ -74,8 +74,8 @@ const caseStudies = [
         <!-- Autoplays muted; burned-in captions carry it, controls allow unmute. -->
         <figure class="mp-artifact mp-artifact-video">
           <div class="mp-hero-video">
-            <video autoplay muted loop playsinline controls preload="metadata" poster="/video/hub/second-opinion-poster.jpg">
-              <source src="/video/hub/second-opinion.mp4" type="video/mp4" />
+            <video autoplay muted loop playsinline controls preload="metadata" poster="/video/hub/territory-check-poster.jpg">
+              <source src="/video/hub/territory-check.mp4" type="video/mp4" />
             </video>
           </div>
           <figcaption class="mp-artifact-cap">Two and a half minutes. Where your jobs are going.</figcaption>
@@ -143,7 +143,7 @@ const caseStudies = [
     <section class="mp-breaks">
       <div class="mp-breaks-inner">
         <p class="mp-eye">What it costs</p>
-        <p class="so-amount">$497</p>
+        <p class="so-amount">$495</p>
         <div class="mp-problem-prose so-tight">
           <p><strong>Hire us inside 30 days and it comes off your first invoice.</strong></p>
           <p>Not ready to hire anyone? Keep the report. Fix the three things yourself. We'll have told you how.</p>
@@ -152,10 +152,10 @@ const caseStudies = [
         <div class="so-terms">
           <div class="so-term">
             <h3>You decide if it was worth it.</h3>
-            <p>If it doesn't show you one thing you didn't know, and can check yourself, we refund the $497. You keep the report. You don't have to argue with us about it.</p>
+            <p>If it doesn't show you one thing you didn't know, and can check yourself, we refund the $495. You keep the report. You don't have to argue with us about it.</p>
           </div>
           <div class="so-term">
-            <h3>One more thing.</h3>
+            <h3>Is your territory open?</h3>
             <p>We never work with your competitors. One company per trade, per town. If we already work for someone in your trade in your market, we tell you before you pay.</p>
           </div>
         </div>
@@ -217,25 +217,25 @@ const caseStudies = [
         if (!host) return;
         var pos = host.getAttribute('data-pos') || '';
         if (seen[pos]) return; seen[pos] = 1;
-        if (typeof gtag === 'function') gtag('event', 'begin_checkout', { value: 497, currency: 'USD', items: [{ item_name: 'Second Opinion' }], position: pos });
-        if (typeof fbq === 'function') fbq('track', 'InitiateCheckout', { value: 497, currency: 'USD', content_name: 'Second Opinion' });
+        if (typeof gtag === 'function') gtag('event', 'begin_checkout', { value: 495, currency: 'USD', items: [{ item_name: 'Territory Check' }], position: pos });
+        if (typeof fbq === 'function') fbq('track', 'InitiateCheckout', { value: 495, currency: 'USD', content_name: 'Territory Check' });
         window.focus();
       }, 0);
     });
   })();
 </script>
 <script is:inline>
-  // One measured action per click. "buy" = checkout started; the sale itself fires on /second-opinion/thanks/.
+  // One measured action per click. "buy" = checkout started; the sale itself fires on /territory-check/thanks/.
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('[data-track]');
     if (!a) return;
     var kind = a.getAttribute('data-track');
     if (kind === 'buy') {
-      if (typeof gtag === 'function') gtag('event', 'begin_checkout', { value: 497, currency: 'USD', items: [{ item_name: 'Second Opinion' }], position: a.getAttribute('data-pos') || '' });
-      if (typeof fbq === 'function') fbq('track', 'InitiateCheckout', { value: 497, currency: 'USD', content_name: 'Second Opinion' });
+      if (typeof gtag === 'function') gtag('event', 'begin_checkout', { value: 495, currency: 'USD', items: [{ item_name: 'Territory Check' }], position: a.getAttribute('data-pos') || '' });
+      if (typeof fbq === 'function') fbq('track', 'InitiateCheckout', { value: 495, currency: 'USD', content_name: 'Territory Check' });
     } else if (kind === 'call') {
-      if (typeof gtag === 'function') gtag('event', 'phone_click', { page: 'second-opinion' });
-      if (typeof fbq === 'function') fbq('track', 'Contact', { content_name: 'Second Opinion' });
+      if (typeof gtag === 'function') gtag('event', 'phone_click', { page: 'territory-check' });
+      if (typeof fbq === 'function') fbq('track', 'Contact', { content_name: 'Territory Check' });
     }
   });
 </script>

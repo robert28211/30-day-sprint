@@ -1,6 +1,6 @@
 ---
 // Stripe Payment Link success page. Set the link's redirect to:
-//   https://marketingperformance.net/second-opinion/thanks/?session_id={CHECKOUT_SESSION_ID}
+//   https://marketingperformance.net/territory-check/thanks/?session_id={CHECKOUT_SESSION_ID}
 // The purchase event fires ONLY when Stripe's session_id is present, once per session,
 // so a stray visit to this URL never counts as a sale.
 import Base from '../../layouts/Base.astro'
@@ -8,7 +8,7 @@ import Footer from '../../components/Footer.astro'
 const PHONE = '803-386-8337'
 const TEL = 'tel:+18033868337'
 ---
-<Base title="Thank you — Second Opinion — Marketing Performance" description="Your Second Opinion is booked." noindex>
+<Base title="Thank you — Territory Check — Marketing Performance" description="Your Territory Check is booked." noindex>
   <nav class="mp-nav">
     <div class="mp-nav-inner">
       <a href="/" class="mp-logo">
@@ -19,7 +19,7 @@ const TEL = 'tel:+18033868337'
 
   <main class="ty">
     <article class="ty-doc">
-      <p class="ty-eye">Second Opinion</p>
+      <p class="ty-eye">Territory Check</p>
       <h1>Got it. Thank you!</h1>
       <p>Here's what happens next.</p>
       <p>I'll email you within one business day. I need three numbers from you. Your average job, how many quotes you send a month, and how many you book. And the names of the two or three competitors you worry about most.</p>
@@ -36,13 +36,13 @@ const TEL = 'tel:+18033868337'
   (function () {
     var sid = new URLSearchParams(location.search).get('session_id');
     if (!sid || sid.indexOf('{') !== -1) return;
-    var key = 'so_purchase_' + sid;
+    var key = 'tc_purchase_' + sid;
     try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
     if (typeof gtag === 'function') gtag('event', 'purchase', {
-      transaction_id: sid, value: 497, currency: 'USD',
-      items: [{ item_id: 'second-opinion', item_name: 'Second Opinion', price: 497, quantity: 1 }]
+      transaction_id: sid, value: 495, currency: 'USD',
+      items: [{ item_id: 'territory-check', item_name: 'Territory Check', price: 495, quantity: 1 }]
     });
-    if (typeof fbq === 'function') fbq('track', 'Purchase', { value: 497, currency: 'USD', content_name: 'Second Opinion' }, { eventID: sid });
+    if (typeof fbq === 'function') fbq('track', 'Purchase', { value: 495, currency: 'USD', content_name: 'Territory Check' }, { eventID: sid });
   })();
 </script>
 

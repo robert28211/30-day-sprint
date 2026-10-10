@@ -6,5 +6,5 @@ export default defineConfig({
   site: 'https://marketingperformance.net',
   output: 'static',
   adapter: cloudflare(),
-  integrations: [sitemap({ filter: (page) => !page.includes('/second-opinion/thanks') })],
+  integrations: [sitemap({ filter: (page) => !page.includes('/territory-check/thanks') })],
 })
