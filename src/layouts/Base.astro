@@ -3,6 +3,7 @@ import '../styles/global.css'
 const {
   title = 'Marketing Performance Group — EngageEngine™',
   description = 'You are losing the demand you already paid for before it becomes revenue. Find exactly where — and fix it.',
+  noindex = false,
 } = Astro.props
 ---
 <!DOCTYPE html>
@@ -13,6 +14,7 @@ const {
     <meta name="google-site-verification" content="b4c653b5568e24bc55155edab210345f" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
 
     <!-- Preconnect to analytics/pixel origins — eliminates connection setup latency -->
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />

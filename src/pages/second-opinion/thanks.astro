@@ -1,0 +1,70 @@
+---
+// Stripe Payment Link success page. Set the link's redirect to:
+//   https://marketingperformance.net/second-opinion/thanks/?session_id={CHECKOUT_SESSION_ID}
+// The purchase event fires ONLY when Stripe's session_id is present, once per session,
+// so a stray visit to this URL never counts as a sale.
+import Base from '../../layouts/Base.astro'
+import Footer from '../../components/Footer.astro'
+const PHONE = '803-386-8337'
+const TEL = 'tel:+18033868337'
+---
+<Base title="Thank you — Second Opinion — Marketing Performance" description="Your Second Opinion is booked." noindex>
+  <nav class="mp-nav">
+    <div class="mp-nav-inner">
+      <a href="/" class="mp-logo">
+        <img src="/mp-logo-v3.png" alt="Marketing Performance — Powered by EngageEngine™" width="217" height="44" />
+      </a>
+    </div>
+  </nav>
+
+  <main class="ty">
+    <article class="ty-doc">
+      <p class="ty-eye">Second Opinion</p>
+      <h1>Got it. Thank you!</h1>
+      <p>Here's what happens next.</p>
+      <p>I'll email you within one business day. I need three numbers from you. Your average job, how many quotes you send a month, and how many you book. And the names of the two or three competitors you worry about most.</p>
+      <p>Three days after I have those, you get the report and we set the call.</p>
+      <p>Questions before then? Call me. <a href={TEL}>{PHONE}</a>.</p>
+      <p class="ty-sig">Robbie</p>
+    </article>
+  </main>
+
+  <Footer ctaHref="/diagnostic/" />
+</Base>
+
+<script is:inline>
+  (function () {
+    var sid = new URLSearchParams(location.search).get('session_id');
+    if (!sid || sid.indexOf('{') !== -1) return;
+    var key = 'so_purchase_' + sid;
+    try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
+    if (typeof gtag === 'function') gtag('event', 'purchase', {
+      transaction_id: sid, value: 497, currency: 'USD',
+      items: [{ item_id: 'second-opinion', item_name: 'Second Opinion', price: 497, quantity: 1 }]
+    });
+    if (typeof fbq === 'function') fbq('track', 'Purchase', { value: 497, currency: 'USD', content_name: 'Second Opinion' }, { eventID: sid });
+  })();
+</script>
+
+<style>
+  .mp-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .mp-nav-inner { max-width: 1280px; margin: 0 auto; padding: 0 32px; height: 56px; display: flex; align-items: center; }
+  .mp-logo { display: flex; align-items: center; min-height: 44px; text-decoration: none; }
+  .mp-logo img { height: 44px; width: auto; display: block; }
+  @media (max-width: 600px) { .mp-nav-inner { padding: 0 20px; } .mp-logo img { height: 34px; } }
+
+  .ty { background: var(--canvas); padding: 72px 16px 96px; }
+  .ty-doc { max-width: 640px; margin: 0 auto; background: var(--white); padding: 56px 52px; border: 1px solid var(--border); }
+  @media (max-width: 640px) { .ty-doc { padding: 40px 24px; } }
+  .ty-eye { font-family: var(--font-t); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mid-gray); margin-bottom: 14px; }
+  .ty-doc h1 { font-family: var(--font-d); font-size: clamp(34px, 5vw, 46px); font-weight: 600; line-height: 1.07; letter-spacing: -0.025em; color: var(--graphite); margin-bottom: 22px; }
+  .ty-doc p { font-family: var(--font-t); font-size: 18px; line-height: 1.6; letter-spacing: -0.018em; color: var(--graphite); margin-bottom: 16px; }
+  .ty-doc a { color: var(--blue-link); text-decoration: none; font-weight: 600; white-space: nowrap; }
+  .ty-sig { font-family: var(--font-d) !important; font-size: 22px !important; font-weight: 600; margin-top: 8px; margin-bottom: 0 !important; }
+</style>
