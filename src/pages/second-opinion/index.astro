@@ -5,13 +5,14 @@ import Base from '../../layouts/Base.astro'
 import Footer from '../../components/Footer.astro'
 import CaseStudyCards from '../../components/CaseStudyCards.astro'
 
-// Paste the Stripe Payment Link here. Until then the buy buttons call the office.
-// Stripe Payment Link → After payment → redirect to
+// Stripe Buy Button (Robbie, 2026-10-10). The publishable key is public by design.
+// Its Payment Link must redirect after payment to
 //   https://marketingperformance.net/second-opinion/thanks/?session_id={CHECKOUT_SESSION_ID}
-const STRIPE_URL = ''
+// so the sale is recorded on /second-opinion/thanks/.
+const STRIPE_BUTTON_ID = 'buy_btn_1UP6npEXtQdTAS0pg5gD2O2a'
+const STRIPE_PK = 'pk_live_NCHTemOvjLeYzr0ZrsGcdQEp00k1AiMZ2F'
 const PHONE = '803-386-8337'
 const TEL = 'tel:+18033868337'
-const buyHref = STRIPE_URL || TEL
 
 const caseStudies = [
   { client: 'The Guttermen', headline: 'Twice the estimate bookings. Within 45 days.',
@@ -65,7 +66,7 @@ const caseStudies = [
           </div>
 
           <div class="hero-cta mp-hero-cta-block">
-            <a href={buyHref} class="mp-btn-primary" data-track="buy" data-pos="hero">Get the Second Opinion. $497</a>
+            <div class="so-stripe" data-pos="hero"><stripe-buy-button buy-button-id={STRIPE_BUTTON_ID} publishable-key={STRIPE_PK}></stripe-buy-button></div>
             <p class="mp-micro">Or call. <a href={TEL} data-track="call"><strong>{PHONE}</strong></a>. I answer.</p>
           </div>
         </div>
@@ -160,7 +161,7 @@ const caseStudies = [
         </div>
 
         <div class="mp-hero-cta-block so-mid-cta">
-          <a href={buyHref} class="mp-btn-primary" data-track="buy" data-pos="price">Get the Second Opinion. $497</a>
+          <div class="so-stripe" data-pos="price"><stripe-buy-button buy-button-id={STRIPE_BUTTON_ID} publishable-key={STRIPE_PK}></stripe-buy-button></div>
         </div>
       </div>
     </section>
@@ -194,7 +195,7 @@ const caseStudies = [
       <h2 class="mp-close-h1">Already took the free diagnostic?</h2>
       <p class="mp-close-body">That told you where you think you're losing jobs. This checks it from the outside, against the people actually taking them.</p>
       <div class="mp-close-cta">
-        <a href={buyHref} class="mp-btn-primary" data-track="buy" data-pos="close">Get the Second Opinion. $497</a>
+        <div class="so-stripe" data-pos="close"><stripe-buy-button buy-button-id={STRIPE_BUTTON_ID} publishable-key={STRIPE_PK}></stripe-buy-button></div>
         <p class="mp-micro">Three days. Report, screenshots, call. <a href={TEL} data-track="call"><strong>{PHONE}</strong></a>.</p>
       </div>
     </section>
@@ -203,6 +204,26 @@ const caseStudies = [
   <Footer ctaHref="/diagnostic/" />
 </Base>
 
+<script is:inline async src="https://js.stripe.com/v3/buy-button.js"></script>
+<script is:inline>
+  // The Stripe button lives in its own frame, so a click on it never reaches this page.
+  // When the window loses focus to that frame, count it once per button as checkout started.
+  (function () {
+    var seen = {};
+    window.addEventListener('blur', function () {
+      setTimeout(function () {
+        var el = document.activeElement;
+        var host = el && el.closest ? el.closest('.so-stripe') : null;
+        if (!host) return;
+        var pos = host.getAttribute('data-pos') || '';
+        if (seen[pos]) return; seen[pos] = 1;
+        if (typeof gtag === 'function') gtag('event', 'begin_checkout', { value: 497, currency: 'USD', items: [{ item_name: 'Second Opinion' }], position: pos });
+        if (typeof fbq === 'function') fbq('track', 'InitiateCheckout', { value: 497, currency: 'USD', content_name: 'Second Opinion' });
+        window.focus();
+      }, 0);
+    });
+  })();
+</script>
 <script is:inline>
   // One measured action per click. "buy" = checkout started; the sale itself fires on /second-opinion/thanks/.
   document.addEventListener('click', function (e) {
@@ -335,6 +356,8 @@ const caseStudies = [
   .so-term h3 { font-family: var(--font-d); font-size: 21px; font-weight: 600; letter-spacing: -0.02em; color: var(--graphite); margin-bottom: 8px; }
   .so-term p { font-family: var(--font-t); font-size: 17px; line-height: 1.55; color: var(--mid-gray); }
   .so-mid-cta { margin-top: 44px; }
+  .so-stripe { min-height: 44px; }
+  .mp-close-cta .so-stripe { display: flex; justify-content: center; }
 
   .so-link { color: var(--blue-link) !important; text-decoration: none; font-weight: 500; }
   .so-link:hover { text-decoration: underline; }
