@@ -65,8 +65,9 @@ const caseStudies = [
             <p>Some customers never found you. Some found you and called someone else. Some got your quote and went quiet. Some said yes and never booked. In three days we'll show you which ones, and why.</p>
           </div>
 
-          <div class="hero-cta mp-hero-cta-block">
-            <div class="so-stripe" data-pos="hero"><stripe-buy-button buy-button-id={STRIPE_BUTTON_ID} publishable-key={STRIPE_PK}></stripe-buy-button></div>
+          <div class="hero-cta mp-hero-cta-block so-hero-cta">
+            <a href="#buy" class="mp-btn-primary so-btn-big" data-track="cta" data-pos="hero">Check my territory. $495</a>
+            <p class="so-promise">Three days. A report, screenshots and a 30-minute call with me. If it shows you nothing new, you get your money back.</p>
             <p class="mp-micro">Or call. <a href={TEL} data-track="call"><strong>{PHONE}</strong></a>. I answer.</p>
           </div>
         </div>
@@ -139,14 +140,24 @@ const caseStudies = [
       </div>
     </section>
 
-    <!-- ═══ PRICE, GUARANTEE, EXCLUSIVITY ═══ -->
-    <section class="mp-breaks">
+    <!-- ═══ CHECKOUT, GUARANTEE, EXCLUSIVITY ═══ -->
+    <section class="mp-breaks so-checkout-sec" id="buy">
       <div class="mp-breaks-inner">
-        <p class="mp-eye">What it costs</p>
-        <p class="so-amount">$495</p>
-        <div class="mp-problem-prose so-tight">
-          <p><strong>Hire us inside 30 days and it comes off your first invoice.</strong></p>
-          <p>Not ready to hire anyone? Keep the report. Fix the three things yourself. We'll have told you how.</p>
+        <div class="so-checkout">
+          <div class="so-checkout-copy">
+            <p class="mp-eye">What it costs</p>
+            <p class="so-amount">$495</p>
+            <h2 class="so-checkout-h">Find out who's taking your jobs. In three days.</h2>
+            <div class="mp-problem-prose so-tight">
+              <p><strong>Hire us inside 30 days and it comes off your first invoice.</strong></p>
+              <p>Not ready to hire anyone? Keep the report. Fix the three things yourself. We'll have told you how.</p>
+            </div>
+          </div>
+          <div class="so-checkout-box">
+            <div class="so-stripe" data-pos="checkout"><stripe-buy-button buy-button-id={STRIPE_BUTTON_ID} publishable-key={STRIPE_PK}></stripe-buy-button></div>
+            <p class="so-box-note">Nothing new in it? You get your $495 back. Keep the report.</p>
+            <p class="so-box-note">Rather talk first? <a href={TEL} data-track="call" class="so-link">{PHONE}</a></p>
+          </div>
         </div>
 
         <div class="so-terms">
@@ -160,9 +171,6 @@ const caseStudies = [
           </div>
         </div>
 
-        <div class="mp-hero-cta-block so-mid-cta">
-          <div class="so-stripe" data-pos="price"><stripe-buy-button buy-button-id={STRIPE_BUTTON_ID} publishable-key={STRIPE_PK}></stripe-buy-button></div>
-        </div>
       </div>
     </section>
 
@@ -195,7 +203,7 @@ const caseStudies = [
       <h2 class="mp-close-h1">Already took the free diagnostic?</h2>
       <p class="mp-close-body">That told you where you think you're losing jobs. This checks it from the outside, against the people actually taking them.</p>
       <div class="mp-close-cta">
-        <div class="so-stripe" data-pos="close"><stripe-buy-button buy-button-id={STRIPE_BUTTON_ID} publishable-key={STRIPE_PK}></stripe-buy-button></div>
+        <a href="#buy" class="mp-btn-primary so-btn-big" data-track="cta" data-pos="close">Check my territory. $495</a>
         <p class="mp-micro">Three days. Report, screenshots, call. <a href={TEL} data-track="call"><strong>{PHONE}</strong></a>.</p>
       </div>
     </section>
@@ -233,6 +241,8 @@ const caseStudies = [
     if (kind === 'buy') {
       if (typeof gtag === 'function') gtag('event', 'begin_checkout', { value: 495, currency: 'USD', items: [{ item_name: 'Territory Check' }], position: a.getAttribute('data-pos') || '' });
       if (typeof fbq === 'function') fbq('track', 'InitiateCheckout', { value: 495, currency: 'USD', content_name: 'Territory Check' });
+    } else if (kind === 'cta') {
+      if (typeof gtag === 'function') gtag('event', 'cta_click', { page: 'territory-check', position: a.getAttribute('data-pos') || '' });
     } else if (kind === 'call') {
       if (typeof gtag === 'function') gtag('event', 'phone_click', { page: 'territory-check' });
       if (typeof fbq === 'function') fbq('track', 'Contact', { content_name: 'Territory Check' });
@@ -349,15 +359,42 @@ const caseStudies = [
   .so-tight { margin-top: 20px; }
   .so-terms {
     display: grid; grid-template-columns: 1fr; gap: 28px;
-    margin-top: 48px; padding-top: 40px; border-top: 1px solid var(--border);
+    margin-top: 56px; padding-top: 40px; border-top: 1px solid var(--border);
   }
   @media (min-width: 760px) { .so-terms { grid-template-columns: 1fr 1fr; gap: 40px; } }
   .so-term { min-width: 0; }
   .so-term h3 { font-family: var(--font-d); font-size: 21px; font-weight: 600; letter-spacing: -0.02em; color: var(--graphite); margin-bottom: 8px; }
   .so-term p { font-family: var(--font-t); font-size: 17px; line-height: 1.55; color: var(--mid-gray); }
-  .so-mid-cta { margin-top: 44px; }
-  .so-stripe { min-height: 44px; }
-  .mp-close-cta .so-stripe { display: flex; justify-content: center; }
+  :global(html) { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { :global(html) { scroll-behavior: auto; } }
+  .so-btn-big { font-size: 19px; font-weight: 500; padding: 16px 30px; }
+  .so-btn-big::after { font-size: 19px; }
+  .so-hero-cta { gap: 14px; }
+  .so-promise {
+    font-family: var(--font-t); font-size: 16px; line-height: 1.5; letter-spacing: -0.015em;
+    color: var(--graphite) !important; max-width: 440px; font-weight: 500;
+  }
+
+  .so-checkout-sec { scroll-margin-top: 64px; }
+  .so-checkout {
+    display: grid; grid-template-columns: 1fr; gap: 36px; align-items: center;
+  }
+  @media (min-width: 860px) { .so-checkout { grid-template-columns: minmax(0, 1fr) 320px; gap: 56px; } }
+  .so-checkout-copy { min-width: 0; }
+  .so-checkout-h {
+    font-family: var(--font-d); font-size: clamp(26px, 3vw, 32px); font-weight: 600;
+    line-height: 1.15; letter-spacing: -0.02em; color: var(--graphite); margin-top: 18px; text-wrap: balance;
+  }
+  .so-checkout-box {
+    background: var(--white); border: 1px solid var(--border); padding: 28px 24px 24px;
+    box-shadow: rgba(0,0,0,0.10) 0 2px 8px, rgba(0,0,0,0.12) 0 14px 34px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0;
+  }
+  .so-stripe { min-height: 230px; width: 100%; display: flex; justify-content: center; }
+  .so-box-note {
+    font-family: var(--font-t); font-size: 14px; line-height: 1.45; color: var(--mid-gray) !important;
+    text-align: center; letter-spacing: -0.01em;
+  }
 
   .so-link { color: var(--blue-link) !important; text-decoration: none; font-weight: 500; }
   .so-link:hover { text-decoration: underline; }
