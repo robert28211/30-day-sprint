@@ -214,6 +214,18 @@ const caseStudies = [
 
 <script is:inline async src="https://js.stripe.com/v3/buy-button.js"></script>
 <script is:inline>
+  // Muted autoplay can stall when the Stripe frame loads beside it. Nudge it once it can play.
+  (function () {
+    var v = document.querySelector('.mp-hero-video video');
+    if (!v) return;
+    v.muted = true;
+    function go() { if (v.paused && !v.dataset.userPaused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } }
+    v.addEventListener('canplay', go, { once: true });
+    v.addEventListener('pause', function () { if (document.hasFocus && v.currentTime > 0.5) v.dataset.userPaused = '1'; });
+    setTimeout(go, 1500);
+  })();
+</script>
+<script is:inline>
   // The Stripe button lives in its own frame, so a click on it never reaches this page.
   // When the window loses focus to that frame, count it once per button as checkout started.
   (function () {
