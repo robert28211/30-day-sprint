@@ -1,7 +1,7 @@
 globalThis.process ??= {}; globalThis.process.env ??= {};
 import { renderers } from './renderers.mjs';
 import { c as createExports, s as serverEntrypointModule } from './chunks/_@astrojs-ssr-adapter_BpiDn_3G.mjs';
-import { manifest } from './manifest_Byb8ETeF.mjs';
+import { manifest } from './manifest_w1hoiclN.mjs';
 
 const serverIslandMap = new Map();;
 
@@ -36,10 +36,12 @@ const _page27 = () => import('./pages/score.astro.mjs');
 const _page28 = () => import('./pages/snapshot/booked.astro.mjs');
 const _page29 = () => import('./pages/snapshot/_id_.astro.mjs');
 const _page30 = () => import('./pages/snapshot.astro.mjs');
-const _page31 = () => import('./pages/the-build.astro.mjs');
-const _page32 = () => import('./pages/toolkit.astro.mjs');
-const _page33 = () => import('./pages/videos.astro.mjs');
-const _page34 = () => import('./pages/index.astro.mjs');
+const _page31 = () => import('./pages/territory-check/thanks.astro.mjs');
+const _page32 = () => import('./pages/territory-check.astro.mjs');
+const _page33 = () => import('./pages/the-build.astro.mjs');
+const _page34 = () => import('./pages/toolkit.astro.mjs');
+const _page35 = () => import('./pages/videos.astro.mjs');
+const _page36 = () => import('./pages/index.astro.mjs');
 const pageMap = new Map([
     ["node_modules/@astrojs/cloudflare/dist/entrypoints/image-endpoint.js", _page0],
     ["src/pages/api/onboarding.ts", _page1],
@@ -72,10 +74,12 @@ const pageMap = new Map([
     ["src/pages/snapshot/booked.astro", _page28],
     ["src/pages/snapshot/[id].astro", _page29],
     ["src/pages/snapshot/index.astro", _page30],
-    ["src/pages/the-build.astro", _page31],
-    ["src/pages/toolkit/index.astro", _page32],
-    ["src/pages/videos.astro", _page33],
-    ["src/pages/index.astro", _page34]
+    ["src/pages/territory-check/thanks.astro", _page31],
+    ["src/pages/territory-check/index.astro", _page32],
+    ["src/pages/the-build.astro", _page33],
+    ["src/pages/toolkit/index.astro", _page34],
+    ["src/pages/videos.astro", _page35],
+    ["src/pages/index.astro", _page36]
 ]);
 
 const _manifest = Object.assign(manifest, {

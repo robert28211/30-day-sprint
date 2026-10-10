@@ -42,6 +42,7 @@
     "/privacy",
     "/score",
     "/snapshot/booked",
+    "/territory-check/*",
     "/the-build",
     "/videos"
   ]

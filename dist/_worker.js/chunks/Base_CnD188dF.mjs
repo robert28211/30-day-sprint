@@ -12,9 +12,10 @@ const $$Base = createComponent(($$result, $$props, $$slots) => {
   Astro2.self = $$Base;
   const {
     title = "Marketing Performance Group \u2014 EngageEngine\u2122",
-    description = "You are losing the demand you already paid for before it becomes revenue. Find exactly where \u2014 and fix it."
+    description = "You are losing the demand you already paid for before it becomes revenue. Find exactly where \u2014 and fix it.",
+    noindex = false
   } = Astro2.props;
-  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="google-site-verification" content="b4c653b5568e24bc55155edab210345f"><title>', '</title><meta name="description"', `><!-- Preconnect to analytics/pixel origins \u2014 eliminates connection setup latency --><link rel="preconnect" href="https://www.googletagmanager.com" crossorigin><link rel="preconnect" href="https://www.clarity.ms" crossorigin><link rel="dns-prefetch" href="https://connect.facebook.net"><!-- Google Analytics \u2014 stub only in head, script loads after interaction --><script>
+  return renderTemplate(_a || (_a = __template(['<html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="google-site-verification" content="b4c653b5568e24bc55155edab210345f"><title>', '</title><meta name="description"', ">", `<!-- Preconnect to analytics/pixel origins \u2014 eliminates connection setup latency --><link rel="preconnect" href="https://www.googletagmanager.com" crossorigin><link rel="preconnect" href="https://www.clarity.ms" crossorigin><link rel="dns-prefetch" href="https://connect.facebook.net"><!-- Google Analytics \u2014 stub only in head, script loads after interaction --><script>
       window.dataLayer = window.dataLayer || [];
       window.gtag = function(){dataLayer.push(arguments);}
       gtag('js', new Date());
@@ -69,7 +70,7 @@ const $$Base = createComponent(($$result, $$props, $$slots) => {
       // Stubs so gtag/fbq calls before load don't throw
       window.fbq = window.fbq || function(){(window._fbq=window._fbq||[]).push(arguments)};
       window._fbq = window._fbq || [];
-    <\/script>`, "</head> <body> ", ' <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1362717861424529&ev=PageView&noscript=1"></noscript> ', "</body></html>"])), title, addAttribute(description, "content"), renderHead(), renderSlot($$result, $$slots["default"]), renderScript($$result, "/Users/robbiebutt/.claude/worktrees/mpn-referral-hero/src/layouts/Base.astro?astro&type=script&index=0&lang.ts"));
-}, "/Users/robbiebutt/.claude/worktrees/mpn-referral-hero/src/layouts/Base.astro", void 0);
+    <\/script>`, "</head> <body> ", ' <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1362717861424529&ev=PageView&noscript=1"></noscript> ', "</body></html>"])), title, addAttribute(description, "content"), noindex && renderTemplate`<meta name="robots" content="noindex">`, renderHead(), renderSlot($$result, $$slots["default"]), renderScript($$result, "/Users/robbiebutt/.claude/worktrees/second-opinion/src/layouts/Base.astro?astro&type=script&index=0&lang.ts"));
+}, "/Users/robbiebutt/.claude/worktrees/second-opinion/src/layouts/Base.astro", void 0);
 
 export { $$Base as $ };
