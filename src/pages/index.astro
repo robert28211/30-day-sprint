@@ -69,11 +69,11 @@ const caseStudies = [
         <!-- Hero VSL. Autoplays muted; burned-in captions carry it, controls allow unmute. -->
         <figure class="mp-artifact mp-artifact-video">
           <div class="mp-hero-video">
-            <video autoplay muted loop playsinline controls preload="auto" poster="/video/hub/hero-nine-cents-poster.jpg">
-              <source src="/video/hub/hero-nine-cents.mp4" type="video/mp4" />
+            <video autoplay muted loop playsinline controls preload="auto" poster="/video/hub/territory-check-poster.jpg">
+              <source src="/video/hub/territory-check.mp4" type="video/mp4" />
             </video>
           </div>
-          <figcaption class="mp-artifact-cap">40 seconds. How our clients buy clicks for nine cents.</figcaption>
+          <figcaption class="mp-artifact-cap">Two and a half minutes. Where your jobs are going.</figcaption>
         </figure>
       </div>
     </section>
@@ -183,6 +183,19 @@ const caseStudies = [
   </main>
   <Footer ctaHref="/diagnostic/" />
 </Base>
+
+<script is:inline>
+  // Same muted-autoplay nudge as /territory-check: start silent, retry once it can play.
+  (function () {
+    var v = document.querySelector('.mp-hero-video video');
+    if (!v) return;
+    v.muted = true;
+    function go() { if (v.paused && !v.dataset.userPaused) { var p = v.play(); if (p && p.catch) p.catch(function () {}); } }
+    v.addEventListener('canplay', go, { once: true });
+    v.addEventListener('pause', function () { if (document.hasFocus && v.currentTime > 0.5) v.dataset.userPaused = '1'; });
+    setTimeout(go, 1500);
+  })();
+</script>
 
 <style>
   /* ═══════════════════════════════════════════════════════
