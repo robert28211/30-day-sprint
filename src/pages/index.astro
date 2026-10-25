@@ -21,7 +21,15 @@ const caseStudies = [
 // To add the new video: drop the .mp4 + poster .jpg in public/video/hub/ and fill this in.
 // shape: 'vertical' (9:16, phone-shot) or 'wide' (16:9). While null, the preview shows a
 // labeled placeholder frame. Never ship to production with HERO_VIDEO = null.
-const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 'vertical' | 'wide' } = null;
+const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 'vertical' | 'wide' } = {
+  // Source: Robbie's "Find Your Failure Point_1080p_caption.mp4" (1080x1920, 1:45, 68 MB),
+  // re-encoded 2026-10-25 to 720x1280 H.264 (7.7 MB, under the 25 MB asset limit).
+  // Captions are burned in, so it works muted. Poster = frame at 0:21.6 ("Diagnose before you prescribe.").
+  src: '/video/hub/find-your-failure-point.mp4',
+  poster: '/video/hub/find-your-failure-point-poster.jpg',
+  caption: 'Under two minutes. Diagnose before you prescribe.',
+  shape: 'vertical',
+};
 ---
 <Base
   title="Marketing Performance Group | Turn Existing Demand Into Booked Work"
