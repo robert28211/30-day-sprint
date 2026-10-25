@@ -38,7 +38,14 @@ const FLAGS = [
 // .mp4 + poster .jpg in public/video/hub/ and fill this in. shape: 'vertical' (9:16) or
 // 'wide' (16:9). While null, the preview shows a labeled placeholder frame.
 // Never ship to production with DIAG_VIDEO = null.
-const DIAG_VIDEO: null | { src: string; poster: string; caption: string; shape: 'vertical' | 'wide' } = null;
+const DIAG_VIDEO: null | { src: string; poster: string; caption: string; shape: 'vertical' | 'wide' } = {
+  // Source: Robbie's "Demand Collapse Diagnostic™_1080p_caption.mp4" (1080x1920, 1:51, 79 MB),
+  // re-encoded 2026-10-25 to 720x1280 H.264 (9 MB, under the 25 MB asset limit). Poster = frame at 0:59.
+  src: '/video/hub/demand-collapse-diagnostic.mp4',
+  poster: '/video/hub/demand-collapse-diagnostic-poster.jpg',
+  caption: 'Under two minutes. How the diagnostic and the five-part plan work.',
+  shape: 'vertical',
+};
 const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 million', '$3 million to $5 million', '$5 million to $10 million', 'More than $10 million'];
 ---
 <Base
