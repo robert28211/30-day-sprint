@@ -79,12 +79,28 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
                 <source src={HERO_VIDEO.src} type="video/mp4" />
               </video>
             </div>
-            <figcaption class="mp-artifact-cap">{HERO_VIDEO.caption}</figcaption>
+            <div class="mp-hero-creds">
+              <p class="mp-hero-creds-who">Robbie Butt &middot; Columbia, South Carolina</p>
+              <div class="mp-hero-creds-row">
+                <div class="mp-hc"><span class="mp-hc-n">41 <em>years</em></span><span class="mp-hc-l">Advertising and public relations</span></div>
+                <div class="mp-hc"><span class="mp-hc-n">31 <em>years</em></span><span class="mp-hc-l">Owner, Marketing Performance</span></div>
+                <div class="mp-hc"><span class="mp-hc-n">22 <em>years</em></span><span class="mp-hc-l">Adjunct professor, University of South Carolina</span></div>
+              </div>
+            </div>
+            {HERO_VIDEO.caption && <figcaption class="mp-artifact-cap">{HERO_VIDEO.caption}</figcaption>}
           </figure>
         ) : (
           <figure class="mp-artifact mp-artifact-video" data-placeholder="hero-video">
             <div class="mp-hero-video mp-hero-video--slot">
               <span>New hero video<br />goes here</span>
+            </div>
+            <div class="mp-hero-creds">
+              <p class="mp-hero-creds-who">Robbie Butt &middot; Columbia, South Carolina</p>
+              <div class="mp-hero-creds-row">
+                <div class="mp-hc"><span class="mp-hc-n">41 <em>years</em></span><span class="mp-hc-l">Advertising and public relations</span></div>
+                <div class="mp-hc"><span class="mp-hc-n">31 <em>years</em></span><span class="mp-hc-l">Owner, Marketing Performance</span></div>
+                <div class="mp-hc"><span class="mp-hc-n">22 <em>years</em></span><span class="mp-hc-l">Adjunct professor, University of South Carolina</span></div>
+              </div>
             </div>
             <figcaption class="mp-artifact-cap">Preview only. Swapped for the new video before launch.</figcaption>
           </figure>
@@ -149,22 +165,7 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
     <!-- 3b. How EngageEngine works (the journey graphic) -->
     <HowEngageEngineWorks />
 
-    <!-- ═══ 4. PROOF (Hormozi §4): authority, recency. Results proof sits under the hero (Robbie, 2026-10-25). ═══ -->
-
-    <!-- 4b. Who you're dealing with -->
-    <section class="mp-creds">
-      <div class="mp-creds-inner">
-        <figure class="mp-creds-photo" data-animate>
-          <img src="/img/robbie-butt.jpg" alt="Robbie Butt, Marketing Performance, Columbia, South Carolina" width="560" height="1054" loading="lazy" />
-          <figcaption>Robbie Butt &middot; Columbia, South Carolina</figcaption>
-        </figure>
-        <div class="mp-creds-list" data-animate data-delay="0.05">
-          <div class="mp-cred"><span class="mp-cred-n">41 <em>years</em></span><span class="mp-cred-l">In advertising and public relations</span></div>
-          <div class="mp-cred"><span class="mp-cred-n">31 <em>years</em></span><span class="mp-cred-l">Owner, Marketing Performance</span></div>
-          <div class="mp-cred"><span class="mp-cred-n">22 <em>years</em></span><span class="mp-cred-l">Adjunct professor, University of South Carolina</span></div>
-        </div>
-      </div>
-    </section>
+    <!-- ═══ 4. PROOF (Hormozi §4): recency. Results proof = cards under the hero; authority = stats under the hero video (Robbie, 2026-10-25). ═══ -->
 
     <!-- 4c. Recent catches -->
     <section class="mp-catch">
@@ -931,44 +932,6 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
   }
   .mp-btn-ghost:hover { border-color: var(--blue); text-decoration: none; }
 
-  /* ─── Credentials + portrait ─── */
-  .mp-creds {
-    padding: 96px 32px; background: var(--canvas);
-    border-top: 1px solid var(--border);
-  }
-  .mp-creds-inner {
-    max-width: 900px; margin: 0 auto;
-    display: grid; grid-template-columns: 260px 1fr; gap: 56px; align-items: center;
-  }
-  .mp-creds-photo { margin: 0; }
-  .mp-creds-photo img {
-    width: 100%; height: auto; display: block; border-radius: 8px;
-    box-shadow: rgba(0,0,0,0.22) 3px 5px 30px 0px;
-  }
-  .mp-creds-photo figcaption {
-    font-family: var(--font-t); font-size: 13px; color: var(--mid-gray);
-    margin-top: 12px;
-  }
-  .mp-creds-list { display: flex; flex-direction: column; gap: 28px; }
-  .mp-cred { display: flex; flex-direction: column; gap: 6px; }
-  .mp-cred-n {
-    font-family: var(--font-d); font-size: 38px; font-weight: 600;
-    letter-spacing: -0.03em; line-height: 1; color: var(--graphite);
-  }
-  .mp-cred-n em {
-    font-style: normal; font-size: 16px; color: var(--blue);
-    letter-spacing: 0; margin-left: 6px;
-  }
-  .mp-cred-l {
-    font-family: var(--font-t); font-size: 16px; line-height: 1.45;
-    color: var(--mid-gray);
-  }
-  @media (max-width: 720px) {
-    .mp-creds-inner { grid-template-columns: 1fr; gap: 34px; }
-    .mp-creds-photo { max-width: 220px; }
-    .mp-cred-n { font-size: 32px; }
-  }
-
   /* ─── Where a sale breaks ─── */
   .mp-breaks {
     padding: 112px 32px; background: var(--canvas);
@@ -1007,7 +970,7 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
     color: var(--graphite) !important;
   }
   @media (max-width: 720px) {
-    .mp-creds, .mp-breaks { padding: 72px 22px; }
+    .mp-breaks { padding: 72px 22px; }
     .mp-only-line { font-size: 19px; }
     .mp-couplet { font-size: 23px !important; }
   }
@@ -1085,4 +1048,18 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
     .mp-proofhead { padding: 72px 22px 20px; }
     .mp-risk { padding: 72px 22px; }
   }
+  /* ─── Credentials under the hero video (replaces the portrait section, 2026-10-25) ─── */
+  .mp-hero-creds { width: 100%; max-width: 460px; margin: 4px auto 0; text-align: center; }
+  .mp-hero-creds-who {
+    font-family: var(--font-t); font-size: 13px; font-weight: 600; color: var(--graphite);
+    letter-spacing: -0.01em; margin-bottom: 12px;
+  }
+  .mp-hero-creds-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .mp-hc { display: flex; flex-direction: column; gap: 4px; }
+  .mp-hc-n {
+    font-family: var(--font-d); font-size: 26px; font-weight: 600; line-height: 1;
+    letter-spacing: -0.03em; color: var(--graphite);
+  }
+  .mp-hc-n em { font-style: normal; font-size: 13px; color: var(--blue); letter-spacing: 0; margin-left: 3px; }
+  .mp-hc-l { font-family: var(--font-t); font-size: 12px; line-height: 1.35; color: var(--mid-gray); }
 </style>
