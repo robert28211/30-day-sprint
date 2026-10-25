@@ -25,8 +25,8 @@
     "/img/robbie-butt.jpg",
     "/img/rogerson.jpg",
     "/img/snapshot-hvac.png",
-    "/video/*",
     "/reports/*",
+    "/video/*",
     "/b2b",
     "/case-studies/*",
     "/diagnosis/*",
@@ -42,7 +42,7 @@
     "/privacy",
     "/score",
     "/snapshot/booked",
-    "/territory-check/*",
+    "/territory-check/thanks",
     "/the-build",
     "/videos"
   ]
