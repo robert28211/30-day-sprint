@@ -63,7 +63,6 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
           <div class="hero-cta mp-hero-cta-block">
             <a href="/diagnostic/" class="mp-btn-primary" data-plan-cta="hero">Get Your Five-Part Demand Recovery Plan</a>
             <p class="mp-micro">Start with twelve questions. See your preliminary failure mode immediately. Qualified home-service companies can receive a personalized recovery plan at no cost.</p>
-            <a class="mp-hero-proof" href="/case-studies/the-guttermen/"><strong>The Guttermen:</strong> 70 estimate bookings to 140 in 45 days.</a>
           </div>
 
           <div class="mp-only">
@@ -92,6 +91,9 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
         )}
       </div>
     </section>
+
+    <!-- 1b. Case studies directly under the hero. Robbie's call 2026-10-25: proof at the top, ahead of Hormozi's order. -->
+    <CaseStudyCards cards={caseStudies} />
 
     <!-- ═══ 2. PROBLEM (Hormozi §2): symptoms, failed attempts, the real enemy ═══ -->
     <section class="mp-problem">
@@ -147,14 +149,7 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
     <!-- 3b. How EngageEngine works (the journey graphic) -->
     <HowEngageEngineWorks />
 
-    <!-- ═══ 4. PROOF (Hormozi §4): results, authority, recency ═══ -->
-    <section class="mp-proofhead">
-      <div class="mp-proofhead-inner">
-        <p class="mp-eye" data-animate>Proof</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">More booked work. Not more activity.</h2>
-      </div>
-    </section>
-    <CaseStudyCards cards={caseStudies} />
+    <!-- ═══ 4. PROOF (Hormozi §4): authority, recency. Results proof sits under the hero (Robbie, 2026-10-25). ═══ -->
 
     <!-- 4b. Who you're dealing with -->
     <section class="mp-creds">
