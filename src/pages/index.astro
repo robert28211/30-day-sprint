@@ -38,10 +38,11 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
 
   <main class="mp">
 
-    <!-- ═══ 1. HERO ═══ -->
+    <!-- ═══ 1. HOOK (Hormozi §1): outcome headline, proof element, one CTA ═══ -->
     <section class="mp-hero">
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
+          <p class="mp-eye mp-hero-eye">A demand-recovery system for established home-service companies</p>
           <h1 class="mp-h1">
             <span class="hero-word">Turn </span>
             <span class="hero-word">more </span>
@@ -62,6 +63,7 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
           <div class="hero-cta mp-hero-cta-block">
             <a href="/diagnostic/" class="mp-btn-primary" data-plan-cta="hero">Get Your Five-Part Demand Recovery Plan</a>
             <p class="mp-micro">Start with twelve questions. See your preliminary failure mode immediately. Qualified home-service companies can receive a personalized recovery plan at no cost.</p>
+            <a class="mp-hero-proof" href="/case-studies/the-guttermen/"><strong>The Guttermen:</strong> 70 estimate bookings to 140 in 45 days.</a>
           </div>
 
           <div class="mp-only">
@@ -91,28 +93,7 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
       </div>
     </section>
 
-    <!-- ═══ 1b. CASE STUDIES ═══ -->
-    <CaseStudyCards cards={caseStudies} />
-
-    <!-- ═══ 1b2. HOW ENGAGEENGINE WORKS ═══ -->
-    <HowEngageEngineWorks />
-
-    <!-- ═══ 1c. WHO YOU'RE DEALING WITH ═══ -->
-    <section class="mp-creds">
-      <div class="mp-creds-inner">
-        <figure class="mp-creds-photo" data-animate>
-          <img src="/img/robbie-butt.jpg" alt="Robbie Butt, Marketing Performance, Columbia, South Carolina" width="560" height="1054" loading="lazy" />
-          <figcaption>Robbie Butt &middot; Columbia, South Carolina</figcaption>
-        </figure>
-        <div class="mp-creds-list" data-animate data-delay="0.05">
-          <div class="mp-cred"><span class="mp-cred-n">41 <em>years</em></span><span class="mp-cred-l">In advertising and public relations</span></div>
-          <div class="mp-cred"><span class="mp-cred-n">31 <em>years</em></span><span class="mp-cred-l">Owner, Marketing Performance</span></div>
-          <div class="mp-cred"><span class="mp-cred-n">22 <em>years</em></span><span class="mp-cred-l">Adjunct professor, University of South Carolina</span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 2. WHERE IT ACTUALLY GOES WRONG ═══ -->
+    <!-- ═══ 2. PROBLEM (Hormozi §2): symptoms, failed attempts, the real enemy ═══ -->
     <section class="mp-problem">
       <div class="mp-problem-inner">
         <p class="mp-eye" data-animate>The Problem</p>
@@ -125,26 +106,7 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
       </div>
     </section>
 
-    <!-- ═══ 3. SOLUTION ═══ -->
-    <section class="mp-solution">
-      <div class="mp-solution-inner">
-        <p class="mp-eye" data-animate>The Solution</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">We lock your market. Then we point the work at you.</h2>
-        <div class="mp-solution-prose" data-animate data-delay="0.1">
-          <p><strong>One company per trade, per market.</strong> The day you claim yours, your competitor can't. That is the product, not a bonus.</p>
-          <p>Here's how we deliver it. <strong>EngageEngine™</strong> applies enterprise-grade buyer-signal intelligence to a single local market, helping us recognize when demand is forming, where buyers are in the decision process and what should happen next.</p>
-          <p>See demand forming earlier. Reach buyers sooner. Lose fewer jobs between interest and action.</p>
-          <p>And because the seat is yours alone, every job it produces is a job the guy across town didn't get. That is what taking your market looks like.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ 4. THE ENGINE — DemandEngine removed from home 2026-10-01 (Robbie); component kept, still used on /how-it-works ═══ -->
-
-    <!-- Founder block removed 2026-07-17: off-aesthetic, belongs to a deeper page. -->
-    <!-- Value Stack removed 2026-07-17: discounty price-anchor + names pitch, off the new positioning. -->
-
-    <!-- ═══ 4a. WHERE A SALE BREAKS ═══ -->
+    <!-- 2b. The four places demand disappears -->
     <section class="mp-breaks">
       <div class="mp-breaks-inner">
         <p class="mp-eye" data-animate>The Four Moments</p>
@@ -165,20 +127,66 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
       </div>
     </section>
 
-    <!-- ═══ 4a2. MECHANISM (Demand Recovery brief 2026-10-25) ═══ -->
+    <!-- ═══ 3. SOLUTION (Hormozi §3): the named mechanism ═══ -->
     <section class="mp-mech">
       <div class="mp-mech-inner">
-        <p class="mp-eye" data-animate>How recovery works</p>
+        <p class="mp-eye" data-animate>The Solution</p>
         <h2 class="mp-h2" data-animate data-delay="0.05">Diagnose first. Then deploy.</h2>
         <div class="mp-mech-grid" data-animate data-delay="0.1">
           <div class="mp-mech-step"><span class="mp-mech-n">01</span><h3>Diagnose</h3><p>Find where demand is disappearing across the four failure modes.</p></div>
           <div class="mp-mech-step"><span class="mp-mech-n">02</span><h3>Detect</h3><p>Use buyer-signal intelligence to understand where demand is forming and where buyers are moving toward a decision.</p></div>
           <div class="mp-mech-step"><span class="mp-mech-n">03</span><h3>Recover</h3><p>Use EngageEngine&trade; to coordinate advertising, follow-up, visibility and conversion around the confirmed failure point.</p></div>
         </div>
+        <div class="mp-mech-note" data-animate data-delay="0.15">
+          <p><strong>EngageEngine&trade;</strong> applies enterprise-grade buyer-signal intelligence to a single local market, helping us recognize when demand is forming, where buyers are in the decision process and what should happen next.</p>
+          <p class="mp-mech-punch">See demand forming earlier. Reach buyers sooner. Lose fewer jobs between interest and action.</p>
+        </div>
       </div>
     </section>
 
-    <!-- ═══ 4a3. THE OFFER ═══ -->
+    <!-- 3b. How EngageEngine works (the journey graphic) -->
+    <HowEngageEngineWorks />
+
+    <!-- ═══ 4. PROOF (Hormozi §4): results, authority, recency ═══ -->
+    <section class="mp-proofhead">
+      <div class="mp-proofhead-inner">
+        <p class="mp-eye" data-animate>Proof</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">More booked work. Not more activity.</h2>
+      </div>
+    </section>
+    <CaseStudyCards cards={caseStudies} />
+
+    <!-- 4b. Who you're dealing with -->
+    <section class="mp-creds">
+      <div class="mp-creds-inner">
+        <figure class="mp-creds-photo" data-animate>
+          <img src="/img/robbie-butt.jpg" alt="Robbie Butt, Marketing Performance, Columbia, South Carolina" width="560" height="1054" loading="lazy" />
+          <figcaption>Robbie Butt &middot; Columbia, South Carolina</figcaption>
+        </figure>
+        <div class="mp-creds-list" data-animate data-delay="0.05">
+          <div class="mp-cred"><span class="mp-cred-n">41 <em>years</em></span><span class="mp-cred-l">In advertising and public relations</span></div>
+          <div class="mp-cred"><span class="mp-cred-n">31 <em>years</em></span><span class="mp-cred-l">Owner, Marketing Performance</span></div>
+          <div class="mp-cred"><span class="mp-cred-n">22 <em>years</em></span><span class="mp-cred-l">Adjunct professor, University of South Carolina</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4c. Recent catches -->
+    <section class="mp-catch">
+      <div class="mp-catch-inner">
+        <p class="mp-eye" data-animate>After the Launch</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">We catch it before it costs you.</h2>
+        <p class="mp-catch-lede" data-animate data-delay="0.1">Campaigns don't fail loudly. They fail quietly, in ways you'd never see on an invoice. Every account gets watched every week. Recent catches:</p>
+        <ul class="mp-catch-list" data-animate data-delay="0.15">
+          <li>A plumbing client's campaign delivery collapsed 90% overnight. Caught the same day, diagnosed as a campaign issue, not a market issue, and restored. Conversions never dipped.</li>
+          <li>An email campaign started silently dropping one in four sends. Caught before the next send went out, fixed before the client ever saw it.</li>
+          <li>Visitors on three client sites were clicking buttons that didn't respond, at the exact moment they were trying to act. Found it in the behavior recordings. Fixed it.</li>
+        </ul>
+        <p class="mp-catch-foot" data-animate data-delay="0.2">The launch is the easy part. The watching is what you're paying for.</p>
+      </div>
+    </section>
+
+    <!-- ═══ 5. OFFER (Hormozi §5): the Five-Part Demand Recovery Plan ═══ -->
     <section class="mp-plan" id="plan">
       <div class="mp-plan-inner">
         <p class="mp-eye" data-animate>Five-Part Demand Recovery Plan&trade;</p>
@@ -198,35 +206,34 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
       </div>
     </section>
 
-    <!-- ═══ 4b. WE CATCH IT BEFORE IT COSTS YOU ═══ -->
-    <section class="mp-catch">
-      <div class="mp-catch-inner">
-        <p class="mp-eye" data-animate>After the Launch</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">We catch it before it costs you.</h2>
-        <p class="mp-catch-lede" data-animate data-delay="0.1">Campaigns don't fail loudly. They fail quietly, in ways you'd never see on an invoice. Every account gets watched every week. Recent catches:</p>
-        <ul class="mp-catch-list" data-animate data-delay="0.15">
-          <li>A plumbing client's campaign delivery collapsed 90% overnight. Caught the same day, diagnosed as a campaign issue, not a market issue, and restored. Conversions never dipped.</li>
-          <li>An email campaign started silently dropping one in four sends. Caught before the next send went out, fixed before the client ever saw it.</li>
-          <li>Visitors on three client sites were clicking buttons that didn't respond, at the exact moment they were trying to act. Found it in the behavior recordings. Fixed it.</li>
+    <!-- ═══ 6. RISK REVERSAL (Hormozi §6). No guarantee is offered; every line below is a stated term of the free plan. ═══ -->
+    <section class="mp-risk">
+      <div class="mp-risk-inner">
+        <p class="mp-eye" data-animate>Your risk</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">You carry none of it.</h2>
+        <ul class="mp-risk-list" data-animate data-delay="0.1">
+          <li><strong>It costs nothing.</strong> Qualified companies receive the plan at no cost. No payment information.</li>
+          <li><strong>No obligation.</strong> You don't have to hire Marketing Performance Group. That conversation happens only after you've seen the plan.</li>
+          <li><strong>You keep it.</strong> All five documents are yours, whether you implement them yourself or ask us to.</li>
+          <li><strong>No wasted time.</strong> If a direct competitor has already claimed your territory, Robbie tells you before preparing the full plan.</li>
         </ul>
-        <p class="mp-catch-foot" data-animate data-delay="0.2">The launch is the easy part. The watching is what you're paying for.</p>
       </div>
     </section>
 
-    <!-- Guarantee section removed 2026-08-18 at Robbie's instruction. -->
-
-    <!-- ═══ 7. FINAL CTA ═══ -->
-    <section class="mp-close">
-      <h2 class="mp-close-h1" data-animate>One company per trade, per market.</h2>
-      <p class="mp-close-h2" data-animate data-delay="0.05">Is your territory still open?</p>
-      <p class="mp-close-body" data-animate data-delay="0.15">We can't sell your market twice. That's the whole point. If your competitor claims it first, we start sending <em>him</em> the work.</p>
-      <div class="mp-close-cta" data-animate data-delay="0.2">
-        <a href="/diagnostic/" class="mp-btn-primary" data-plan-cta="close">Get Your Five-Part Demand Recovery Plan</a>
-        <p class="mp-micro">Twelve questions. About ten minutes. Your preliminary result on screen, no email required.</p>
+    <!-- ═══ 7. SCARCITY (Hormozi §7): one company per trade, per market ═══ -->
+    <section class="mp-solution">
+      <div class="mp-solution-inner">
+        <p class="mp-eye" data-animate>One company per trade, per market</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">We lock your market. Then we point the work at you.</h2>
+        <div class="mp-solution-prose" data-animate data-delay="0.1">
+          <p><strong>One company per trade, per market.</strong> The day you claim yours, your competitor can't. That is the product, not a bonus.</p>
+          <p>And because the seat is yours alone, every job it produces is a job the guy across town didn't get. That is what taking your market looks like.</p>
+          <p>Because every plan is researched and prepared individually, Marketing Performance Group accepts a limited number of qualified companies each month.</p>
+        </div>
       </div>
     </section>
 
-    <!-- ═══ 8. FAQ ═══ -->
+    <!-- FAQ: objections handled right before the final ask -->
     <section class="mp-faq">
       <div class="mp-faq-inner">
         <h2 class="mp-h2">Questions</h2>
@@ -237,6 +244,17 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
         <details class="mp-faq-item"><summary>What information do you need?</summary><p>The application asks for basic company information, your website, trade, service area and current challenge. Robbie begins with publicly available information and the answers you provide. Any request for additional access should be explained and approved separately.</p></details>
         <details class="mp-faq-item"><summary>What if my territory is already claimed?</summary><p>Marketing Performance Group works with one company per trade, per market. If a direct competitor has already claimed the territory, Robbie will tell you before preparing the full plan.</p></details>
         <details class="mp-faq-item"><summary>How is EngageEngine&trade; different from ordinary advertising?</summary><p>Ordinary advertising usually starts with channels and budgets. EngageEngine&trade; starts with the confirmed failure point, applies buyer-signal intelligence to the local market and coordinates the work around where demand is actually being lost.</p></details>
+      </div>
+    </section>
+
+    <!-- ═══ 8. CALL TO ACTION (Hormozi §8): one action ═══ -->
+    <section class="mp-close">
+      <h2 class="mp-close-h1" data-animate>Is your territory still open?</h2>
+      <p class="mp-close-h2" data-animate data-delay="0.05">Find out in twelve questions.</p>
+      <p class="mp-close-body" data-animate data-delay="0.15">We can't sell your market twice. That's the whole point. If your competitor claims it first, we start sending <em>him</em> the work.</p>
+      <div class="mp-close-cta" data-animate data-delay="0.2">
+        <a href="/diagnostic/" class="mp-btn-primary" data-plan-cta="close">Get Your Five-Part Demand Recovery Plan</a>
+        <p class="mp-micro">Twelve questions. About ten minutes. Your preliminary result on screen, no email required.</p>
       </div>
     </section>
 
@@ -1044,5 +1062,32 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
     .mp-mech-grid { grid-template-columns: 1fr; }
     .mp-plan-list li { padding-left: 56px; }
     .mp-btn-primary { white-space: normal; text-align: left; }
+  }
+  /* ─── Hormozi reorder additions (2026-10-25) ─── */
+  .mp-hero-eye { margin-bottom: 14px; }
+  .mp-hero-proof {
+    display: inline-block; margin-top: 6px; font-family: var(--font-t); font-size: 15px;
+    color: var(--graphite); border-left: 3px solid var(--blue); padding: 2px 0 2px 12px; text-decoration: none;
+  }
+  .mp-hero-proof strong { font-weight: 600; }
+  .mp-hero-proof:hover { color: var(--blue-link); text-decoration: none; }
+  .mp-mech-note { max-width: 780px; margin: 40px auto 0; display: flex; flex-direction: column; gap: 14px; }
+  .mp-mech-note p { font-family: var(--font-t); font-size: 18px; line-height: 1.6; color: var(--graphite); }
+  .mp-mech-note strong { color: var(--blue); font-weight: 600; }
+  .mp-mech-punch { font-family: var(--font-d) !important; font-weight: 600; font-size: 21px !important; letter-spacing: -0.015em; }
+  .mp-proofhead { padding: 104px 32px 28px; background: var(--canvas); border-top: 1px solid var(--border); }
+  .mp-proofhead-inner { max-width: 1160px; margin: 0 auto; }
+  .mp-risk { padding: 104px 32px; background: var(--white); border-top: 1px solid var(--border); }
+  .mp-risk-inner { max-width: 780px; margin: 0 auto; }
+  .mp-risk-list { list-style: none; display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
+  .mp-risk-list li {
+    font-family: var(--font-t); font-size: 17px; line-height: 1.55; color: var(--mid-gray);
+    padding-left: 30px; position: relative;
+  }
+  .mp-risk-list li::before { content: '✓'; position: absolute; left: 4px; top: 0; color: var(--blue); font-weight: 700; }
+  .mp-risk-list li strong { color: var(--graphite); font-weight: 600; }
+  @media (max-width: 768px) {
+    .mp-proofhead { padding: 72px 22px 20px; }
+    .mp-risk { padding: 72px 22px; }
   }
 </style>
