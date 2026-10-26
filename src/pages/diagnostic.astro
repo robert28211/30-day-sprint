@@ -633,6 +633,8 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
       const label = { failure_mode: p.name, secondary_mode: result.secondary?.name || 'none' };
       if (!fired.has('diagnostic_complete')) {
         track('diagnostic_complete', { ...label, fm1_score: result.sections[0].total, fm2_score: result.sections[1].total, fm3_score: result.sections[2].total, fm4_score: result.sections[3].total });
+        // Google Ads result ("Diagnostic completed"). Live domain only, so local and staging tests don't count.
+        if (/(^|\.)marketingperformance\.net$/.test(location.hostname)) (window as any).gtag?.('event', 'conversion', { send_to: 'AW-11530702943/lv_rCJ7vpqodEN-govoq' });
         // Completion notice to Robbie (scores only, no contact details exist yet).
         fetch(FORM_ENDPOINT, {
           method: 'POST',

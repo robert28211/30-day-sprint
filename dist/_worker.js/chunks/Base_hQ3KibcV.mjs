@@ -20,6 +20,7 @@ const $$Base = createComponent(($$result, $$props, $$slots) => {
       window.gtag = function(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-7CF3328ZK0');
+      gtag('config', 'AW-11530702943');
     <\/script><!-- Microsoft Clarity --><script>
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
