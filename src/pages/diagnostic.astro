@@ -43,7 +43,7 @@ const DIAG_VIDEO: null | { src: string; poster: string; caption: string; shape: 
   // re-encoded 2026-10-25 to 720x1280 H.264 (9 MB, under the 25 MB asset limit). Poster = frame at 0:59.
   src: '/video/hub/demand-collapse-diagnostic.mp4',
   poster: '/video/hub/demand-collapse-diagnostic-poster.jpg',
-  caption: 'Under two minutes. How the diagnostic and the five-part plan work.',
+  caption: 'Watch (1:51): how the diagnostic and the five-part plan work.',
   shape: 'vertical',
 };
 const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 million', '$3 million to $5 million', '$5 million to $10 million', 'More than $10 million'];
@@ -155,6 +155,9 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
 
       /* ─── Assessment ─── */
       #assessment { scroll-margin-top: 120px; }
+      .hero-micro { margin-top: 14px; }
+      .hero + #assessment { padding-top: 8px; border-top: 0; }
+      @media (max-width: 640px) { .hero { padding: 24px 0 12px; } .hero h1 { font-size: 27px; margin-bottom: 10px; } .hero .hero-copy { display: none; } }
       .instr {
         font-size: 14px; color: var(--mid-gray); background: var(--white);
         border: 1px solid var(--border); border-left: 3px solid var(--blue);
@@ -295,63 +298,12 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
         <h1>Find where your demand is collapsing. Get the five-part plan to recover it.</h1>
         <div class="hero-copy">
           <p>Complete the 12-question Demand Collapse Diagnostic™ and see your primary failure mode immediately.</p>
-          <p>If your company qualifies, Robbie will review your business, market and buyer journey and prepare a personalized Five-Part Demand Recovery Plan™ at no cost.</p>
-          <p><strong>Not another automated score.</strong> Five working documents showing what is breaking, what to fix first and what to do over the next 30 to 120 days.</p>
         </div>
-        <div class="hero-cta">
-          <a href="#assessment" class="btn" id="hero-start">Find My Failure Point</a>
-          <p class="micro">12 questions. Approximately 10 minutes. Your initial result appears immediately. No credit card.</p>
-        </div>
-        {DIAG_VIDEO ? (
-          <figure class:list={['d-video', DIAG_VIDEO.shape === 'wide' && 'd-video--wide']}>
-            <div class="d-video-frame">
-              <video controls playsinline preload="metadata" poster={DIAG_VIDEO.poster}>
-                <source src={DIAG_VIDEO.src} type="video/mp4" />
-              </video>
-            </div>
-            {DIAG_VIDEO.caption && <figcaption>{DIAG_VIDEO.caption}</figcaption>}
-          </figure>
-        ) : (
-          <figure class="d-video d-video--wide" data-placeholder="diagnostic-video">
-            <div class="d-video-frame d-video-slot"><span>Diagnostic page video<br />goes here</span></div>
-            <figcaption>Preview only. Plays on click, never autoplays. Swapped for the new video before launch.</figcaption>
-          </figure>
-        )}
+        <p class="micro hero-micro">Score what is <strong>consistently true</strong>, not your best day. 12 questions, one tap each. Your initial result appears immediately. No credit card.</p>
       </header>
 
-      <!-- 2. PROOF -->
-      <div class="proof" aria-label="Client results">
-        <a href="/case-studies/the-guttermen/">
-          <div class="proof-client">The Guttermen</div>
-          <div class="proof-claim">70 estimate bookings to 140 in 45 days.</div>
-          <span class="proof-more">Read the full case study</span>
-        </a>
-        <a href="/case-studies/punch-list-pros/">
-          <div class="proof-client">Punch List Pros</div>
-          <div class="proof-claim">$5.20 in booked work for each Google Ads dollar in August 2026, based on uploaded closed-job values.</div>
-          <span class="proof-more">Read the full case study</span>
-        </a>
-      </div>
-
-      <!-- 3. HOW IT WORKS -->
-      <section class="block">
-        <div class="eyebrow">What happens next</div>
-        <h2 class="h2">Start with the failure point. Then build the recovery plan.</h2>
-        <p class="lede">The scorecard tells us where to investigate first. The personalized review confirms what is happening and turns it into a plan your company can execute.</p>
-        <ol class="steps">
-          <li><div><h3>Complete the diagnostic</h3><p>Score twelve questions across the four places demand can collapse.</p></div></li>
-          <li><div><h3>See your preliminary result</h3><p>Your primary failure mode appears immediately.</p></div></li>
-          <li><div><h3>Apply for your personalized plan</h3><p>If your company qualifies and your territory is available, Robbie reviews the business, market and buyer journey.</p></div></li>
-          <li><div><h3>Receive the five-part recovery plan</h3><p>Walk through the diagnosis, market snapshot, fix sequence, prescription and recovery sprint with Robbie.</p></div></li>
-          <li><div><h3>Choose how to implement it</h3><p>Use the plan yourself or ask Marketing Performance Group to implement it through EngageEngine™.</p></div></li>
-        </ol>
-      </section>
-
       <!-- 4. ASSESSMENT -->
-      <section class="block" id="assessment" aria-labelledby="assess-h">
-        <div class="eyebrow">Demand Collapse Diagnostic™</div>
-        <h2 class="h2" id="assess-h">Twelve questions. One at a time.</h2>
-        <div class="instr">Score what is <strong>consistently true</strong>, not your best day. 1 is lowest, 10 is highest.</div>
+      <section class="block" id="assessment" aria-label="Demand Collapse Diagnostic questions">
 
         <div class="q-card">
           {QUESTIONS.map((q, i) => {
@@ -461,6 +413,57 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- 4b. WHAT YOU GET (moved below the questions 2026-10-27 so question 1 is on the first screen) -->
+      <section class="block">
+        <div class="hero-copy">
+          <p>If your company qualifies, Robbie will review your business, market and buyer journey and prepare a personalized Five-Part Demand Recovery Plan™ at no cost.</p>
+          <p><strong>Not another automated score.</strong> Five working documents showing what is breaking, what to fix first and what to do over the next 30 to 120 days.</p>
+        </div>
+        {DIAG_VIDEO ? (
+          <figure class:list={['d-video', DIAG_VIDEO.shape === 'wide' && 'd-video--wide']}>
+            <div class="d-video-frame">
+              <video controls playsinline preload="metadata" poster={DIAG_VIDEO.poster}>
+                <source src={DIAG_VIDEO.src} type="video/mp4" />
+              </video>
+            </div>
+            {DIAG_VIDEO.caption && <figcaption>{DIAG_VIDEO.caption}</figcaption>}
+          </figure>
+        ) : (
+          <figure class="d-video d-video--wide" data-placeholder="diagnostic-video">
+            <div class="d-video-frame d-video-slot"><span>Diagnostic page video<br />goes here</span></div>
+            <figcaption>Preview only. Plays on click, never autoplays. Swapped for the new video before launch.</figcaption>
+          </figure>
+        )}
+      </section>
+
+      <!-- 2. PROOF -->
+      <div class="proof" aria-label="Client results">
+        <a href="/case-studies/the-guttermen/">
+          <div class="proof-client">The Guttermen</div>
+          <div class="proof-claim">70 estimate bookings to 140 in 45 days.</div>
+          <span class="proof-more">Read the full case study</span>
+        </a>
+        <a href="/case-studies/punch-list-pros/">
+          <div class="proof-client">Punch List Pros</div>
+          <div class="proof-claim">$5.20 in booked work for each Google Ads dollar in August 2026, based on uploaded closed-job values.</div>
+          <span class="proof-more">Read the full case study</span>
+        </a>
+      </div>
+
+      <!-- 3. HOW IT WORKS -->
+      <section class="block">
+        <div class="eyebrow">What happens next</div>
+        <h2 class="h2">Start with the failure point. Then build the recovery plan.</h2>
+        <p class="lede">The scorecard tells us where to investigate first. The personalized review confirms what is happening and turns it into a plan your company can execute.</p>
+        <ol class="steps">
+          <li><div><h3>Complete the diagnostic</h3><p>Score twelve questions across the four places demand can collapse.</p></div></li>
+          <li><div><h3>See your preliminary result</h3><p>Your primary failure mode appears immediately.</p></div></li>
+          <li><div><h3>Apply for your personalized plan</h3><p>If your company qualifies and your territory is available, Robbie reviews the business, market and buyer journey.</p></div></li>
+          <li><div><h3>Receive the five-part recovery plan</h3><p>Walk through the diagnosis, market snapshot, fix sequence, prescription and recovery sprint with Robbie.</p></div></li>
+          <li><div><h3>Choose how to implement it</h3><p>Use the plan yourself or ask Marketing Performance Group to implement it through EngageEngine™.</p></div></li>
+        </ol>
       </section>
 
       <!-- 7. VALUE STACK -->
@@ -654,7 +657,7 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
     }
 
     // Hero / bottom "Find My Failure Point"
-    ['hero-start', 'bottom-start'].forEach(id => document.getElementById(id)!.addEventListener('click', () => {
+    ['hero-start', 'bottom-start'].forEach(id => document.getElementById(id)?.addEventListener('click', () => {
       track('diagnostic_start', { via: id });
       setTimeout(() => show(answers.findIndex(v => v === null) === -1 ? 11 : answers.findIndex(v => v === null)), 400);
     }));
