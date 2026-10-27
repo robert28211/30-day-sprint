@@ -33,7 +33,7 @@ const FLAGS = [
   "Proposals and follow-ups aren't closing the gap",
   'Our response time could be faster',
 ];
-// Diagnostic page video slot. Sits UNDER the "Find My Failure Point" button and never
+// Diagnostic page video slot (Robbie on camera). Sits below the questions, beside 'what you get', and never
 // autoplays (brief: no autoplay video above the primary CTA). To add the video: drop the
 // .mp4 + poster .jpg in public/video/hub/ and fill this in. shape: 'vertical' (9:16) or
 // 'wide' (16:9). While null, the preview shows a labeled placeholder frame.
@@ -43,8 +43,18 @@ const DIAG_VIDEO: null | { src: string; poster: string; caption: string; shape: 
   // re-encoded 2026-10-25 to 720x1280 H.264 (9 MB, under the 25 MB asset limit). Poster = frame at 0:59.
   src: '/video/hub/demand-collapse-diagnostic.mp4',
   poster: '/video/hub/demand-collapse-diagnostic-poster.jpg',
-  caption: 'Watch (1:51): how the diagnostic and the five-part plan work.',
+  caption: 'How the diagnostic and the five-part plan work.',
   shape: 'vertical',
+};
+// Hero video slot (2026-10-27): the DCD walkthrough, NOT the video of Robbie (that one sits
+// below the questions). Right column on desktop, tap-to-play tile on phones. Never autoplays.
+// Stand-in: "DCD Walkthrough - cut 3.mp4" (1920x1080, 1:07), re-encoded to 1280x720 (4.8 MB).
+// Swap the file when the final cut is approved.
+const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 'vertical' | 'wide' } = {
+  src: '/video/hub/dcd-walkthrough.mp4',
+  poster: '/video/hub/dcd-walkthrough-poster.jpg',
+  caption: 'what the five-part plan looks like.',
+  shape: 'wide',
 };
 const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 million', '$3 million to $5 million', '$5 million to $10 million', 'More than $10 million'];
 ---
@@ -130,6 +140,33 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
         border: 2px dashed #b0b0b5; font-size: 15px; font-weight: 600; color: var(--mid-gray);
       }
       .d-video figcaption { font-size: 12px; color: var(--light-gray); text-align: center; }
+
+      /* ─── Hero video (2026-10-27): right column on desktop, compact tap-to-play tile on phones ─── */
+      .d-video-frame { position: relative; }
+      .d-video-play {
+        position: absolute; inset: 0; margin: auto; width: 56px; height: 56px; border-radius: 50%;
+        border: 0; background: rgba(255,255,255,.92); color: #1d1d1f; font-size: 20px; cursor: pointer;
+        box-shadow: rgba(0,0,0,.25) 0 4px 16px;
+      }
+      .d-video.is-playing .d-video-play { display: none; }
+      .d-video-watch { font-weight: 600; color: var(--graphite); }
+      @media (min-width: 860px) {
+        .hero--split { display: grid; grid-template-columns: minmax(0,1fr) 250px; gap: 56px; align-items: center; text-align: left; }
+        .hero--split.hero--wide {
+          grid-template-columns: minmax(0,1fr) 460px; gap: 48px;
+          width: min(1100px, calc(100vw - 64px)); position: relative; left: 50%; transform: translateX(-50%);
+        }
+        .hero--split.hero--wide h1 { font-size: clamp(34px, 3.4vw, 44px); }
+        .hero--split h1, .hero--split .hero-copy { margin-left: 0; }
+        .hero--split .d-video--hero { margin: 0; max-width: none; }
+      }
+      @media (max-width: 859px) {
+        .d-video--hero { flex-direction: row; align-items: center; max-width: 340px; margin: 16px auto 0; gap: 14px; cursor: pointer; }
+        .d-video--hero .d-video-frame { width: 72px; flex: none; border-radius: 6px; }
+        .d-video--hero.d-video--wide .d-video-frame { width: 128px; }
+        .d-video--hero .d-video-play { width: 32px; height: 32px; font-size: 12px; }
+        .d-video--hero figcaption { text-align: left; font-size: 14px; line-height: 1.4; color: var(--mid-gray); }
+      }
 
       /* ─── Proof strip ─── */
       .proof { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 8px 0 56px; }
@@ -293,13 +330,31 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
     <div class="diag-wrap">
 
       <!-- 1. HERO -->
-      <header class="hero">
+      <header class:list={['hero', 'hero--split', HERO_VIDEO?.shape === 'wide' && 'hero--wide']}>
+        <div class="hero-text">
         <div class="eyebrow">Complimentary for qualified home-service companies</div>
         <h1>Find where your demand is collapsing. Get the five-part plan to recover it.</h1>
         <div class="hero-copy">
           <p>Complete the 12-question Demand Collapse Diagnostic™ and see your primary failure mode immediately.</p>
         </div>
-        <p class="micro hero-micro">Score what is <strong>consistently true</strong>, not your best day. 12 questions, one tap each. Your initial result appears immediately. No credit card.</p>
+        <p class="micro hero-micro">Score what is <strong>consistently true</strong>, not your best day. 12 questions. About 10 minutes. Your initial result appears immediately. No credit card.</p>
+        </div>
+        {HERO_VIDEO ? (
+          <figure class:list={['d-video', 'd-video--hero', HERO_VIDEO.shape === 'wide' && 'd-video--wide']} id="hero-video">
+            <div class="d-video-frame">
+              <video playsinline preload="metadata" poster={HERO_VIDEO.poster}>
+                <source src={HERO_VIDEO.src} type="video/mp4" />
+              </video>
+              <button type="button" class="d-video-play" aria-label="Play the video"><span aria-hidden="true">▶</span></button>
+            </div>
+            {HERO_VIDEO.caption && <figcaption><span class="d-video-watch">Watch:</span> {HERO_VIDEO.caption}</figcaption>}
+          </figure>
+        ) : (
+          <figure class="d-video d-video--hero" data-placeholder="diagnostic-video">
+            <div class="d-video-frame d-video-slot"><span>Video<br />goes here</span></div>
+            <figcaption>Preview only. Plays on click, never autoplays.</figcaption>
+          </figure>
+        )}
       </header>
 
       <!-- 4. ASSESSMENT -->
@@ -421,7 +476,7 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
           <p>If your company qualifies, Robbie will review your business, market and buyer journey and prepare a personalized Five-Part Demand Recovery Plan™ at no cost.</p>
           <p><strong>Not another automated score.</strong> Five working documents showing what is breaking, what to fix first and what to do over the next 30 to 120 days.</p>
         </div>
-        {DIAG_VIDEO ? (
+        {DIAG_VIDEO && (
           <figure class:list={['d-video', DIAG_VIDEO.shape === 'wide' && 'd-video--wide']}>
             <div class="d-video-frame">
               <video controls playsinline preload="metadata" poster={DIAG_VIDEO.poster}>
@@ -429,11 +484,6 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
               </video>
             </div>
             {DIAG_VIDEO.caption && <figcaption>{DIAG_VIDEO.caption}</figcaption>}
-          </figure>
-        ) : (
-          <figure class="d-video d-video--wide" data-placeholder="diagnostic-video">
-            <div class="d-video-frame d-video-slot"><span>Diagnostic page video<br />goes here</span></div>
-            <figcaption>Preview only. Plays on click, never autoplays. Swapped for the new video before launch.</figcaption>
           </figure>
         )}
       </section>
@@ -654,6 +704,23 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
         }).catch(() => {});
       }
       track('failure_mode_result_view', label);
+    }
+
+    // Hero video: never autoplays. Tap plays it; on phones it opens full screen.
+    const heroVid = document.getElementById('hero-video');
+    const heroV = heroVid?.querySelector('video') as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    if (heroVid && heroV) {
+      heroVid.addEventListener('click', () => {
+        if (heroVid.classList.contains('is-playing')) return;
+        heroVid.classList.add('is-playing');
+        heroV.controls = true;
+        heroV.play().catch(() => {});
+        if (window.matchMedia('(max-width: 859px)').matches) {
+          if (heroV.requestFullscreen) heroV.requestFullscreen().catch(() => {});
+          else heroV.webkitEnterFullscreen?.();
+        }
+        track('video_play', { video: 'diagnostic_hero' });
+      });
     }
 
     // Hero / bottom "Find My Failure Point"
