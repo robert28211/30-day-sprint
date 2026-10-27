@@ -7,7 +7,7 @@ const prerender = false;
 const $$Index = createComponent(($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
   Astro2.self = $$Index;
-  return Astro2.redirect("/score/", 301);
+  return Astro2.redirect("/diagnostic/", 301);
 }, "/Users/robbiebutt/.claude/worktrees/demand-recovery-plan/src/pages/snapshot/index.astro", void 0);
 
 const $$file = "/Users/robbiebutt/.claude/worktrees/demand-recovery-plan/src/pages/snapshot/index.astro";
