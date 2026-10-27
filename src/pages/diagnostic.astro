@@ -520,7 +520,8 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
 
     // Robbie's Cal.com booking page (replaced Calendly), 30-minute meeting.
     const SCHEDULE_URL = 'https://cal.com/robert-butt-xbwcl7/30min';
-    const FORM_ENDPOINT = 'https://formspree.io/f/mnjlkyjo';
+    // Saves to the site's own D1 and emails Robbie (Formspree mnjlkyjo stopped emailing after Oct 25).
+    const FORM_ENDPOINT = '/api/diagnostic';
 
     const BRIDGE = [
       'Your answers suggest buyers may not be finding you at the moment they choose who to contact. The personalized review examines where your company appears, where competitors are intercepting demand and what must change first.',
@@ -639,14 +640,16 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
         fetch(FORM_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          keepalive: true,
           body: JSON.stringify({
-            _subject: 'Diagnostic Completed: ' + p.name,
+            kind: 'completion',
             primary_fm: p.name,
             secondary_fm: result.secondary?.name || 'none',
             fm1_not_seen: result.sections[0].total + ' / 30',
             fm2_not_trusted: result.sections[1].total + ' / 30',
             fm3_still_compared: result.sections[2].total + ' / 30',
             fm4_selected_no_action: result.sections[3].total + ' / 30',
+            answers: answers.join(','),
           }),
         }).catch(() => {});
       }
@@ -711,8 +714,7 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
       btn.disabled = true; btn.textContent = 'Sending...';
       const fd = new FormData(form);
       const payload: Record<string, unknown> = {
-        _subject: 'Plan Application: ' + fd.get('company') + ' (' + result?.primary.name + ')',
-        _replyto: fd.get('email'),
+        kind: 'application',
         name: fd.get('name'), email: fd.get('email'), company: fd.get('company'),
         website: fd.get('website'), trade: fd.get('trade'), service_area: fd.get('service_area'),
         revenue_range: fd.get('revenue_range'), role: fd.get('role'),
