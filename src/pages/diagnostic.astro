@@ -233,6 +233,27 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
       .nav-btn[disabled] { opacity: .4; cursor: default; }
       .q-saved { font-size: 12px; color: var(--light-gray); }
 
+      /* ─── Quiz as the hero (2026-10-30, Robbie): the question card is the page's anchor ─── */
+      .q-card { border: 0; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 18px 48px -12px rgba(0,0,0,.22); }
+      .q-head { background: var(--graphite); border-bottom: 0; padding: 30px 36px 32px; }
+      .q-count { color: rgba(255,255,255,.55); letter-spacing: .12em; margin-bottom: 14px; }
+      .q-symptom { color: #fff; font-size: clamp(22px, 2.6vw, 30px); font-weight: 700; line-height: 1.22; letter-spacing: -0.025em; margin-bottom: 0; text-wrap: balance; }
+      .q-body { padding: 30px 36px 30px; }
+      .q-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+      .q-main { font-size: 17px; color: var(--deep-gray); margin-bottom: 14px; }
+      .think { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+      .think li { background: var(--canvas); border-radius: 980px; padding: 6px 12px; font-size: 13px; color: var(--deep-gray); }
+      .think li::before { content: none; }
+      .score-row { gap: 8px; }
+      .score-btn { height: 56px; font-size: 18px; background: var(--white); border-color: var(--silver); border-radius: 12px; transition: transform .12s ease, background-color .12s ease, border-color .12s ease, color .12s ease; }
+      .score-btn:hover { transform: translateY(-2px); }
+      .score-btn[aria-checked="true"] { box-shadow: 0 6px 16px -6px rgba(0,113,227,.6); transform: translateY(-2px); }
+      @media (prefers-reduced-motion: reduce) { .score-btn, .score-btn:hover, .score-btn[aria-checked="true"] { transform: none; } }
+      @media (max-width: 640px) {
+        .q-head { padding: 24px 20px 26px; }
+        .q-body { padding: 24px 20px 24px; }
+      }
+
       /* ─── Result + application ─── */
       #result { margin-top: 28px; scroll-margin-top: 120px; }
       .panel {
