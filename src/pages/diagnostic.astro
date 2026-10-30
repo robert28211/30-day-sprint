@@ -336,7 +336,18 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
         .bar-right { width: 100%; justify-content: space-between; }
         .progress-track { flex: 1; }
       }
-    </style>
+    
+      /* ─── DESIGN.md conformance (Apple reference, 2026-10-30) ─── */
+      .block { border-top: 0; }
+      .block:nth-of-type(even) { background: #ffffff; box-shadow: 0 0 0 100vmax #ffffff; clip-path: inset(0 -100vmax); }
+      .h2, h2.result-fm, .result-fm { font-size: 40px; line-height: 1.12; }
+      .d-video-frame, .d-video-play, .doc { box-shadow: none !important; }
+      .d-video-frame, .doc { border-radius: 28px; }
+      .proof a { border: 0; border-radius: 28px; }
+      .panel { border: 0; border-radius: 28px; }
+      .secondary-note { border: 0; border-radius: 16px; }
+      .field input, .field select, .field textarea { border-radius: 12px; }
+</style>
 
     <!-- Progress bar (appears once the visitor reaches the assessment) -->
     <div id="sticky-bar" aria-hidden="true">

@@ -1007,4 +1007,16 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
   }
   .mp-hc-n em { font-style: normal; font-size: 13px; color: var(--blue); letter-spacing: 0; margin-left: 3px; }
   .mp-hc-l { font-family: var(--font-t); font-size: 12px; line-height: 1.35; color: var(--mid-gray); }
+
+  /* ─── DESIGN.md conformance (Apple reference, 2026-10-30) ───
+     No borders between sections: alternate white / #f5f5f7 bands instead.
+     No shadows. Cards at 28px radius. No colored left-border callouts. */
+  :global(main.mp > section) { border-top: 0 !important; border-bottom: 0 !important; }
+  :global(main.mp > section:nth-of-type(odd)) { background-color: #ffffff; }
+  :global(main.mp > section:nth-of-type(even)) { background-color: #f5f5f7; }
+  :global(main.mp *) { box-shadow: none !important; }
+  :global(.mp-hero-video), :global(.mp-cscard), :global(.mp-mech-step),
+  :global(.ee-stage), :global(.ee-band), :global(.ee-step) { border-radius: 28px !important; }
+  :global(.mp-hero-video) { overflow: hidden; }
+  :global(.mp-only), :global(.mp-problem-punch) { border-left: 0 !important; padding-left: 0 !important; }
 </style>
