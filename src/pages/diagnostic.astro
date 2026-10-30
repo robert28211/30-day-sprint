@@ -66,6 +66,8 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
   <main>
 
     <style>
+  /* Text visitors clicked (Clarity dead clicks, 2026-10-30) jumps to question 1; looks unchanged. */
+  .dc-jump { color: inherit; text-decoration: none; cursor: pointer; }
       /* ─── Progress bar ─── */
       #sticky-bar {
         position: fixed; top: 56px; left: 0; right: 0; z-index: 90;
@@ -333,8 +335,8 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
       <!-- 1. HERO -->
       <header class:list={['hero', 'hero--split', HERO_VIDEO?.shape === 'wide' && 'hero--wide']}>
         <div class="hero-text">
-        <div class="eyebrow">Complimentary for qualified home-service companies</div>
-        <h1>Find where your demand is collapsing. Get the five-part plan to recover it.</h1>
+        <a href="#assessment" class="dc-jump"><div class="eyebrow">Complimentary for qualified home-service companies</div>
+        <h1>Find where your demand is collapsing. Get the five-part plan to recover it.</h1></a>
         <div class="hero-copy">
           <p>Complete the 12-question Demand Collapse Diagnostic™ and see your primary failure mode immediately.</p>
         </div>
@@ -474,7 +476,7 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
       <!-- 4b. WHAT YOU GET (moved below the questions 2026-10-27 so question 1 is on the first screen) -->
       <section class="block">
         <div class="hero-copy">
-          <p>If your company qualifies, Robbie will review your business, market and buyer journey and prepare a personalized Five-Part Demand Recovery Plan™ at no cost.</p>
+          <a style="display:block" href="#assessment" class="dc-jump"><p>If your company qualifies, Robbie will review your business, market and buyer journey and prepare a personalized Five-Part Demand Recovery Plan™ at no cost.</p></a>
           <p><strong>Not another automated score.</strong> Five working documents showing what is breaking, what to fix first and what to do over the next 30 days.</p>
         </div>
         {DIAG_VIDEO && (
@@ -509,8 +511,8 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
         <h2 class="h2">Start with the failure point. Then build the recovery plan.</h2>
         <p class="lede">The scorecard tells us where to investigate first. The personalized review confirms what is happening and turns it into a plan your company can execute.</p>
         <ol class="steps">
-          <li><div><h3>Complete the diagnostic</h3><p>Score twelve questions across the four places demand can collapse.</p></div></li>
-          <li><div><h3>See your preliminary result</h3><p>Your primary failure mode appears immediately.</p></div></li>
+          <li><div><h3><a href="#assessment" class="dc-jump">Complete the diagnostic</a></h3><p>Score twelve questions across the four places demand can collapse.</p></div></li>
+          <li><div><h3><a href="#assessment" class="dc-jump">See your preliminary result</a></h3><p>Your primary failure mode appears immediately.</p></div></li>
           <li><div><h3>Apply for your personalized plan</h3><p>If your company qualifies and your territory is available, Robbie reviews the business, market and buyer journey.</p></div></li>
           <li><div><h3>Receive the five-part recovery plan</h3><p>Walk through the diagnosis, market snapshot, fix sequence, prescription and recovery sprint with Robbie.</p></div></li>
           <li><div><h3>Choose how to implement it</h3><p>Use the plan yourself or ask Marketing Performance Group to implement it through EngageEngine™.</p></div></li>

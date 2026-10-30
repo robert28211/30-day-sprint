@@ -50,7 +50,7 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
       <div class="mp-hero-grid">
         <div class="mp-hero-copy">
           <p class="mp-eye mp-hero-eye">A demand-recovery system for established home-service companies</p>
-          <h1 class="mp-h1">
+          <h1 class="mp-h1"><a href="/diagnostic/" class="mp-h1-link" data-plan-cta="headline">
             <span class="hero-word">Turn </span>
             <span class="hero-word">more </span>
             <span class="hero-word">of </span>
@@ -61,7 +61,7 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
             <span class="hero-word hero-dim">into </span>
             <span class="hero-word hero-dim">booked </span>
             <span class="hero-word hero-dim">work. </span>
-          </h1>
+          </a></h1>
           <div class="mp-hero-prose hero-sub">
             <p>Most agencies start by selling you more advertising. We start by finding where the work you should be winning is disappearing.</p>
             <p>The Demand Collapse Diagnostic&trade; identifies the failure point. EngageEngine&trade; uses enterprise-grade buyer-signal intelligence to help recover the opportunity before a competitor wins the job.</p>
@@ -222,6 +222,8 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
 </script>
 
 <style>
+  /* Headline is a link (Clarity dead clicks, 2026-10-30): looks unchanged. */
+  .mp-h1-link { color: inherit; text-decoration: none; cursor: pointer; }
   /* ═══════════════════════════════════════════════════════
      APPLE-FIDELITY HOMEPAGE. Hormozi rewrite v2.
      Tokens: Canvas White #f5f5f7 / Pure White #ffffff /
