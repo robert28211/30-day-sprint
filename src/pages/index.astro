@@ -1019,4 +1019,17 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
   :global(.ee-stage), :global(.ee-band), :global(.ee-step) { border-radius: 28px !important; }
   :global(.mp-hero-video) { overflow: hidden; }
   :global(.mp-only), :global(.mp-problem-punch) { border-left: 0 !important; padding-left: 0 !important; }
+
+  /* ─── Four moments as pastel cards (Robbie, 2026-10-30). Deliberate departure from DESIGN.md:
+     the guide reserves finish colors for product imagery; the four moments are this site's "finishes". ─── */
+  :global(.mp-breaks-list) { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px !important; }
+  :global(.mp-break) { border-radius: 28px; padding: 32px 32px 36px; border: 0 !important; }
+  :global(.mp-break:nth-child(1)) { background: #c8d8e0; }  /* Sky */
+  :global(.mp-break:nth-child(2)) { background: #f0e4d3; }  /* Starlight */
+  :global(.mp-break:nth-child(3)) { background: #dddc8c; }  /* Citrus */
+  :global(.mp-break:nth-child(4)) { background: #e8d0d0; }  /* Blush */
+  :global(.mp-break .mp-break-fm) { color: #474747 !important; }
+  :global(.mp-break h3) { font-size: 28px !important; line-height: 1.14; font-weight: 600; letter-spacing: 0.007em; }
+  :global(.mp-break p:not(.mp-break-fm)) { color: #1d1d1f !important; }
+  @media (max-width: 720px) { :global(.mp-breaks-list) { grid-template-columns: 1fr; } :global(.mp-break) { padding: 26px 24px 28px; } }
 </style>
