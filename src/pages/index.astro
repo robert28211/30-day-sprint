@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro'
 import Footer from '../components/Footer.astro'
-import HowEngageEngineWorks from '../components/HowEngageEngineWorks.astro'
 import CaseStudyCards from '../components/CaseStudyCards.astro'
 
 // Home case-study wall. Full stories live at /case-studies/*.
@@ -119,16 +118,18 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
     <!-- 1b. Case studies directly under the hero. Robbie's call 2026-10-25: proof at the top, ahead of Hormozi's order. -->
     <CaseStudyCards cards={caseStudies} />
 
-    <!-- ═══ 2. PROBLEM (Hormozi §2): symptoms, failed attempts, the real enemy ═══ -->
-    <section class="mp-problem">
-      <div class="mp-problem-inner">
-        <p class="mp-eye" data-animate>The Problem</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">Most businesses don't lose work because people aren't interested.</h2>
-        <div class="mp-problem-prose" data-animate data-delay="0.1">
-          <p>They lose it when confidence collapses <em>after</em> interest, under decision pressure. It usually looks like plenty of activity with no predictable outcome, results that swing month to month with nobody able to explain why, and advice to add more: more ads, more posts, more spend. Nobody tells you what's actually broken.</p>
-          <p>That isn't a tactics problem. It's a confidence problem. And it happens in a small number of specific places, which is the useful part: if there are only a few places it can break, you can go find out which one it is instead of guessing.</p>
+    <!-- Trimmed 2026-10-30 (Robbie): Problem, Solution, How EngageEngine works, After the Launch and FAQ cut; Four Moments one line each; scarcity moved up. Copy unchanged. -->
+
+    <!-- ═══ 7. SCARCITY (Hormozi §7): one company per trade, per market ═══ -->
+    <section class="mp-solution">
+      <div class="mp-solution-inner">
+        <p class="mp-eye" data-animate>One company per trade, per market</p>
+        <h2 class="mp-h2" data-animate data-delay="0.05">We lock your market. Then we point the work at you.</h2>
+        <div class="mp-solution-prose" data-animate data-delay="0.1">
+          <p><strong>One company per trade, per market.</strong> The day you claim yours, your competitor can't. That is the product, not a bonus.</p>
+          <p>And because the seat is yours alone, every job it produces is a job the guy across town didn't get. That is what taking your market looks like.</p>
+          <p>Because every plan is researched and prepared individually, Marketing Performance Group accepts a limited number of qualified companies each month.</p>
         </div>
-        <p class="mp-problem-punch" data-animate data-delay="0.15">That's the first thing I do. Not execution. Not a campaign. Identifying where confidence is collapsing between interest and decision. Once that's clear the correction is usually straightforward. Until it's clear, everything else is guessing.</p>
       </div>
     </section>
 
@@ -139,54 +140,15 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
         <h2 class="mp-h2" data-animate data-delay="0.05">There are only a few places a sale can break.</h2>
         <p class="mp-breaks-lede" data-animate data-delay="0.1">Nearly every revenue problem I see comes down to one of four moments.</p>
         <div class="mp-breaks-list" data-animate data-delay="0.15">
-          <div class="mp-break"><p class="mp-break-fm">Not Seen When the Decision Is Made</p><h3>You weren't there when they decided.</h3><p>People were looking for what you do. You just weren't in front of them at the moment they picked somebody.</p></div>
-          <div class="mp-break"><p class="mp-break-fm">Seen But Not Trusted</p><h3>They found you and didn't trust you yet.</h3><p>They looked, and they left. The interest was real. The confidence wasn't.</p></div>
-          <div class="mp-break"><p class="mp-break-fm">Trusted But Still Compared</p><h3>They trusted you and shopped you anyway.</h3><p>You gave the estimate, they compared, and you lost some you should have won, usually on price, because the difference between you and the other fellow never got made clear.</p></div>
-          <div class="mp-break"><p class="mp-break-fm">Selected But No Action</p><h3>They meant to hire you and never got to it.</h3><p>They said they'd call back, and they meant it. Most of those jobs aren't lost. They're stuck.</p></div>
+          <div class="mp-break"><p class="mp-break-fm">Not Seen When the Decision Is Made</p><h3>You weren't there when they decided.</h3></div>
+          <div class="mp-break"><p class="mp-break-fm">Seen But Not Trusted</p><h3>They found you and didn't trust you yet.</h3></div>
+          <div class="mp-break"><p class="mp-break-fm">Trusted But Still Compared</p><h3>They trusted you and shopped you anyway.</h3></div>
+          <div class="mp-break"><p class="mp-break-fm">Selected But No Action</p><h3>They meant to hire you and never got to it.</h3></div>
         </div>
-        <p class="mp-breaks-foot" data-animate data-delay="0.2">Different problems, different fixes, and the fix for one does nothing for the other three.</p>
         <div class="mp-breaks-turn" data-animate data-delay="0.25">
-          <p><strong>Here's the trouble.</strong> From where you sit, you can only see one of the four. You know about the estimates you lost. You don't know about the people who never came back, never called, or never found you at all.</p>
           <p class="mp-couplet">More advertising doesn't fix lost demand.<br />Finding the failure point does.</p>
-          <p>The Demand Collapse Diagnostic&trade; looks at all four, not by asking you to guess, but by reading what your own numbers already say: where you land when somebody nearby is choosing, what people do on your site before they leave, what they type before they hire, and who came looking and never called.</p>
+          <p><a href="/how-it-works/">See how it works &rarr;</a></p>
         </div>
-      </div>
-    </section>
-
-    <!-- ═══ 3. SOLUTION (Hormozi §3): the named mechanism ═══ -->
-    <section class="mp-mech">
-      <div class="mp-mech-inner">
-        <p class="mp-eye" data-animate>The Solution</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">Diagnose first. Then deploy.</h2>
-        <div class="mp-mech-grid" data-animate data-delay="0.1">
-          <div class="mp-mech-step"><span class="mp-mech-n">01</span><h3>Diagnose</h3><p>Find where demand is disappearing across the four failure modes.</p></div>
-          <div class="mp-mech-step"><span class="mp-mech-n">02</span><h3>Detect</h3><p>Use buyer-signal intelligence to understand where demand is forming and where buyers are moving toward a decision.</p></div>
-          <div class="mp-mech-step"><span class="mp-mech-n">03</span><h3>Recover</h3><p>Use EngageEngine&trade; to coordinate advertising, follow-up, visibility and conversion around the confirmed failure point.</p></div>
-        </div>
-        <div class="mp-mech-note" data-animate data-delay="0.15">
-          <p><strong>EngageEngine&trade;</strong> applies enterprise-grade buyer-signal intelligence to a single local market, helping us recognize when demand is forming, where buyers are in the decision process and what should happen next.</p>
-          <p class="mp-mech-punch">See demand forming earlier. Reach buyers sooner. Lose fewer jobs between interest and action.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3b. How EngageEngine works (the journey graphic) -->
-    <HowEngageEngineWorks />
-
-    <!-- ═══ 4. PROOF (Hormozi §4): recency. Results proof = cards under the hero; authority = stats under the hero video (Robbie, 2026-10-25). ═══ -->
-
-    <!-- 4c. Recent catches -->
-    <section class="mp-catch">
-      <div class="mp-catch-inner">
-        <p class="mp-eye" data-animate>After the Launch</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">We catch it before it costs you.</h2>
-        <p class="mp-catch-lede" data-animate data-delay="0.1">Campaigns don't fail loudly. They fail quietly, in ways you'd never see on an invoice. Every account gets watched every week. Recent catches:</p>
-        <ul class="mp-catch-list" data-animate data-delay="0.15">
-          <li>A plumbing client's campaign delivery collapsed 90% overnight. Caught the same day, diagnosed as a campaign issue, not a market issue, and restored. Conversions never dipped.</li>
-          <li>An email campaign started silently dropping one in four sends. Caught before the next send went out, fixed before the client ever saw it.</li>
-          <li>Visitors on three client sites were clicking buttons that didn't respond, at the exact moment they were trying to act. Found it in the behavior recordings. Fixed it.</li>
-        </ul>
-        <p class="mp-catch-foot" data-animate data-delay="0.2">The launch is the easy part. The watching is what you're paying for.</p>
       </div>
     </section>
 
@@ -221,33 +183,6 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
           <li><strong>You keep it.</strong> All five documents are yours, whether you implement them yourself or ask us to.</li>
           <li><strong>No wasted time.</strong> If a direct competitor has already claimed your territory, Robbie tells you before preparing the full plan.</li>
         </ul>
-      </div>
-    </section>
-
-    <!-- ═══ 7. SCARCITY (Hormozi §7): one company per trade, per market ═══ -->
-    <section class="mp-solution">
-      <div class="mp-solution-inner">
-        <p class="mp-eye" data-animate>One company per trade, per market</p>
-        <h2 class="mp-h2" data-animate data-delay="0.05">We lock your market. Then we point the work at you.</h2>
-        <div class="mp-solution-prose" data-animate data-delay="0.1">
-          <p><strong>One company per trade, per market.</strong> The day you claim yours, your competitor can't. That is the product, not a bonus.</p>
-          <p>And because the seat is yours alone, every job it produces is a job the guy across town didn't get. That is what taking your market looks like.</p>
-          <p>Because every plan is researched and prepared individually, Marketing Performance Group accepts a limited number of qualified companies each month.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAQ: objections handled right before the final ask -->
-    <section class="mp-faq">
-      <div class="mp-faq-inner">
-        <h2 class="mp-h2">Questions</h2>
-        <details class="mp-faq-item"><summary>Is the plan really free?</summary><p>Yes. Qualified companies in available territories receive the plan without paying for it. You keep the plan whether you implement it yourself or ask Marketing Performance Group to help.</p></details>
-        <details class="mp-faq-item"><summary>Why do I have to qualify?</summary><p>Every plan is researched and prepared for a specific company and market. The review is designed for established home-service companies where the findings can support a meaningful recovery plan.</p></details>
-        <details class="mp-faq-item"><summary>Is the scorecard the complete diagnosis?</summary><p>No. The twelve questions identify the first failure point to investigate. The personalized review examines the company, market, competitive position and available evidence before the plan is prepared.</p></details>
-        <details class="mp-faq-item"><summary>Do I have to hire Marketing Performance Group afterward?</summary><p>No. The plan is yours. You may implement it yourself. If you want Marketing Performance Group to implement it through EngageEngine&trade;, that conversation happens only after you have seen the plan.</p></details>
-        <details class="mp-faq-item"><summary>What information do you need?</summary><p>The application asks for basic company information, your website, trade, service area and current challenge. Robbie begins with publicly available information and the answers you provide. Any request for additional access should be explained and approved separately.</p></details>
-        <details class="mp-faq-item"><summary>What if my territory is already claimed?</summary><p>Marketing Performance Group works with one company per trade, per market. If a direct competitor has already claimed the territory, Robbie will tell you before preparing the full plan.</p></details>
-        <details class="mp-faq-item"><summary>How is EngageEngine&trade; different from ordinary advertising?</summary><p>Ordinary advertising usually starts with channels and budgets. EngageEngine&trade; starts with the confirmed failure point, applies buyer-signal intelligence to the local market and coordinates the work around where demand is actually being lost.</p></details>
       </div>
     </section>
 

@@ -8,9 +8,9 @@ const $$Index = createComponent(($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
   Astro2.self = $$Index;
   return Astro2.redirect("/diagnostic/", 301);
-}, "/Users/robbiebutt/.claude/worktrees/demand-recovery-plan/src/pages/score/index.astro", void 0);
+}, "/Users/robbiebutt/.claude/worktrees/homepage-trim/src/pages/score/index.astro", void 0);
 
-const $$file = "/Users/robbiebutt/.claude/worktrees/demand-recovery-plan/src/pages/score/index.astro";
+const $$file = "/Users/robbiebutt/.claude/worktrees/homepage-trim/src/pages/score/index.astro";
 const $$url = "/score";
 
 const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
