@@ -4,7 +4,7 @@ import Nav from '../components/Nav.astro'
 import Footer from '../components/Footer.astro'
 
 // The twelve questions, three per failure mode. Order matters: question i belongs
-// to section Math.floor(i / 3). Scoring lives in src/lib/diagnostic-score.mjs.
+// to section Math.floor(i / 3). Each question carries its own symptom quote (2026-10-30). Scoring lives in src/lib/diagnostic-score.mjs.
 const SECTIONS = [
   { name: 'Not Seen When the Decision Is Made', symptom: '"Your Google reviews are 4.8 stars but your phone stopped ringing."' },
   { name: 'Seen But Not Trusted',               symptom: '"You\'re getting website traffic but nobody books."' },
@@ -12,18 +12,18 @@ const SECTIONS = [
   { name: 'Selected But No Action',             symptom: '"They said yes, then disappeared."' },
 ];
 const QUESTIONS = [
-  { title: 'Visibility Where Decisions Are Made', main: 'Are you present when people are choosing?', think: ['Google Maps visibility', 'Search results for your brand name', 'Competitors appearing above you'] },
-  { title: 'Demand Protection', main: 'Are you losing people who already want you?', think: ['Competitor ads on your name', 'Review sites outranking you', 'Marketplaces intercepting traffic'] },
-  { title: "Relevance in Today's Market", main: "Do you still feel current to today's buyer?", think: ['Website quality on mobile', 'Google Business Profile activity', 'Whether your brand feels dated or modern'] },
-  { title: 'Trust Signals', main: 'Do you look trustworthy before anyone calls?', think: ['Reviews quantity and quality', 'Photos, credentials, licenses', 'First impressions'] },
-  { title: 'Message Consistency', main: 'Does everything sound like the same company?', think: ['Old logos or slogans still floating around', 'Different tones across platforms', 'Conflicting promises'] },
-  { title: 'Customer Value & Experience', main: 'Do customers clearly understand why they should choose you?', think: ['Trust and professionalism mentioned in reviews', 'Repeat customers and referrals', 'Whether people explain why they chose you'] },
-  { title: 'Comparison Justification', main: 'Do customers still compare other options even after they trust you?', think: ['How often customers ask for multiple quotes', 'Whether price comparisons come up late in the process', 'If customers say they like you but want to "check a few others"'] },
-  { title: 'Clear Local Positioning', main: 'Are you clearly different from competitors?', think: ['Can your office staff answer "Why you?"', 'Do your ads and website say something specific?', "Or could your name be swapped with a competitor's?"] },
-  { title: 'Perceived Value (Not Just Price)', main: "Do customers believe you're worth it?", think: ['Pushback on pricing', '"Too expensive" objections', 'Whether people compare you to "cheaper guys"'] },
-  { title: 'Follow-Through Confidence', main: 'Do customers stall or drop off after showing clear interest in moving forward?', think: ['Prospects who go quiet after a strong first conversation', 'Delays between "yes" signals and actual commitment', 'How often momentum dies at the last step'] },
-  { title: 'Next-Step Clarity', main: 'Is it obvious what to do next?', think: ['Confusing websites', 'Too many competing buttons and offers', 'Missed calls or slow follow-ups'] },
-  { title: 'Overall Brand Control', main: 'Do you feel in control of your growth?', think: ['How your brand shows up', 'How inquiries come in', 'How customers choose you'] },
+  { symptom: '"Your Google reviews are 4.8 stars but your phone stopped ringing."', title: 'Visibility Where Decisions Are Made', main: 'Are you present when people are choosing?', think: ['Google Maps visibility', 'Search results for your brand name', 'Competitors appearing above you'] },
+  { symptom: '"Somebody searched your name and called the company whose ad was above it."', title: 'Demand Protection', main: 'Are you losing people who already want you?', think: ['Competitor ads on your name', 'Review sites outranking you', 'Marketplaces intercepting traffic'] },
+  { symptom: '"Your work is better than ever, but your website still looks like 2015."', title: "Relevance in Today's Market", main: "Do you still feel current to today's buyer?", think: ['Website quality on mobile', 'Google Business Profile activity', 'Whether your brand feels dated or modern'] },
+  { symptom: '"You\'re getting website traffic but nobody books."', title: 'Trust Signals', main: 'Do you look trustworthy before anyone calls?', think: ['Reviews quantity and quality', 'Photos, credentials, licenses', 'First impressions'] },
+  { symptom: '"Your truck says one thing, your website says another, and your Facebook page says a third."', title: 'Message Consistency', main: 'Does everything sound like the same company?', think: ['Old logos or slogans still floating around', 'Different tones across platforms', 'Conflicting promises'] },
+  { symptom: '"Your customers love you, but they can\'t tell a neighbor why they picked you."', title: 'Customer Value & Experience', main: 'Do customers clearly understand why they should choose you?', think: ['Trust and professionalism mentioned in reviews', 'Repeat customers and referrals', 'Whether people explain why they chose you'] },
+  { symptom: '"They loved your estimate, then said they\'d get a couple more quotes."', title: 'Comparison Justification', main: 'Do customers still compare other options even after they trust you?', think: ['How often customers ask for multiple quotes', 'Whether price comparisons come up late in the process', 'If customers say they like you but want to "check a few others"'] },
+  { symptom: '"Cover up your logo, and your website could belong to any competitor in town."', title: 'Clear Local Positioning', main: 'Are you clearly different from competitors?', think: ['Can your office staff answer "Why you?"', 'Do your ads and website say something specific?', "Or could your name be swapped with a competitor's?"] },
+  { symptom: '"You won the estimate but they picked someone cheaper."', title: 'Perceived Value (Not Just Price)', main: "Do customers believe you're worth it?", think: ['Pushback on pricing', '"Too expensive" objections', 'Whether people compare you to "cheaper guys"'] },
+  { symptom: '"They said yes, then disappeared."', title: 'Follow-Through Confidence', main: 'Do customers stall or drop off after showing clear interest in moving forward?', think: ['Prospects who go quiet after a strong first conversation', 'Delays between "yes" signals and actual commitment', 'How often momentum dies at the last step'] },
+  { symptom: '"They wanted to book, but nobody called them back until the next day."', title: 'Next-Step Clarity', main: 'Is it obvious what to do next?', think: ['Confusing websites', 'Too many competing buttons and offers', 'Missed calls or slow follow-ups'] },
+  { symptom: '"Some months the phone rings off the hook, and you can\'t say why."', title: 'Overall Brand Control', main: 'Do you feel in control of your growth?', think: ['How your brand shows up', 'How inquiries come in', 'How customers choose you'] },
 ];
 const FLAGS = [
   "We're getting impressions and clicks but not enough calls",
@@ -365,7 +365,7 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
               <div class="q-step" data-q={i} hidden={i !== 0}>
                 <div class="q-head">
                   <div class="q-count">Question {i + 1} of 12</div>
-                  <div class="q-symptom">{s.symptom}</div>
+                  <div class="q-symptom">{q.symptom}</div>
                 </div>
                 <div class="q-body">
                   <div class="q-title" id={`q${i}-t`}>{q.title}</div>
