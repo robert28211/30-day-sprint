@@ -51,16 +51,16 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
         <div class="mp-hero-copy">
           <p class="mp-eye mp-hero-eye">A demand-recovery system for established home-service companies</p>
           <h1 class="mp-h1"><a href="/diagnostic/" class="mp-h1-link" data-plan-cta="headline">
-            <span class="hero-word">Turn </span>
-            <span class="hero-word">more </span>
-            <span class="hero-word">of </span>
-            <span class="hero-word">your </span>
-            <span class="hero-word">market's </span>
-            <span class="hero-word">existing </span>
-            <span class="hero-word">demand </span>
-            <span class="hero-word hero-dim">into </span>
-            <span class="hero-word hero-dim">booked </span>
-            <span class="hero-word hero-dim">work. </span>
+            <span class="hero-wordNone" style="--w:0">Turn </span>
+            <span class="hero-wordNone" style="--w:1">more </span>
+            <span class="hero-wordNone" style="--w:2">of </span>
+            <span class="hero-wordNone" style="--w:3">your </span>
+            <span class="hero-wordNone" style="--w:4">market's </span>
+            <span class="hero-wordNone" style="--w:5">existing </span>
+            <span class="hero-wordNone" style="--w:6">demand </span>
+            <span class="hero-word hero-dim" style="--w:7">into </span>
+            <span class="hero-word hero-dim" style="--w:8">booked </span>
+            <span class="hero-word hero-dim" style="--w:9">work. </span>
           </a></h1>
           <div class="mp-hero-prose hero-sub">
             <p>Most agencies start by selling you more advertising. We start by finding where the work you should be winning is disappearing.</p>
@@ -1030,4 +1030,27 @@ const HERO_VIDEO: null | { src: string; poster: string; caption: string; shape: 
     .mp-close    { padding: 104px 22px 96px; }
   }
   .mp-breaks-turn a { display: inline-block; padding: 12px 0; }
+
+  /* ─── RESTRAINT PREVIEW (local only, branch claude/homepage-restraint) ───
+     No added graphics. Motion only: the headline resolves, the promise lands after it,
+     sections settle as they arrive, and the CTA carries the visitor into the diagnostic. */
+  @keyframes rs-resolve { from { opacity: 0; filter: blur(10px); letter-spacing: .02em; } to { opacity: 1; filter: blur(0); letter-spacing: inherit; } }
+  :global(.mp-h1 .hero-word) { animation: rs-resolve 1.1s cubic-bezier(.16,1,.3,1) both; }
+  :global(.mp-h1 .hero-word:nth-child(n)) { animation-delay: calc(var(--w, 0) * 90ms); }
+  @keyframes rs-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .mp-hero-prose, .mp-hero-cta-block { animation: rs-rise .9s cubic-bezier(.16,1,.3,1) 1.05s both; }
+  .mp-only { animation: rs-rise 1s cubic-bezier(.16,1,.3,1) 1.45s both; }
+  .mp-only-line strong { animation: rs-resolve 1.2s cubic-bezier(.16,1,.3,1) 1.7s both; }
+  @supports (animation-timeline: view()) {
+    :global(main.mp > section:not(.mp-hero)) > * { animation: rs-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
+    :global(main.mp [data-animate]) { opacity: 1 !important; transform: none !important; }
+  }
+  @view-transition { navigation: auto; }
+  .mp-hero-cta-block .mp-btn-primary { view-transition-name: rs-cta; }
+  :global(::view-transition-group(rs-cta)) { animation-duration: .55s; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+  :global(::view-transition-old(root)), :global(::view-transition-new(root)) { animation-duration: .35s; }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.mp-h1 .hero-word), .mp-hero-prose, .mp-hero-cta-block, .mp-only, .mp-only-line strong,
+    :global(main.mp > section) > * { animation: none !important; }
+  }
 </style>
