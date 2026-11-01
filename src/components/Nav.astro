@@ -1,4 +1,5 @@
 ---
+const { hideCta = false } = Astro.props;
 ---
 <nav>
   <div class="nav-inner">
@@ -7,7 +8,7 @@
     </a>
     <div class="nav-right">
       <a href="/the-build" class="nav-link">The Build</a>
-      <a href="/diagnostic/" class="nav-cta">Find My Failure Point →</a>
+      {!hideCta && <a href="/diagnostic/" class="nav-cta">Find My Failure Point →</a>}
     </div>
   </div>
 </nav>
