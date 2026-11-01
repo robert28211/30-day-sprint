@@ -18,6 +18,19 @@ if (!prefersReducedMotion) {
       ease: 'power3.out',
     })
   })
+
+  // Homepage sections: rise each block in as it enters, staggered within its group
+  document.querySelectorAll('main.mp > section:not(.mp-hero) > * > *:not([data-animate])').forEach((el) => {
+    const i = Array.prototype.indexOf.call(el.parentElement.children, el)
+    gsap.from(el, {
+      scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+      opacity: 0,
+      y: 28,
+      duration: 0.8,
+      delay: Math.min(i, 4) * 0.08,
+      ease: 'power3.out',
+    })
+  })
 }
 
 // ─── Hero: CSS handles the animation — no JS opacity:0 on LCP elements ───────
