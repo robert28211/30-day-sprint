@@ -450,7 +450,7 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
               </ul>
               <p class="keep">You keep the plan whether you implement it yourself or ask Marketing Performance Group to help.</p>
               <button type="button" class="btn btn-wide" id="open-apply" aria-expanded="false" aria-controls="apply">Apply for My Complimentary Plan</button>
-              <p class="alt-row" id="alt-row">Not ready to apply? <a href="#" id="kit-link" download>Download the free toolkit for this failure mode</a> or <a href="#" id="fm-page-link">read more about it</a>.<br /><button type="button" class="link-btn" id="review-answers" style="background:none;border:0;color:var(--blue-link);cursor:pointer;font:inherit;padding:4px 0;">Review my answers</button></p>
+              <p class="alt-row" id="alt-row">Not ready to apply? <a href="#" id="fm-page-link">Read more about this failure mode</a>.<br /><button type="button" class="link-btn" id="review-answers" style="background:none;border:0;color:var(--blue-link);cursor:pointer;font:inherit;padding:4px 0;">Review my answers</button></p>
             </div>
 
             <!-- APPLICATION -->
@@ -574,7 +574,6 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
       'Your answers suggest prospects are choosing you mentally but failing to complete the next step. The personalized review examines response time, follow-up, calls to action and the friction between selection and booking.',
     ];
     const FM_PAGE = ['/diagnosis/not-seen/', '/diagnosis/not-trusted/', '/diagnosis/still-compared/', '/diagnosis/no-action/'];
-    const FM_KIT  = ['fm1-toolkit.zip', 'fm2-toolkit.zip', 'fm3-toolkit.zip', 'fm4-toolkit.zip'];
 
     // Analytics: event names and the failure-mode label only. Never form fields.
     const fired = new Set<string>();
@@ -669,7 +668,6 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
       } else {
         sec.hidden = true;
       }
-      (document.getElementById('kit-link') as HTMLAnchorElement).href = '/downloads/' + FM_KIT[p.idx];
       (document.getElementById('fm-page-link') as HTMLAnchorElement).href = FM_PAGE[p.idx] + '?src=diagnostic';
 
       const wasHidden = resultEl.hidden;
@@ -734,7 +732,6 @@ const REVENUE = ['Under $500,000', '$500,000 to $1 million', '$1 million to $3 m
       show(0);
       assess.scrollIntoView({ behavior: 'smooth' });
     });
-    document.getElementById('kit-link')!.addEventListener('click', () => track('toolkit_download', { failure_mode: result?.primary.name }, false));
 
     // ── Application ──
     const form = document.getElementById('apply') as HTMLFormElement;
